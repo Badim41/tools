@@ -198,6 +198,8 @@ class ChatGPT:
 
             self.chars = [Character_AI(char_id=char_ids[number], char_token=char_tokens[number],
                                        testing=testing) for number in range(len(char_ids))]
+        else:
+            self.chars = []
 
         self.logger = Logs(warnings=warnings, errors=errors)
         self.testing = testing
