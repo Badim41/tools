@@ -320,12 +320,17 @@ class ChatGPT:
                 self.logger.logging(f"Error in {str(provider)}", str(e), color=Color.GRAY)
             await asyncio.sleep(delay_for_gpt)
 
-    async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id: int, gpt_role):
+    async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role):
 
         if self.testing:
             self.logger.logging("messages", messages, Color.GRAY)
 
         if key_gpt:
+            # нет ключей
+            if not self.openAI_keys:
+                await asyncio.sleep(delay_for_gpt)
+                return
+
             try:
                 openai_key = self.openAI_keys[self.gpt_queue % len(self.openAI_keys)]
                 client = AsyncOpenAI(api_key="sk-" + openai_key)
@@ -347,6 +352,11 @@ class ChatGPT:
                 else:
                     await asyncio.sleep(delay_for_gpt)
         else:
+            # нет ключей
+            if not self.openAI_auth_keys:
+                await asyncio.sleep(delay_for_gpt)
+                return
+
             try:
                 auth_key = self.openAI_auth_keys[self.gpt_queue % len(self.openAI_auth_keys)]
 
