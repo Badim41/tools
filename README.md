@@ -32,7 +32,7 @@
 Установите пакет с помощью pip:
 
 ```bash
-pip install discord_tools
+pip install git+https://github.com/Badim41/discord_tools.git
 ```
 
 # ChatGPT <a name="section-2"></a>
