@@ -10,11 +10,6 @@ import zipfile
 from PIL import Image
 
 from discord_tools.character_ai_chat import Character_AI, char_id_images
-
-if not os.path.exists('images'):
-    os.mkdir('images')
-
-
 async def get_image_size(image_path):
     try:
         with Image.open(image_path) as img:
@@ -88,6 +83,9 @@ class Kandinsky_API:
 
 class GenerateImages:
     def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None):
+        if not os.path.exists('images'):
+            os.mkdir('images')
+
         if isinstance(secret_keys_kandinsky, list):
             self.secret_keys_kandinsky = secret_keys_kandinsky
         elif isinstance(secret_keys_kandinsky, str):
