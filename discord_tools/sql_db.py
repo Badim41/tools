@@ -2,7 +2,7 @@ import sqlite3
 import asyncio
 from contextlib import asynccontextmanager
 
-# Асинхронный контекстный менеджер для блокировки
+db_path = 'config.db'
 @asynccontextmanager
 async def database_lock():
     lock = asyncio.Lock()
@@ -14,7 +14,6 @@ async def set_get_database_async(section, key, value=None):
     изменить - await set_get_database_async("test", keys, values)
     получить - await set_get_database_async("test", "500")
     """
-    db_path = 'config.db'
     section = str(section)
 
     async with database_lock():
@@ -61,7 +60,6 @@ async def get_all_config_async():
 
     :return: section, key, value
     """
-    db_path = 'config.db'
 
     # Create SQLite connection and cursor
     conn = sqlite3.connect(db_path)
@@ -75,3 +73,50 @@ async def get_all_config_async():
     conn.close()
 
     return result
+
+def get_database(section, key):
+    section = str(section)
+    key = str(key)
+
+    async with database_lock():
+        # Создаем подключение к SQLite и курсор
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Получаем значение для ключа
+        cursor.execute('SELECT value FROM config WHERE section = ? AND key = ?', (section, key))
+        return_value = cursor.fetchone()
+
+        # Закрываем соединение
+        conn.close()
+
+        return return_value[0] if return_value else None
+
+
+def set_database(section, key, value):
+    section = str(section)
+    key = str(key)
+    value = str(value)
+
+    async with database_lock():
+        # Создаем подключение к SQLite и курсор
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Создаем таблицу, если она не существует
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                section TEXT,
+                key TEXT NOT NULL UNIQUE,
+                value TEXT
+            )
+        ''')
+        conn.commit()
+
+        # Устанавливаем значение для ключа
+        cursor.execute('INSERT OR REPLACE INTO config (section, key, value) VALUES (?, ?, ?)', (section, key, value))
+        conn.commit()
+
+        # Закрываем соединение
+        conn.close()
