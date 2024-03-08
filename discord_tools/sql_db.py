@@ -3,11 +3,15 @@ import asyncio
 from contextlib import asynccontextmanager
 
 db_path = 'config.db'
+
+
 @asynccontextmanager
 async def database_lock():
     lock = asyncio.Lock()
     async with lock:
         yield lock
+
+
 async def set_get_database_async(section, key, value=None):
     """
     не поддерживается массив секций!
@@ -47,7 +51,8 @@ async def set_get_database_async(section, key, value=None):
                 return return_value[0] if return_value else None
 
             # Set the value for the key
-            cursor.execute('INSERT OR REPLACE INTO config (section, key, value) VALUES (?, ?, ?)', (section, key, str(value)))
+            cursor.execute('INSERT OR REPLACE INTO config (section, key, value) VALUES (?, ?, ?)',
+                           (section, key, str(value)))
             conn.commit()
 
         # Close the connection
@@ -74,26 +79,26 @@ async def get_all_config_async():
 
     return result
 
+
 def get_database(section, key):
     section = str(section)
     key = str(key)
 
-    async with database_lock():
-        # Создаем подключение к SQLite и курсор
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+    # Создаем подключение к SQLite и курсор
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
 
-        # Получаем значение для ключа
-        cursor.execute('SELECT value FROM config WHERE section = ? AND key = ?', (section, key))
-        return_value = cursor.fetchone()
+    # Получаем значение для ключа
+    cursor.execute('SELECT value FROM config WHERE section = ? AND key = ?', (section, key))
+    return_value = cursor.fetchone()
 
-        # Закрываем соединение
-        conn.close()
+    # Закрываем соединение
+    conn.close()
 
-        return return_value[0] if return_value else None
+    return return_value[0] if return_value else None
 
 
-def set_database(section, key, value):
+async def set_database(section, key, value):
     section = str(section)
     key = str(key)
     value = str(value)
