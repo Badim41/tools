@@ -125,3 +125,7 @@ async def set_database(section, key, value):
 
         # Закрываем соединение
         conn.close()
+
+
+asyncio.run(set_database("1", "1", "2"))
+print(get_database("1", "1"))

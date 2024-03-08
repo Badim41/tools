@@ -38,7 +38,7 @@ pip install git+https://github.com/Badim41/discord_tools.git
 # ChatGPT <a name="section-2"></a>
 ## Создание класса <a name="section-2.1"></a>
 ```python
-from discord_tools import ChatGPT
+from discord_tools.chat_gpt import ChatGPT
 chat_gpt = ChatGPT()
 ```
 ### С ключами OPEN_AI  <a name="section-2.2"></a>
@@ -63,13 +63,13 @@ print(result)
 ```
 ### Много ответов  <a name="section-2.6"></a>
 ```python
-from discord_tools import ChatGPT, ChatGPT_Mode
+from discord_tools.chat_gpt import ChatGPT, ChatGPT_Mode
 result = await chat_gpt.run_all_gpt("запрос", mode=ChatGPT_Mode.all)
 print(result)
 ```
 ### Сохранение истории  <a name="section-2.7"></a>
 ```python
-from discord_tool import clear_history
+from discord_tools.chat_gpt import 
 result = await chat_gpt.run_all_gpt("запрос", user_id=123) # 123 - номер для сохранения
 print(result)
 await clear_history(123) # отчистка
@@ -107,14 +107,14 @@ if flagged_status:
 ```
 # Character.ai  <a name="section-3"></a>
 ```python
-from discord_tools import Character_AI
+from discord_tools.character_ai_chat import Character_AI
 character = Character_AI(char_id, char_token)
 result = await character.get_answer("запрос")
 print(result)
 ```
 ## Модерация запроса <a name="section-3.1"></a>
 ```python
-from discord_tools import Character_AI, ModerateParams
+from discord_tools.character_ai_chat import Character_AI, ModerateParams
 result = await character.get_answer("запрос", moderate_answer=ModerateParams.replace_mat)
 print(result)
 ModerateParams.skip - не модерировать
@@ -123,7 +123,7 @@ ModerateParams.replace_mat - заменить все нежелательные 
 ```
 # Инструменты для модерации  <a name="section-4"></a>
 ```python
-from discord_tools import moderate_mat_in_sentence
+from discord_tools.detect_mat import moderate_mat_in_sentence
 sentence = "пошёл &*:+@ !"
 found_mats, sentence = await moderate_mat_in_sentence(sentence)
 if found_mats:
@@ -131,7 +131,7 @@ if found_mats:
 ```
 # Бесплатная генерация изображений <a name="section-5"></a>
 ```python
-from discord_tools import GenerateImages
+from discord_tools.image_generate import GenerateImages
 generator = GenerateImages()
 images = await generator.generate("Tree 4K")
 print(images) # пути к файлам
@@ -147,12 +147,13 @@ print(images) # пути к файлам
 ```
 # Цветные логи <a name="section-6"></a>
 ```python
-from discord_tools import Logs, Color
+from discord_tools.logs import Logs, Color
 logger = Logs(warnings=True)
 logger.logging("hello", "world", color=Color.GRAY)
 ```
 # Таймеры <a name="section-7"></a>
 ```python
+from discord_tools.timer import Time_Count
 timer = Time_Count()
 time.sleep(1)
 spent_time = timer.count_time()
@@ -168,16 +169,21 @@ await set_reaction(message, "👋") # поставить реакцию
 ```
 # Перевод <a name="section-9"></a>
 ```python
-from discord_tools import translate_text, Languages
+from discord_tools.translate import translate_text, Languages
 text = "Привет!"
 translated_text = await translate_text(text, Languages.en)
 print(translated_text)
 ```
 # База данных <a name="section-10"></a>
 ```python
-# (Возможно, что не совсем удобная)*
-from discord_tools import set_get_database_async
-await set_get_database_async("Секция", "Ключ", "Значение")
-key = await set_get_database_async("Секция", "Ключ")
+from discord_tools.sql_db import get_database, set_database
+asyncio.run(set_database(section="Секция", key="Ключ", value="Значение"))
+print(get_database(section="Секция", key="Ключ"))
+```
+```python
+# Одним методом (Возможно, что не совсем удобная)*
+from discord_tools.sql_db import set_get_database_async
+asyncio.run(set_get_database_async(section="Секция", key="Ключ", value="Значение"))
+key = asyncio.run(set_get_database_async("Секция", "Ключ"))
 print(key)
 ```
