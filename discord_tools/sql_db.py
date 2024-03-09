@@ -4,6 +4,19 @@ from contextlib import asynccontextmanager
 
 db_path = 'config.db'
 
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+# Create a table if it doesn't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        section TEXT,
+        key TEXT NOT NULL UNIQUE,
+        value TEXT
+    )
+''')
+conn.commit()
 
 @asynccontextmanager
 async def database_lock():
