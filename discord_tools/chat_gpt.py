@@ -206,10 +206,12 @@ class ChatGPT:
         self.logger = Logs(warnings=warnings, errors=errors)
         self.testing = testing
 
-    async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False, translate_lang=None):
+    async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
+                          translate_lang=None):
         def get_fake_gpt_functions(delay):
             functions_add = \
-                [self.one_gpt_run(provider=provider, messages=messages, delay_for_gpt=delay, translate_lang=translate_lang) for provider in _providers]
+                [self.one_gpt_run(provider=provider, messages=messages, delay_for_gpt=delay,
+                                  translate_lang=translate_lang) for provider in _providers]
 
             if self.chars:
                 char = self.chars[self.character_queue % len(self.chars)]
@@ -316,11 +318,11 @@ class ChatGPT:
             provider = provider[provider.find("'") + 1:]
             provider = provider[:provider.find("'")]
 
-            if translate_lang:
-                result = await translate_text(text=result, target_lang=translate_lang)
-
             if self.testing:
                 self.logger.logging("PROVIDER:", provider, result, "\n", color=Color.GRAY)
+
+            if translate_lang:
+                result = await translate_text(text=result, target_lang=translate_lang)
 
             return result
         except Exception as e:
@@ -382,7 +384,8 @@ class ChatGPT:
                 return response
             except Exception as e:
                 self.logger.logging("error gpt-off2", str(traceback.format_exc()))
-                if "Could not parse your authentication token" in str(e) or "Too many requests in 1 hour. Try again later." in str(e):
+                if "Could not parse your authentication token" in str(
+                        e) or "Too many requests in 1 hour. Try again later." in str(e):
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
                 if self.openAI_auth_keys:
