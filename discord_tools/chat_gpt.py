@@ -325,9 +325,6 @@ class ChatGPT:
 
     async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role):
 
-        if self.testing:
-            self.logger.logging("messages", messages, Color.GRAY)
-
         if key_gpt:
             # нет ключей
             if not self.openAI_keys:
