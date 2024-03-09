@@ -373,6 +373,10 @@ class ChatGPT:
                 )
                 if self.testing:
                     self.logger.logging("ChatGPT_OFFICIAL_2:", response, color=Color.GRAY)
+                lines = response.split("\n")
+                if len(lines) > 2:
+                    if lines[1].startswith(lines[0]):
+                        raise Exception(f"Повторяющаяся фраза. Вероятно это баг в ответе:\n {lines[0]} {lines[1]}")
                 return response
             except:
                 self.logger.logging("error gpt-off2", str(traceback.format_exc()))
