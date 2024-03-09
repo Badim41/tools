@@ -298,10 +298,11 @@ class ChatGPT:
                 timeout=30
             )
 
-            if result is None or result.replace("\n", "").replace(" ",
-                                                                  "") == "" or result == "None" or "!DOCTYPE" in str(
-                result) or "https://gptgo.ai" in str(result):
-                # делаем задержку, чтобы не вывелся пустой результат
+            if result is None \
+                    or result.replace("\n", "").replace(" ", "") == "" \
+                    or result == "None" or "!DOCTYPE" in str(result) \
+                    or "https://gptgo.ai" in str(result) \
+                    or '[GoogleGenerativeAI Error]' in str(result):
                 await asyncio.sleep(delay_for_gpt)
                 return
 
