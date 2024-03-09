@@ -426,7 +426,7 @@ class ChatGPT:
         response = requests.post(url, headers=headers, json=data)
         self.is_running_moderation = False
         if response.status_code == 200:
-            self.logger.logging(f"api_key: {api_key}", color=Color.GRAY)
+            self.logger.logging(f"api_key: {api_key[:10]}", color=Color.GRAY)
             result = response.json()
             flagged = result['results'][0]['flagged']
             categories = result['results'][0]['categories']
