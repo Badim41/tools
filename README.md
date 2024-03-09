@@ -20,7 +20,7 @@
     1. [Использование](#section-3.1)
 4. [Инструменты для модерации](#section-4)
 5. [Бесплатная генерация изображений](#section-5)
-    1. [С указание ключей](#section-5.1)
+    1. [С указанием ключей](#section-5.1)
 6. [Цветные логи](#section-6)
 7. [Таймеры](#section-7)
 8. [Авторизация Discord](#section-8)
@@ -53,7 +53,7 @@ chat_gpt = ChatGPT(auth_keys=AUTH_KEY: [str, list])
 ### С аутентификационным ключом character.ai (бесплатно)  <a name="section-2.4"></a>
 ![img.png](img.png)
 ```python
-# https://beta.character.ai - На F12 смотрите csrftoken в cookie
+# https://beta.character.ai - На F12 смотрите char_token в Local Storage
 chat_gpt = ChatGPT(char_tokens=CHAR_TOKEN: [str, list])
 ```
 ## Ответ  <a name="section-2.5"></a>
@@ -136,10 +136,10 @@ generator = GenerateImages()
 images = await generator.generate("Tree 4K")
 print(images) # пути к файлам
 ```
-## С указание ключей <a name="section-5.1"></a>
+## С указанием ключей <a name="section-5.1"></a>
 ```python
 KANDINSKY_KEYS - https://fusionbrain.ai/keys/
-CHAR_TOKENS - https://beta.character.ai - На F12 смотрите csrftoken в cookie
+CHAR_TOKENS - https://beta.character.ai - На F12 смотрите char_token в Local Storage
 
 generator = GenerateImages(SECRET_KEYS_KANDINSKY: [str, list], APIS_KANDINSKY: [str, list], CHAR_TOKENS: [str, list])
 images = await generator.generate("Tree 4K")
