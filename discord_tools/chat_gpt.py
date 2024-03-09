@@ -1,6 +1,7 @@
 import asyncio
 import g4f
 import json
+import logging
 import os
 import requests
 import traceback
@@ -375,9 +376,10 @@ class ChatGPT:
                     if lines[1].startswith(lines[0]) or len(response) > 4100:
                         raise Exception(f"Повторяющаяся фраза. Вероятно это баг в ответе:\n {lines[0]} {lines[1]}")
                 return response
-            except:
+            except Exception as e:
                 self.logger.logging("error gpt-off2", str(traceback.format_exc()))
-                if "Could not parse your authentication token":
+                if "Could not parse your authentication token" in str(e) or "Too many requests in 1 hour. Try again later." in str(e):
+                    self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
                 if self.openAI_auth_keys:
                     return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role)
