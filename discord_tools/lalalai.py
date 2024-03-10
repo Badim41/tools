@@ -339,7 +339,7 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
     return crashed, first_result, second_result
 
 
-def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None, file_format=None):
+def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None, file_format=None, delete_file=False):
     timer = Time_Count()
 
     if not modes:
@@ -386,31 +386,30 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
         if file_format not in ["mp3", "wav"]:
             raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
 
-        shutil.copy(audio_path, f'audio_files/input.{file_format}')
-
         if not lalala:
             lalala = LalalAI()
             lalala.go_to_site()
 
-        last_file = audio_path
+        process_file = f"{random_factor}input.{file_format}"
+        shutil.copy(audio_path, f'{SAVE_DIR}/{process_file}')
 
         for mode in modes:
-            logger.logging("Start process:", last_file, color=Color.GREEN)
-            results = process_file_pipeline(f"audio_files/{last_file}",
+            logger.logging("Start process:", process_file, color=Color.GREEN)
+            results = process_file_pipeline(f"{SAVE_DIR}/{process_file}",
                                             mode=mode,
                                             random_factor=random_factor,
                                             lalala=lalala,
                                             file_format=file_format)
             all_results.append(results[1])
-            last_file = results[2]
+            process_file = results[2]
 
-        not_recognized = f"{random_factor}_Else.{file_format}"
-        os.rename(last_file, not_recognized)
+        not_recognized = f"{RESULT_DIR}/{random_factor}_Else.{file_format}"
+        os.rename(process_file, not_recognized)
 
         all_results.append(not_recognized)
         lalala.driver.quit()
 
-        if downloaded_video:
+        if downloaded_video or delete_file:
             os.remove(audio_path)
     except:
         traceback_str = traceback.format_exc()
