@@ -274,7 +274,10 @@ class LalalAI:
             f.write(response.content)
 
 
-def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor=""):
+def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor="", file_format="mp3"):
+    if file_format not in ["mp3", "wav"]:
+        raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
+
     if not lalala:
         lalala = LalalAI()
         lalala.go_to_site()
@@ -288,7 +291,7 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
 
         lalala.change_mode(mode)
         # нарезаем файлы
-        files = slice_file(large_file_name, random_factor=random_factor)
+        files = slice_file(large_file_name, random_factor=random_factor, file_format=file_format)
         first_paths = []
         second_paths = []
         for i, file in enumerate(files):
@@ -330,13 +333,16 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
         first_result = random_factor + f"{mode}.wav"
         second_result = random_factor + f"Without_{mode}.wav"
     # объединяем файлы
-    first_result = join_files(first_paths, first_result, delete_paths=True)
-    second_result = join_files(second_paths, second_result, delete_paths=True)
+    first_result = join_files(first_paths, first_result, file_format=file_format, delete_paths=True)
+    second_result = join_files(second_paths, second_result, file_format=file_format, delete_paths=True)
     lalala.responses_was = set()
     return crashed, first_result, second_result
 
 
-def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None):
+def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None, file_format="mp3"):
+    if file_format not in ["mp3", "wav"]:
+        raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
+
     timer = Time_Count()
 
     if not modes:
@@ -368,13 +374,13 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
         if not audio_path:
             raise Exception("Укажите ссылку на ютуб или аудиофайл")
 
-        shutil.copy(audio_path, 'audio_files/input.mp3')
+        shutil.copy(audio_path, f'audio_files/input.{file_format}')
 
         if not lalala:
             lalala = LalalAI()
             lalala.go_to_site()
 
-        results = process_file_pipeline("audio_files/input.mp3",
+        results = process_file_pipeline(f"audio_files/input.{file_format}",
                                         mode=LalalAIModes.Vocal_and_Instrumental,
                                         random_factor=random_factor,
                                         lalala=lalala)
@@ -384,8 +390,8 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
         logger.logging("INSTRUMENTAL:", instrumental, color=Color.GREEN)
 
         for mode in modes:
-            shutil.copy(instrumental, 'audio_files/input.mp3')
-            results = process_file_pipeline("audio_files/input.mp3",
+            shutil.copy(instrumental, f'audio_files/input.{file_format}')
+            results = process_file_pipeline(f"audio_files/input.{file_format}",
                                             mode=mode,
                                             random_factor=random_factor,
                                             lalala=lalala)

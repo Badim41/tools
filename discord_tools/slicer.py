@@ -5,7 +5,7 @@ SAVE_DIR = "audio_files"
 RESULT_DIR = "results"
 
 
-def join_files(audio_paths, output_path, delete_paths=False):
+def join_files(audio_paths, output_path, file_format: str, delete_paths=False):
     joined_audio = AudioSegment.empty()
 
     for audio_path in audio_paths:
@@ -16,17 +16,17 @@ def join_files(audio_paths, output_path, delete_paths=False):
             os.remove(audio_path)
 
     result_path = os.path.join(RESULT_DIR, output_path)
-    joined_audio.export(result_path, format="wav")
+    joined_audio.export(result_path, format=file_format)
     return result_path
 
 
-def slice_audio_file(input_file_path, slice_duration_ms, output_file1, output_file2):
+def slice_audio_file(input_file_path, slice_duration_ms, output_file1, output_file2, file_format: str):
     audio = AudioSegment.from_file(input_file_path)
     audio_duration = len(audio)
     # print(slice_duration_ms, audio_duration)
 
     if slice_duration_ms == audio_duration:
-        audio.export(os.path.join(SAVE_DIR, output_file1), format="mp3")
+        audio.export(os.path.join(SAVE_DIR, output_file1), format=file_format)
         os.remove(output_file2)
         return True
     elif slice_duration_ms <= 0 or slice_duration_ms > audio_duration:
@@ -34,8 +34,8 @@ def slice_audio_file(input_file_path, slice_duration_ms, output_file1, output_fi
 
     slice_1 = audio[:slice_duration_ms]
     slice_2 = audio[slice_duration_ms:]
-    slice_1.export(os.path.join(SAVE_DIR, output_file1), format="mp3")
-    slice_2.export(os.path.join(output_file2), format="mp3")
+    slice_1.export(os.path.join(SAVE_DIR, output_file1), format=file_format)
+    slice_2.export(os.path.join(output_file2), format=file_format)
 
 
 def find_min_volume_timecodes(audio_file_path):
@@ -62,14 +62,15 @@ def find_min_volume_timecodes(audio_file_path):
     return min_loud_piece[0]
 
 
-def slice_file(audio_file_path, random_factor=""):
+def slice_file(audio_file_path, file_format: str, random_factor=""):
     i = 0
     while True:
         # Получаем таймкод минимальной громкости
         timecode = find_min_volume_timecodes(audio_file_path)
 
         end_generation = slice_audio_file(input_file_path=audio_file_path, slice_duration_ms=timecode,
-                                          output_file1=random_factor + f"input_{i}.mp3", output_file2=audio_file_path)
+                                          output_file1=random_factor + f"input_{i}.{file_format}",
+                                          output_file2=audio_file_path, file_format=file_format)
         i += 1
         if end_generation:
             # print("Done!")
@@ -77,7 +78,7 @@ def slice_file(audio_file_path, random_factor=""):
 
         # print(f"Min volume at {timecode} milliseconds")
 
-    files = [os.path.join(SAVE_DIR, random_factor + f"input_{j}.mp3") for j in range(i)]
+    files = [os.path.join(SAVE_DIR, random_factor + f"input_{j}.{file_format}") for j in range(i)]
     for file in files:
         if not os.path.exists(file):
             raise Exception(file + " not exist!")
