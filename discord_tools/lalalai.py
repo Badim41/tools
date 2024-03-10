@@ -319,10 +319,7 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
                     raise Exception("Найдено более двух файлов")
             # обратно в меню
             lalala.back_to_menu()
-            if lalala.low_memory:
-                logger.logging("try refresh")
-                lalala.driver.refresh()
-                logger.logging("refreshed")
+            lalala.driver.refresh()
             # удаляем временный файл
             try:
                 os.remove(file)
@@ -346,7 +343,6 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
     # объединяем файлы
     first_result = join_files(first_paths, first_result, file_format=file_format, delete_paths=True)
     second_result = join_files(second_paths, second_result, file_format=file_format, delete_paths=True)
-    lalala.responses_was = set()
     return crashed, first_result, second_result
 
 
