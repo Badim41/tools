@@ -26,7 +26,7 @@
 8. [Авторизация Discord](#section-8)
 9. [Перевод](#section-9)
 10. [База данных](#section-10)
-11. [Скачать аудиофайл по ссылку с ютуба](#section-11)
+11. [Скачать аудиофайл по ссылке с ютуба](#section-11)
 12. [Отделить вокал/иструментал](#section-12)
     1. [Одна модель](#section-12.1)
     2. [Несколько моделей](#section-12.2)
@@ -191,7 +191,7 @@ asyncio.run(set_get_database_async(section="Секция", key="Ключ", value
 key = asyncio.run(set_get_database_async("Секция", "Ключ"))
 print(key)
 ```
-# Скачать аудиофайл по ссылку с ютуба <a name="section-11"></a>
+# Скачать аудиофайл по ссылке с ютуба <a name="section-11"></a>
 ```python
 from discord_tools.yt_downloader import get_youtube_video_id, yt_download
 
