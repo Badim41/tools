@@ -228,7 +228,7 @@ print("Results:", result_1, result_2)
 from discord_tools.lalalai import full_process_file_pipeline, LalalAIModes
 
 input_str = input("Введите имя файла или ссылку на ютуб:\n")
-all_processed_files = full_process_file_pipeline(input_str,
+results = full_process_file_pipeline(input_str,
                                                  modes=[LalalAIModes.Vocal_and_Instrumental,
                                                         LalalAIModes.Drums,
                                                         LalalAIModes.Bass,
@@ -238,5 +238,5 @@ all_processed_files = full_process_file_pipeline(input_str,
                                                         LalalAIModes.Synthesizer,
                                                         LalalAIModes.Strings,
                                                         LalalAIModes.Wind])
-print("All results:", all_processed_files)
+print("All results:", results)
 ```
