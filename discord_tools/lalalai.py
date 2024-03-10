@@ -289,7 +289,15 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
         if lalala.testing:
             logger.logging("Selected model:", mode, color=Color.BLUE)
 
-        lalala.change_mode(mode)
+        # С очень низкой вероятностью тут может быть ошибка.
+        while True:
+            try:
+                lalala.change_mode(mode)
+                break
+            except Exception as e:
+                logger.logging("ERROR: cant change mode:", e)
+                lalala.go_to_site()
+
         # нарезаем файлы
         files = slice_file(large_file_name, random_factor=random_factor, file_format=file_format)
         first_paths = []
