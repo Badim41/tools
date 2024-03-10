@@ -340,11 +340,6 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
 
 
 def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None, file_format=None):
-    if not file_format:
-        file_format = input_text[input_text.rfind(".")+1:]
-    if file_format not in ["mp3", "wav"]:
-        raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
-
     timer = Time_Count()
 
     if not modes:
@@ -375,6 +370,12 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
 
         if not audio_path:
             raise Exception("Укажите ссылку на ютуб или аудиофайл")
+
+        if not file_format:
+            file_format = audio_path[input_text.rfind(".") + 1:]
+
+        if file_format not in ["mp3", "wav"]:
+            raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
 
         shutil.copy(audio_path, f'audio_files/input.{file_format}')
 
