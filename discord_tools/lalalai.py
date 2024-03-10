@@ -386,16 +386,19 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
                                         lalala=lalala)
         all_results.append(results)
 
-        logger.logging("INSTRUMENTAL:", results[2], color=Color.GREEN)
-
         for mode in modes:
+            logger.logging("Start process:", results[2], color=Color.GREEN)
             results = process_file_pipeline(f"audio_files/{results[2]}",
                                             mode=mode,
                                             random_factor=random_factor,
                                             lalala=lalala)
-            all_results.append(results)
-            logger.logging("RESULTS:", results, color=Color.GREEN)
+            all_results.append(results[1])
 
+        last_file = results[2]
+        not_recognized = f"{random_factor}_Else.{file_format}"
+        os.rename(last_file, not_recognized)
+
+        all_results.append(not_recognized)
         lalala.driver.quit()
 
         if downloaded_video:
