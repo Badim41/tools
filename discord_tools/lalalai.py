@@ -390,12 +390,12 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
             lalala = LalalAI()
             lalala.go_to_site()
 
-        process_file = f"{random_factor}input.{file_format}"
-        shutil.copy(audio_path, f'{SAVE_DIR}/{process_file}')
+        process_file = f'{SAVE_DIR}/{random_factor}input.{file_format}'
+        shutil.copy(audio_path, process_file)
 
         for mode in modes:
             logger.logging("Start process:", process_file, color=Color.GREEN)
-            results = process_file_pipeline(f"{SAVE_DIR}/{process_file}",
+            results = process_file_pipeline(process_file,
                                             mode=mode,
                                             random_factor=random_factor,
                                             lalala=lalala,
