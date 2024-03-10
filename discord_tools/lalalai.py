@@ -316,7 +316,10 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
                 lalala.driver.refresh()
                 logger.logging("refreshed")
             # удаляем временный файл
-            os.remove(file)
+            try:
+                os.remove(file)
+            except Exception as e:
+                logger.logging("ERROR IN REMOVE FILE:", e)
     except Exception as e:
         traceback_str = traceback.format_exc()
         logger.logging("ERROR ID:2", str(traceback_str))
