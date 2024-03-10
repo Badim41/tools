@@ -1,4 +1,4 @@
-from discord_tools import moderate_mat_in_sentence
+from discord_tools.detect_mat import moderate_mat_in_sentence
 import asyncio
 sentence = "пошёл &*:+@ !"
 found_mats, sentence = asyncio.run(moderate_mat_in_sentence(sentence))

@@ -1,17 +1,14 @@
 import os
-import os
 import shutil
 import traceback
 from urllib.parse import urlparse
 
+from discord_tools.lalalai import process_file_pipeline, LalalAI, LalalAIModes
 from discord_tools.logs import Color, Logs
 from discord_tools.timer import Time_Count
-from discord_tools.yt_downloader import get_youtube_video_id, yt_download, VideoDurationError
-
-from discord_tools.lalalai import process_file_pipeline, LalalAI, LalalAIModes
+from discord_tools.yt_downloader import get_youtube_video_id, yt_download
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-SAVE_DIR = "audio_files"
 logger = Logs(warnings=True)
 
 
