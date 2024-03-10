@@ -26,6 +26,10 @@
 8. [Авторизация Discord](#section-8)
 9. [Перевод](#section-9)
 10. [База данных](#section-10)
+11. [Скачать видео с ютуба](#section-11)
+12. [Отделить вокал/иструментал](#section-12)
+    1. [Одна модель](#section-12.1)
+    2. [Несколько моделей](#section-12.2)
 
 ## Установка <a name="section-1"></a>
 
@@ -186,4 +190,40 @@ from discord_tools.sql_db import set_get_database_async
 asyncio.run(set_get_database_async(section="Секция", key="Ключ", value="Значение"))
 key = asyncio.run(set_get_database_async("Секция", "Ключ"))
 print(key)
+```
+# Скачать видео с ютуба <a name="section-11"></a>
+```python
+from discord_tools.yt_downloader import get_youtube_video_id, yt_download
+
+url = "https://youtube.com/..."
+song_id = get_youtube_video_id(url)
+
+if song_id is None:
+    raise Exception("Нет song id")
+
+song_link = song_id.split('&')[0]
+audio_path = yt_download(song_link, max_duration=3600) # время в секундах
+```
+
+# Отделить вокал/иструментал (и ещё 9 моделей) <a name="section-12"></a>
+## Одна модель <a name="section-12.1"></a>
+```python
+from discord_tools.lalalai import LalalAIModes, process_file_pipeline
+
+mp3_file_path = "file.mp3"
+crashed, result_1, result_2 = process_file_pipeline(
+    large_file_name=mp3_file_path,
+    mode=LalalAIModes.Vocal_and_Instrumental)
+
+```
+## Несколько моделей <a name="section-12.2"></a>
+
+```python
+from discord_tools.lalalai import full_process_file_pipeline, LalalAIModes
+
+input_str = input("Введите имя файла или ссылку на ютуб:\n")
+all_processed_files = full_process_file_pipeline(input_str,
+                                                 modes=[LalalAIModes.Piano,
+                                                        LalalAIModes.Drums])  # Опционально, список моделей
+print("All results:", all_processed_files)
 ```

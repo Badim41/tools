@@ -274,12 +274,18 @@ class LalalAI:
             f.write(response.content)
 
 
-def process_file_pipeline(large_file_name: str, mode, lalala: LalalAI, random_factor=""):
+def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor=""):
+    if not lalala:
+        lalala = LalalAI()
+        lalala.go_to_site()
+
     crashed = False
     try:
         mode = mode.replace("_", " ")
+
         if lalala.testing:
             logger.logging("Selected model:", mode, color=Color.BLUE)
+
         lalala.change_mode(mode)
         # нарезаем файлы
         files = slice_file(large_file_name, random_factor=random_factor)
