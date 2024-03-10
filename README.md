@@ -9,7 +9,7 @@
     3. [С аутентификационным ключом ChatGPT (бесплатно)](#section-2.3)
     4. [С аутентификационным ключом character.ai (бесплатно)](#section-2.4)
     5. [Ответ](#section-2.5)
-    6. [Много ответов](#section-2.6)
+    6. [Несколько ответов](#section-2.6)
     7. [Сохранение истории](#section-2.7)
     8. [С системным запросом](#section-2.8)
     9. [Поиск в интернете с GPT](#section-2.9)
@@ -17,7 +17,7 @@
     11. [Ограничить использование ключа OPEN_AI](#section-2.11)
     12. [Модерация](#section-2.12)
 3. [Character.ai](#section-3)
-    1. [Использование](#section-3.1)
+    1. [Модерация мата](#section-3.1)
 4. [Инструменты для модерации](#section-4)
 5. [Бесплатная генерация изображений](#section-5)
     1. [С указанием ключей](#section-5.1)
@@ -60,12 +60,18 @@ chat_gpt = ChatGPT(auth_keys=AUTH_KEY: [str, list])
 # https://beta.character.ai - На F12 смотрите char_token в Local Storage
 chat_gpt = ChatGPT(char_tokens=CHAR_TOKEN: [str, list])
 ```
+### Все сразу
+```python
+chat_gpt = ChatGPT(OPEN_AI_KEY: [str, list],
+                   AUTH_KEY: [str, list],
+                   CHAR_TOKEN: [str, list])
+```
 ## Ответ  <a name="section-2.5"></a>
 ```python
 result = await chat_gpt.run_all_gpt("запрос")
 print(result)
 ```
-### Много ответов  <a name="section-2.6"></a>
+### Несколько ответов  <a name="section-2.6"></a>
 ```python
 from discord_tools.chat_gpt import ChatGPT, ChatGPT_Mode
 result = await chat_gpt.run_all_gpt("запрос", mode=ChatGPT_Mode.all)
@@ -116,9 +122,10 @@ character = Character_AI(char_id, char_token)
 result = await character.get_answer("запрос")
 print(result)
 ```
-## Модерация запроса <a name="section-3.1"></a>
+## Модерация мата <a name="section-3.1"></a>
 ```python
 from discord_tools.character_ai_chat import Character_AI, ModerateParams
+character = Character_AI(char_id, char_token)
 result = await character.get_answer("запрос", moderate_answer=ModerateParams.replace_mat)
 print(result)
 ModerateParams.skip - не модерировать
