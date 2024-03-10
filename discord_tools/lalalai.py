@@ -2,13 +2,18 @@ import json
 import os
 import random
 import requests
+import shutil
 import threading
 import time
 import traceback
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from urllib.parse import urlparse
+
+from discord_tools.logs import Color, Logs
 from discord_tools.slicer import slice_file, join_files
-from discord_tools.logs import Logs, Color
+from discord_tools.timer import Time_Count
+from discord_tools.yt_downloader import get_youtube_video_id, yt_download
 
 logger = Logs(warnings=True)
 
@@ -72,7 +77,7 @@ def screen_recorder(driver):
 
 class LalalAI:
     def __init__(self, profile=None, testing=False, low_memory=False, record_screen=False):
-        
+
         if not os.path.exists(RESULT_DIR):
             os.mkdir(RESULT_DIR)
 
@@ -81,7 +86,7 @@ class LalalAI:
 
         self.done = False
         chrome_options = webdriver.ChromeOptions()
-        
+
         if profile:
             chrome_options.add_argument(f'user-data-dir={profile}')
 
@@ -108,7 +113,8 @@ class LalalAI:
         except:
             from selenium.webdriver.chrome.service import Service as ChromeService
             from webdriver_manager.chrome import ChromeDriverManager
-            self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+            self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()),
+                                           options=chrome_options)
 
         self.driver.implicitly_wait(10)
         self.responses_was = set()
@@ -268,7 +274,7 @@ class LalalAI:
             f.write(response.content)
 
 
-def process_file_pipeline(large_file_name:str, mode, lalala: LalalAI, random_factor=""):
+def process_file_pipeline(large_file_name: str, mode, lalala: LalalAI, random_factor=""):
     crashed = False
     try:
         mode = mode.replace("_", " ")
@@ -311,9 +317,9 @@ def process_file_pipeline(large_file_name:str, mode, lalala: LalalAI, random_fac
     # Voice.wav, Instrumental.wav
     # Without_Bass.was, Bass.wav
     if mode.count(" ") >= 2:
-        words = mode.split(" ")
-        first_result = random_factor + f"{words[0]}.wav"
-        second_result = random_factor + f"{words[-1]}.wav"
+        mode_words = mode.split(" ")
+        first_result = random_factor + f"{mode_words[0]}.wav"
+        second_result = random_factor + f"{mode_words[-1]}.wav"
     else:
         first_result = random_factor + f"{mode}.wav"
         second_result = random_factor + f"Without_{mode}.wav"
@@ -322,3 +328,66 @@ def process_file_pipeline(large_file_name:str, mode, lalala: LalalAI, random_fac
     second_result = join_files(second_paths, second_result, delete_paths=True)
     lalala.responses_was = set()
     return crashed, first_result, second_result
+
+
+def full_process_file_pipeline(input_text: str, lalala=None, random_factor=""):
+    timer = Time_Count()
+    modes = ['Drums', 'Bass', 'Electric guitar', 'Acoustic guitar', 'Piano', 'Synthesizer', 'Strings', 'Wind']
+    all_results = []
+
+    try:
+        logger.logging("Обработка:", input_text, color=Color.GRAY)
+
+        audio_path = None
+        if os.path.exists(input_text):
+            audio_path = input_text
+            downloaded_video = False
+            logger.logging("Найден файл", color=Color.GRAY)
+        elif 'https' in input_text:
+            if urlparse(input_text).scheme == 'https':
+                song_id = get_youtube_video_id(input_text)
+
+                if song_id is None:
+                    raise Exception("Нет song id")
+
+                song_link = input_text.split('&')[0]
+                audio_path = yt_download(song_link, max_duration=3600)
+                downloaded_video = True
+
+        if not audio_path:
+            raise Exception("Укажите ссылку на ютуб или аудиофайл")
+
+        shutil.copy(audio_path, 'audio_files/input.mp3')
+
+        if not lalala:
+            lalala = LalalAI()
+            lalala.go_to_site()
+
+        results = process_file_pipeline("audio_files/input.mp3",
+                                        mode=LalalAIModes.Vocal_and_Instrumental,
+                                        random_factor=random_factor,
+                                        lalala=lalala)
+        all_results.append(results)
+
+        instrumental = results[2]
+        logger.logging("INSTRUMENTAL:", instrumental, color=Color.GREEN)
+
+        for mode in modes:
+            shutil.copy(instrumental, 'audio_files/input.mp3')
+            results = process_file_pipeline("audio_files/input.mp3",
+                                            mode=mode,
+                                            random_factor=random_factor,
+                                            lalala=lalala)
+            all_results.append(results)
+            logger.logging("RESULTS:", results, color=Color.GREEN)
+
+        lalala.driver.quit()
+
+        if downloaded_video:
+            os.remove(audio_path)
+    except:
+        traceback_str = traceback.format_exc()
+        logger.logging("ERROR ID:1", str(traceback_str))
+
+    logger.logging("ПОТРАЧЕНО:", timer.count_time(), color=Color.PURPLE)
+    return all_results
