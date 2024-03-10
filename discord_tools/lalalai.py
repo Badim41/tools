@@ -319,7 +319,9 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
                     raise Exception("Найдено более двух файлов")
             # обратно в меню
             lalala.back_to_menu()
-            lalala.driver.refresh()
+
+            if self.low_memory():
+                lalala.driver.refresh()
             # удаляем временный файл
             try:
                 os.remove(file)
