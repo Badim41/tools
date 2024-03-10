@@ -391,7 +391,8 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
             results = process_file_pipeline(f"audio_files/{results[2]}",
                                             mode=mode,
                                             random_factor=random_factor,
-                                            lalala=lalala)
+                                            lalala=lalala,
+                                            file_format=file_format)
             all_results.append(results[1])
 
         last_file = results[2]
