@@ -324,14 +324,14 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
 
     # Правильные имена файлов. Например:
     # Voice.wav, Instrumental.wav
-    # Without_Bass.was, Bass.wav
+    # Without_Bass.wav, Bass.wav
     if mode.count(" ") >= 2:
         mode_words = mode.split(" ")
-        first_result = random_factor + f"{mode_words[0]}.wav"
-        second_result = random_factor + f"{mode_words[-1]}.wav"
+        first_result = random_factor + f"{mode_words[0]}.{file_format}"
+        second_result = random_factor + f"{mode_words[-1]}.{file_format}"
     else:
-        first_result = random_factor + f"{mode}.wav"
-        second_result = random_factor + f"Without_{mode}.wav"
+        first_result = random_factor + f"{mode}.{file_format}"
+        second_result = random_factor + f"Without_{mode}.{file_format}"
     # объединяем файлы
     first_result = join_files(first_paths, first_result, file_format=file_format, delete_paths=True)
     second_result = join_files(second_paths, second_result, file_format=file_format, delete_paths=True)
