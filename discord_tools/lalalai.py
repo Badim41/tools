@@ -339,7 +339,9 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
     return crashed, first_result, second_result
 
 
-def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None, file_format="mp3"):
+def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None, file_format=None):
+    if not file_format:
+        file_format = input_text[input_text.rfind(".")+1:]
     if file_format not in ["mp3", "wav"]:
         raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
 
