@@ -214,10 +214,8 @@ mp3_file_path = "file.mp3"
 crashed, result_1, result_2 = process_file_pipeline(
     large_file_name=mp3_file_path,
     mode=LalalAIModes.Vocal_and_Instrumental)
-
 ```
 ## Несколько моделей <a name="section-12.2"></a>
-
 ```python
 from discord_tools.lalalai import full_process_file_pipeline, LalalAIModes
 
