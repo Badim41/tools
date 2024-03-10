@@ -330,9 +330,14 @@ def process_file_pipeline(large_file_name: str, mode, lalala: LalalAI, random_fa
     return crashed, first_result, second_result
 
 
-def full_process_file_pipeline(input_text: str, lalala=None, random_factor=""):
+def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None):
     timer = Time_Count()
-    modes = ['Drums', 'Bass', 'Electric guitar', 'Acoustic guitar', 'Piano', 'Synthesizer', 'Strings', 'Wind']
+
+    if not modes:
+        modes = ['Drums', 'Bass', 'Electric guitar', 'Acoustic guitar', 'Piano', 'Synthesizer', 'Strings', 'Wind']
+    elif not isinstance(modes, list):
+        raise Exception("Modes должно быть list")
+
     all_results = []
 
     try:
