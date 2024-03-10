@@ -343,7 +343,16 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
     timer = Time_Count()
 
     if not modes:
-        modes = ['Drums', 'Bass', 'Electric guitar', 'Acoustic guitar', 'Piano', 'Synthesizer', 'Strings', 'Wind']
+        modes = [LalalAIModes.Vocal_and_Instrumental,
+                 LalalAIModes.Drums,
+                 LalalAIModes.Bass,
+                 LalalAIModes.Electric_guitar,
+                 LalalAIModes.Acoustic_guitar,
+                 LalalAIModes.Piano,
+                 LalalAIModes.Synthesizer,
+                 LalalAIModes.Strings,
+                 LalalAIModes.Wind]
+
     elif not isinstance(modes, list):
         raise Exception("Modes должно быть list")
 
@@ -383,22 +392,18 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
             lalala = LalalAI()
             lalala.go_to_site()
 
-        results = process_file_pipeline(f"audio_files/input.{file_format}",
-                                        mode=LalalAIModes.Vocal_and_Instrumental,
-                                        random_factor=random_factor,
-                                        lalala=lalala)
-        all_results.append(results)
+        last_file = audio_path
 
         for mode in modes:
-            logger.logging("Start process:", results[2], color=Color.GREEN)
-            results = process_file_pipeline(f"audio_files/{results[2]}",
+            logger.logging("Start process:", last_file, color=Color.GREEN)
+            results = process_file_pipeline(f"audio_files/{last_file}",
                                             mode=mode,
                                             random_factor=random_factor,
                                             lalala=lalala,
                                             file_format=file_format)
             all_results.append(results[1])
+            last_file = results[2]
 
-        last_file = results[2]
         not_recognized = f"{random_factor}_Else.{file_format}"
         os.rename(last_file, not_recognized)
 
