@@ -229,14 +229,14 @@ from discord_tools.lalalai import full_process_file_pipeline, LalalAIModes
 
 input_str = input("Введите имя файла или ссылку на ютуб:\n")
 results = full_process_file_pipeline(input_str,
-                                                 modes=[LalalAIModes.Vocal_and_Instrumental,
-                                                        LalalAIModes.Drums,
-                                                        LalalAIModes.Bass,
-                                                        LalalAIModes.Electric_guitar,
-                                                        LalalAIModes.Acoustic_guitar,
-                                                        LalalAIModes.Piano,
-                                                        LalalAIModes.Synthesizer,
-                                                        LalalAIModes.Strings,
-                                                        LalalAIModes.Wind])
+                                     modes=[LalalAIModes.Vocal_and_Instrumental,
+                                            LalalAIModes.Drums,
+                                            LalalAIModes.Bass,
+                                            LalalAIModes.Electric_guitar,
+                                            LalalAIModes.Acoustic_guitar,
+                                            LalalAIModes.Piano,
+                                            LalalAIModes.Synthesizer,
+                                            LalalAIModes.Strings,
+                                            LalalAIModes.Wind])
 print("All results:", results)
 ```
