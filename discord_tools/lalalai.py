@@ -386,12 +386,10 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
                                         lalala=lalala)
         all_results.append(results)
 
-        instrumental = results[2]
-        logger.logging("INSTRUMENTAL:", instrumental, color=Color.GREEN)
+        logger.logging("INSTRUMENTAL:", results[2], color=Color.GREEN)
 
         for mode in modes:
-            shutil.copy(instrumental, f'audio_files/input.{file_format}')
-            results = process_file_pipeline(f"audio_files/input.{file_format}",
+            results = process_file_pipeline(f"audio_files/{results[2]}",
                                             mode=mode,
                                             random_factor=random_factor,
                                             lalala=lalala)
