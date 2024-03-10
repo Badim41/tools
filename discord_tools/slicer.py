@@ -41,7 +41,6 @@ def slice_audio_file(input_file_path, slice_duration_ms, output_file1, output_fi
 def find_min_volume_timecodes(audio_file_path, start_duration=15, end_duration=29):
     audio = AudioSegment.from_file(audio_file_path)
     audio_duration = len(audio)
-    print("Audio len:", audio_duration)
 
     start_duration = start_duration*1000
     end_duration = end_duration*1000
