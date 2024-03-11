@@ -320,7 +320,7 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
             # обратно в меню
             lalala.back_to_menu()
 
-            if self.low_memory():
+            if lalala.low_memory:
                 lalala.driver.refresh()
             # удаляем временный файл
             try:
