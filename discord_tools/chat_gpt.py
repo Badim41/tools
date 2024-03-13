@@ -351,7 +351,7 @@ class ChatGPT:
             except Exception as e:
                 self.logger.logging("error (id gpt-off1)", e)
 
-                if "Incorrect API key provided" in str(e):
+                if "Incorrect API key provided" in str(e) or 'token is expired' in str(e):
                     self.openAI_keys = self.openAI_keys[1:]
 
                 if self.openAI_keys:
