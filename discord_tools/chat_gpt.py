@@ -351,11 +351,11 @@ class ChatGPT:
             except Exception as e:
                 self.logger.logging("error (id gpt-off1)", e)
 
-                if "Incorrect API key provided" in str(e) or 'token is expired' in str(e) or error:
+                if "Incorrect API key provided" in str(e):
                     self.openAI_keys = self.openAI_keys[1:]
 
                 if self.openAI_keys:
-                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
+                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role)
                 else:
                     await asyncio.sleep(delay_for_gpt)
         else:
@@ -384,8 +384,9 @@ class ChatGPT:
                 return response
             except Exception as e:
                 self.logger.logging("error gpt-off2", str(traceback.format_exc()))
-                if "Could not parse your authentication token" in str(
-                        e) or "Too many requests in 1 hour. Try again later." in str(e):
+                if ("Could not parse your authentication" in str(e)
+                        or "Too many requests in 1 hour. Try again later." in str(e)
+                        or 'token is expired' in str(e)):
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
                 if self.openAI_auth_keys:
