@@ -82,39 +82,6 @@ class Internet:
             return return_list[:2]
 
     async def search(self, text_request, full_answer=True, limited=False):
-        def parse_links(links):
-            texts = []
-
-            for link in links:
-                print(link)
-                try:
-                    # Получаем содержимое веб-страницы
-                    response = requests.get(link)
-                    response.raise_for_status()  # Проверяем, успешен ли запрос
-
-                    # Используем BeautifulSoup для парсинга HTML-кода
-                    soup = BeautifulSoup(response.text, 'html.parser')
-
-                    # Извлекаем текст из всех заголовков на странице
-                    headline_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
-                    for headline in headline_elements:
-                        headline_text = headline.get_text().strip()
-                        if headline_text:
-                            texts.append(headline_text)
-
-                    # Извлекаем текст из всех параграфов на странице
-                    paragraph_elements = soup.find_all('p')
-                    for paragraph in paragraph_elements:
-                        paragraph_text = paragraph.get_text().strip()
-                        if paragraph_text:
-                            texts.append(f"Paragraph: {paragraph_text}")
-
-                except requests.RequestException as e:
-                    print(f"Произошла ошибка при запросе: {e}")
-                except Exception as e:
-                    print(f"Произошла ошибка: {e}")
-
-            return texts
 
         def search_wrapped(text_request, full_answer, limited):
             try:
@@ -127,7 +94,8 @@ class Internet:
                                  "Какие 2 темы интернет-поиска помогут вам ответить на этот вопрос? Включи в запрос имя сайта, на котором точно будет эта информация"
                                  "Ответьте только в формате JSON:\n" + example_json)
 
-                search_text = asyncio.run(self.chat_gpt.run_all_gpt(search_prompt, mode="Fast", user_id=0, limited=limited))
+                search_text = asyncio.run(
+                    self.chat_gpt.run_all_gpt(search_prompt, mode="Fast", user_id=0, limited=limited))
                 search_json = json.loads(search_text.replace("```json", "").replace("```", ""))
                 links = set()
                 for search_request in search_json.values():
@@ -171,3 +139,34 @@ class Internet:
                 print("error in search.py:", str(traceback_str))
 
         return await asyncio.to_thread(search_wrapped, text_request, full_answer, limited)
+
+
+def parse_links(links):
+    texts = []
+
+    for link in links:
+        print(link)
+        try:
+            response = requests.get(link)
+            response.raise_for_status()
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            headline_elements = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+            for headline in headline_elements:
+                headline_text = headline.get_text().strip()
+                if headline_text:
+                    texts.append(headline_text)
+
+            paragraph_elements = soup.find_all('p')
+            for paragraph in paragraph_elements:
+                paragraph_text = paragraph.get_text().strip()
+                if paragraph_text:
+                    texts.append(f"Paragraph: {paragraph_text}")
+
+        except requests.RequestException as e:
+            print(f"Произошла ошибка при запросе: {e}")
+        except Exception as e:
+            print(f"Произошла ошибка: {e}")
+
+    return texts
