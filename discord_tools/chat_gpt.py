@@ -330,7 +330,7 @@ class ChatGPT:
                 self.logger.logging(f"Error in {str(provider)}", str(e), color=Color.GRAY)
             await asyncio.sleep(delay_for_gpt)
 
-    async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role):
+    async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
 
         if key_gpt:
             # нет ключей
@@ -351,11 +351,11 @@ class ChatGPT:
             except Exception as e:
                 self.logger.logging("error (id gpt-off1)", e)
 
-                if "Incorrect API key provided" in str(e) or 'token is expired' in str(e):
+                if "Incorrect API key provided" in str(e) or 'token is expired' in str(e) or error:
                     self.openAI_keys = self.openAI_keys[1:]
 
                 if self.openAI_keys:
-                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role)
+                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
                 else:
                     await asyncio.sleep(delay_for_gpt)
         else:
