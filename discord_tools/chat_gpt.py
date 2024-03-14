@@ -461,8 +461,11 @@ class ChatGPT:
                 break
             i += 1
             response = await self.run_all_gpt(prompt + chunk, mode=ChatGPT_Mode.fast, user_id=0, limited=limited)
-            if response.startswith("I'm sorry") or response.startswith("Извините") or response.startswith(
-                    "I cannot provide") or response.startswith("Сожалею") or response.startswith("К сожалению"):
+            if (response.startswith("I'm sorry") or
+                    response.startswith("Извините") or
+                    response.startswith("I cannot provide") or
+                    response.startswith("Сожалею") or
+                    response.startswith("К сожалению")):
                 continue
             gpt_responses.append(response)
 
