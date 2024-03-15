@@ -350,7 +350,10 @@ def full_process_file_pipeline(input_text: str, random_factor="", modes=None,
         all_results.append(not_recognized)
 
         if downloaded_video or delete_file:
-            os.remove(audio_path)
+            try:
+                os.remove(audio_path)
+            except Exception as e:
+                logger.logging("Error in delete file:", e)
     except:
         traceback_str = traceback.format_exc()
         logger.logging("ERROR ID:1", str(traceback_str))

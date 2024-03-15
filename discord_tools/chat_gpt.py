@@ -385,7 +385,7 @@ class ChatGPT:
             except Exception as e:
                 self.logger.logging("error gpt-off2", str(traceback.format_exc()))
                 if ("Could not parse your authentication" in str(e)
-                        or "Too many requests in 1 hour. Try again later." in str(e)
+                        # or "Too many requests in 1 hour. Try again later." in str(e) # НЕ УДАЛЯТЬ, ЧЕРЕЗ ЧАС ВЕДЬ ВСЁ НОРМ БУДЕТ
                         or 'token is expired' in str(e)):
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
