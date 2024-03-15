@@ -9,7 +9,7 @@ def join_files(audio_paths, output_path, file_format: str, delete_paths=False):
     joined_audio = AudioSegment.empty()
 
     for audio_path in audio_paths:
-        print("JOIN", audio_path)
+        # print("JOIN", audio_path)
         audio = AudioSegment.from_file(audio_path)
         joined_audio = joined_audio.append(audio, crossfade=0)
         if delete_paths:
@@ -70,9 +70,9 @@ def slice_file(audio_file_path, file_format: str, random_factor=""):
         end_generation = slice_audio_file(input_file_path=audio_file_path, slice_duration_ms=timecode,
                                           output_file1=random_factor + f"input_{i}.{file_format}",
                                           output_file2=audio_file_path, file_format=file_format)
+        print("Sliced:", random_factor + f"input_{i}.{file_format}")
         i += 1
         if end_generation:
-            # print("Done!")
             break
 
         # print(f"Min volume at {timecode} milliseconds")

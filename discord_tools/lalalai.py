@@ -1,10 +1,13 @@
+import concurrent.futures
 import os
-import random
 import requests
 import shutil
+import subprocess
+import time
 import traceback
 import uuid
 from fake_useragent import UserAgent
+from pydub import AudioSegment
 from urllib.parse import urlparse
 
 from discord_tools.logs import Logs, Color
@@ -18,35 +21,41 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 SAVE_DIR = "audio_files"
 RESULT_DIR = "results"
 
+if not os.path.exists(RESULT_DIR):
+    os.mkdir(RESULT_DIR)
+if not os.path.exists(SAVE_DIR):
+    os.mkdir(SAVE_DIR)
+
 
 class LalalAIModes:
-    Vocal_and_Instrumental = ("vocals", "orion")
-    Drums = ("drum", "orion")
-    Bass = ("bass", "orion")
-    Voice_and_Noise = ("voice", "orion")
-    Electric_guitar = ("electric_guitar", "orion")
-    Acoustic_guitar = ("acoustic_guitar", "orion")
-    Piano = ("piano", "orion")
-    Synthesizer = ("synthesizer", "phoenix")
-    Strings = ("strings", "phoenix")
-    Wind = ("wind", "phoenix")
+    Vocal_and_Instrumental = "Vocal and Instrumental"
+    Drums = "Drums"
+    Bass = "Bass"
+    Voice_and_Noise = "Voice and Noise"
+    Electric_guitar = "Electric guitar"
+    Acoustic_guitar = "Acoustic guitar"
+    Piano = "Piano"
+    Synthesizer = "Synthesizer"
+    Strings = "Strings"
+    Wind = "Wind"
 
     @staticmethod
     def get_mode(mode_key):
+        mode_key = mode_key.replace(" ", "_")
         modes_dict = {
-            "vocal_and_instrumental": LalalAIModes.Vocal_and_Instrumental,
-            "drums": LalalAIModes.Drums,
-            "bass": LalalAIModes.Bass,
-            "voice_and_noise": LalalAIModes.Voice_and_Noise,
-            "electric_guitar": LalalAIModes.Electric_guitar,
-            "acoustic_guitar": LalalAIModes.Acoustic_guitar,
-            "piano": LalalAIModes.Piano,
-            "synthesizer": LalalAIModes.Synthesizer,
-            "strings": LalalAIModes.Strings,
-            "wind": LalalAIModes.Wind
+            "vocal_and_instrumental": ("vocals", "orion"),
+            "drums": ("drum", "orion"),
+            "bass": ("bass", "orion"),
+            "voice_and_noise": ("voice", "orion"),
+            "electric_guitar": ("electric_guitar", "orion"),
+            "acoustic_guitar": ("acoustic_guitar", "orion"),
+            "piano": ("piano", "orion"),
+            "synthesizer": ("synthesizer", "phoenix"),
+            "strings": ("strings", "phoenix"),
+            "wind": ("wind", "phoenix")
         }
 
-        return modes_dict.get(mode_key.lower(), "Mode not found")
+        return modes_dict[mode_key.lower()]
 
     # def go_to_site(self):
     #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
@@ -80,13 +89,14 @@ class LalalAIModes:
 
 
 class LalalAI:
-    def __init__(self, testing=False):
+    def __init__(self, mode: tuple, testing=False):
+
         self.session = requests.Session()
         self.csrftoken_token = uuid.uuid1().hex
         self.user_agent = UserAgent().random
         self.testing = testing
         self.uuid = None
-        self.mode = None
+        self.mode = mode
 
     def upload(self, file_path):
         if self.testing:
@@ -118,7 +128,7 @@ class LalalAI:
 
     def preview(self):
         if self.testing:
-            logger.logging("PREVIEW")
+            logger.logging("PREVIEW", self.mode[0], self.mode[1])
 
         url = "https://www.lalal.ai/api/preview/"
 
@@ -137,7 +147,9 @@ class LalalAI:
             logger.logging("PREVIEW END")
 
     def check(self):
-        print("CHECK")
+        if self.testing:
+            logger.logging("CHECK")
+
         url = "https://www.lalal.ai/api/check/"
 
         headers = {
@@ -162,54 +174,73 @@ class LalalAI:
 
     @staticmethod
     def download_file(url, file_name):
-        logger.logging(f"save as {file_name}", color=Color.GRAY)
-        response = requests.get(url)
-        with open(file_name, 'wb') as f:
-            f.write(response.content)
+        # Скачиваем, пока не скачается
+        while True:
+            try:
+                logger.logging(f"save as {file_name}", color=Color.GRAY)
+                response = requests.get(url)
+                with open(file_name, 'wb') as f:
+                    f.write(response.content)
+                AudioSegment.from_file(file_name)
+                return file_name
+            except:
+                logger.logging("Cant decode file, download again")
+                time.sleep(0.5)
+                return LalalAI.download_file(url, f"{file_name[:-4]}-{file_name[-4:]}")
 
 
-def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor="", file_format="mp3"):
+def process_one_piece(file, mode, testing, random_factor, i):
+    lalala = LalalAI(testing=testing, mode=LalalAIModes.get_mode(mode))
+    lalala.upload(file)
+    lalala.preview()
+    urls = lalala.check()
+
+    first_path, second_path = None, None
+    for number, url in enumerate(urls):
+        if number == 0:
+            file_name = os.path.join(SAVE_DIR, random_factor + f"{mode}_first_path{i}.mp3")
+            file_name = LalalAI.download_file(url, file_name=file_name)
+            first_path = file_name
+        elif number == 1:
+            file_name = os.path.join(SAVE_DIR, random_factor + f"{mode}_second_path{i}.mp3")
+            file_name = LalalAI.download_file(url, file_name=file_name)
+            second_path = file_name
+        else:
+            raise Exception("Найдено более двух файлов")
+
+    try:
+        os.remove(file)
+    except Exception as e:
+        logger.logging("ERROR IN REMOVE FILE:", e)
+
+    return i, first_path, second_path
+
+
+def process_file_pipeline(large_file_name: str, mode, testing=False, random_factor="", file_format="mp3"):
     if file_format not in ["mp3", "wav"]:
         raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
-
-    if not lalala:
-        lalala = LalalAI()
-
-    if isinstance(mode, tuple):
-        lalala.mode = mode
-    elif isinstance(mode, str):
-        lalala.mode = LalalAIModes.get_mode("vocal_and_instrumental")
 
     crashed = False
     first_paths = []
     second_paths = []
     try:
 
-        if lalala.testing:
-            logger.logging("Selected model:", lalala.mode[0], color=Color.BLUE)
-
         files = slice_file(large_file_name, random_factor=random_factor, file_format=file_format)
-        for i, file in enumerate(files):
-            lalala.upload(file)
-            lalala.preview()
-            urls = lalala.check()
-            # сохраняем каждую дорожку
-            for number, url in enumerate(urls):
-                if number == 0:
-                    file_name = os.path.join(SAVE_DIR, random_factor + f"{lalala.mode[0]}_first_path{i}.mp3")
-                    LalalAI.download_file(url, file_name=file_name)
-                    first_paths.append(file_name)
-                elif number == 1:
-                    file_name = os.path.join(SAVE_DIR, random_factor + f"{lalala.mode[0]}_second_path{i}.mp3")
-                    LalalAI.download_file(url, file_name=file_name)
-                    second_paths.append(file_name)
-                else:
-                    raise Exception("Найдено более двух файлов")
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_file = {executor.submit(process_one_piece, file, mode, testing, random_factor, i): i for i, file
+                              in enumerate(files)}
 
-            try:
-                os.remove(file)
-            except Exception as e:
-                logger.logging("ERROR IN REMOVE FILE:", e)
+            first_paths = [None] * len(files)
+            second_paths = [None] * len(files)
+
+            for future in concurrent.futures.as_completed(future_to_file):
+                try:
+                    index, first_path, second_path = future.result()
+                    first_paths[index] = first_path
+                    second_paths[index] = second_path
+                except Exception as e:
+                    logger.logging("Error processing file:", e)
+
     except Exception as e:
         traceback_str = traceback.format_exc()
         logger.logging("ERROR ID:2", str(traceback_str))
@@ -218,6 +249,7 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
     # Правильные имена файлов. Например:
     # Voice.wav, Instrumental.wav
     # Without_Bass.wav, Bass.wav
+
     if mode.count(" ") >= 2:
         mode_words = mode.split(" ")
         first_result = random_factor + f"{mode_words[0]}.{file_format}"
@@ -231,8 +263,8 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
     return crashed, first_result, second_result
 
 
-def full_process_file_pipeline(input_text: str, random_factor="", modes=None, file_format=None,
-                               delete_file=False):
+def full_process_file_pipeline(input_text: str, random_factor="", modes=None,
+                               delete_file=False, wav_always=None):
     timer = Time_Count()
 
     if not modes:
@@ -274,11 +306,20 @@ def full_process_file_pipeline(input_text: str, random_factor="", modes=None, fi
         if not audio_path:
             raise Exception("Укажите ссылку на ютуб или аудиофайл")
 
-        if not file_format:
-            file_format = audio_path[input_text.rfind(".") + 1:]
-
-        if file_format not in ["mp3", "wav"]:
-            raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
+        file_format = audio_path[-3:]
+        if file_format == "mp3":
+            if wav_always:
+                wav_path = audio_path[:-4] + ".wav"
+                subprocess.run(
+                    ["ffmpeg", "-i", audio_path, "-codec:a", "pcm_s16le", "-ar", "44100", "-ac", "2", wav_path,
+                     "-y"],
+                    check=True)
+                audio_path = wav_path
+                file_format = "wav"
+        elif file_format == "wav":
+            pass
+        else:
+            raise Exception(f"Формат {file_format} не поддерживается. Доступные форматы: mp3, wav")
 
         process_file = f'{SAVE_DIR}/{random_factor}input.{file_format}'
         shutil.copy(audio_path, process_file)
@@ -288,7 +329,7 @@ def full_process_file_pipeline(input_text: str, random_factor="", modes=None, fi
             results = process_file_pipeline(process_file,
                                             mode=mode,
                                             random_factor=random_factor,
-                                            file_format=file_format)
+                                            file_format=file_format, testing=True)
             all_results.append(results[1])
             process_file = results[2]
 
