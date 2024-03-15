@@ -1,16 +1,13 @@
-import json
 import os
 import random
 import requests
 import shutil
-import threading
-import time
 import traceback
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+import uuid
+from fake_useragent import UserAgent
 from urllib.parse import urlparse
 
-from discord_tools.logs import Color, Logs
+from discord_tools.logs import Logs, Color
 from discord_tools.slicer import slice_file, join_files
 from discord_tools.timer import Time_Count
 from discord_tools.yt_downloader import get_youtube_video_id, yt_download
@@ -21,253 +18,150 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 SAVE_DIR = "audio_files"
 RESULT_DIR = "results"
 
-JS_DROP_FILE = """
-    var target = arguments[0],
-        offsetX = arguments[1],
-        offsetY = arguments[2],
-        document = target.ownerDocument || document,
-        window = document.defaultView || window;
-
-    var input = document.createElement('INPUT');
-    input.type = 'file';
-    input.onchange = function () {
-      var rect = target.getBoundingClientRect(),
-          x = rect.left + (offsetX || (rect.width >> 1)),
-          y = rect.top + (offsetY || (rect.height >> 1)),
-          dataTransfer = { files: this.files };
-
-      ['dragenter', 'dragover', 'drop'].forEach(function (name) {
-        var evt = document.createEvent('MouseEvent');
-        evt.initMouseEvent(name, !0, !0, window, 0, 0, 0, x, y, !1, !1, !1, !1, 0, null);
-        evt.dataTransfer = dataTransfer;
-        target.dispatchEvent(evt);
-      });
-
-      setTimeout(function () { document.body.removeChild(input); }, 25);
-    };
-    document.body.appendChild(input);
-    return input;
-"""
-
 
 class LalalAIModes:
-    Vocal_and_Instrumental = "Vocal and Instrumental"
-    Drums = "Drums"
-    Bass = "Bass"
-    Voice_and_Noise = "Voice and Noise"
-    Electric_guitar = "Electric guitar"
-    Acoustic_guitar = "Acoustic guitar"
-    Piano = "Piano"
-    Synthesizer = "Synthesizer"
-    Strings = "Strings"
-    Wind = "Wind"
+    Vocal_and_Instrumental = ("vocals", "orion")
+    Drums = ("drum", "orion")
+    Bass = ("bass", "orion")
+    Voice_and_Noise = ("voice", "orion")
+    Electric_guitar = ("electric_guitar", "orion")
+    Acoustic_guitar = ("acoustic_guitar", "orion")
+    Piano = ("piano", "orion")
+    Synthesizer = ("synthesizer", "phoenix")
+    Strings = ("strings", "phoenix")
+    Wind = ("wind", "phoenix")
 
+    @staticmethod
+    def get_mode(mode_key):
+        modes_dict = {
+            "vocal_and_instrumental": LalalAIModes.Vocal_and_Instrumental,
+            "drums": LalalAIModes.Drums,
+            "bass": LalalAIModes.Bass,
+            "voice_and_noise": LalalAIModes.Voice_and_Noise,
+            "electric_guitar": LalalAIModes.Electric_guitar,
+            "acoustic_guitar": LalalAIModes.Acoustic_guitar,
+            "piano": LalalAIModes.Piano,
+            "synthesizer": LalalAIModes.Synthesizer,
+            "strings": LalalAIModes.Strings,
+            "wind": LalalAIModes.Wind
+        }
 
-def screen_recorder(driver):
-    try:
-        i = 0
-        while True:
-            i += 1
-            time.sleep(3)
-            print("save screenshot", i)
-            driver.save_screenshot(os.path.join(RESULT_DIR, f"LALALAI_TEMP_RECORD{i}.png"))
-    except Exception as e:
-        print("An error occurred in screen_recorder:", e)
+        return modes_dict.get(mode_key.lower(), "Mode not found")
+
+    # def go_to_site(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def agree_cookie(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def upload_file(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def get_network(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def wait_for_response(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def find_item_by_text(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def back_to_menu(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def get_modes(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def change_mode(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
+    #
+    # def download_file(self):
+    #     logger.logging("THIS METHOD IS OLD AND IGNORED", color=Color.RED)
 
 
 class LalalAI:
-    def __init__(self, profile=None, testing=False, low_memory=False, record_screen=False):
-
-        if not os.path.exists(RESULT_DIR):
-            os.mkdir(RESULT_DIR)
-
-        if not os.path.exists(SAVE_DIR):
-            os.mkdir(SAVE_DIR)
-
-        self.done = False
-        chrome_options = webdriver.ChromeOptions()
-
-        if profile:
-            chrome_options.add_argument(f'user-data-dir={profile}')
-
-        chrome_options.add_experimental_option('detach', True)
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
-        chrome_options.add_experimental_option("prefs", {
-            "profile.managed_default_content_settings.images": 2,
-            "profile.default_content_setting_values.notifications": 2,
-            "profile.managed_default_content_settings.javascript": 2
-        })
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument('--disable-notifications')
-        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--enable-logging')
-        chrome_options.add_argument('--headless')
-        chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
-
-        try:
-            self.driver = webdriver.Chrome(options=chrome_options)
-        except:
-            from selenium.webdriver.chrome.service import Service as ChromeService
-            from webdriver_manager.chrome import ChromeDriverManager
-            self.driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()),
-                                           options=chrome_options)
-
-        self.driver.implicitly_wait(10)
-        self.responses_was = set()
+    def __init__(self, testing=False):
+        self.session = requests.Session()
+        self.csrftoken_token = uuid.uuid1().hex
+        self.user_agent = UserAgent().random
         self.testing = testing
-        self.low_memory = low_memory
-        if record_screen:
-            thread = threading.Thread(target=screen_recorder, args=(self.driver,))
-            thread.start()
+        self.uuid = None
+        self.mode = None
 
-        # while not self.driver:
-        #     time.sleep(0.5)
-
-    # def initialization(self, profile):
-    #     # with SB(uc=True, headed=True, headless=False, devtools=False, user_data_dir=profile,
-    #     #         chromium_arg="--enable-logging") as driver:
-    #
-    #     logger.logging("Loaded browser")
-    #     while not self.done:
-    #         time.sleep(5)
-
-    def go_to_site(self):
-        self.driver.get("https://www.lalal.ai/")
-        self.cancel_upload()
-        self.agree_cookie()
-        self.back_to_menu()
-        self.driver.save_screenshot(os.path.join(RESULT_DIR, "lalalAI.png"))
-        logger.logging("Loaded broswer")
-        # continue_button = self.driver.find_elements(By.CSS_SELECTOR, "button.LgbsSe.LgbsSe-ssJRIf.LgbsSe-KoToPc.mdl-button.mdl-js-button")
-        # if continue_button:
-        #     self.driver.execute_script("arguments[0].click();", continue_button[0])
-        # else:
-        #     logger.logging("No continue button")
-
-    def agree_cookie(self):
+    def upload(self, file_path):
         if self.testing:
-            logger.logging("agree cookie try")
+            logger.logging("UPLOAD")
 
-        cookie_element = self.driver.find_elements(By.CSS_SELECTOR, 'button.cookies__submit-button')
-        if cookie_element:
-            self.driver.execute_script("arguments[0].click();", cookie_element[0])
-        else:
-            logger.logging("No cookie button found")
+        url = "https://www.lalal.ai/api/upload/"
 
-    def upload_file(self, file_path):
+        if not os.path.exists(file_path):
+            raise Exception(f"Не найден файл {file_path}")
+
+        headers = {
+            "Content-Disposition": f"attachment; filename*=UTF-8''{os.path.basename(file_path)}",
+            "Content-Type": "binary/octet-stream",
+            "user-agent": self.user_agent,
+            "x-csrftoken": self.csrftoken_token
+        }
+
+        with open(file_path, "rb") as file:
+            file_content = file.read()
+
+        response = requests.post(url, data=file_content, headers=headers)
+
+        self.uuid = response.json()['id']
+
         if self.testing:
-            logger.logging(f"Uploading {file_path}...", color=Color.GRAY)
+            logger.logging(response, response.text)
+            logger.logging(self.uuid)
+            logger.logging("UPLOAD END")
 
-        for i in range(10):
-            try:
-                upload_element = self.find_item_by_text(type='label', text='Select Files', attribute='aria-label')
-                file_input = self.driver.execute_script(JS_DROP_FILE, upload_element, 0, 0)
-            except Exception as e:
-                logger.logging("ERROR in upload", i, str(e)[:50])
-                self.driver.save_screenshot(os.path.join(RESULT_DIR, f"lalalAI_error{i}.png"))
-                self.cancel_upload()
-                self.back_to_menu()
-                time.sleep(0.5)
-        file_input.send_keys(os.path.abspath(file_path))
-        # logger.logging("loaded file!")
-
-    def get_network(self):
-        return self.driver.get_log("performance")
-
-    def wait_for_response(self):
+    def preview(self):
         if self.testing:
-            logger.logging("wait try")
+            logger.logging("PREVIEW")
 
-        responses = set()
-        while len(responses) < 2:
-            time.sleep(3 if self.low_memory else 0.5)
-            # input("press enter to continue")
-            network_requests = self.get_network()
-            for entry in network_requests:
-                try:
-                    message_obj = json.loads(entry.get("message"))
-                    message = message_obj.get("message")
+        url = "https://www.lalal.ai/api/preview/"
 
-                    response_url = message.get('params', {}).get('response', {}).get('url', '')
-                    if 'https://d.lalal.ai/media/preview/' in response_url:
-                        if response_url in self.responses_was and response_url:
-                            continue
-                        else:
-                            self.responses_was.add(response_url)
+        payload = f"------WebKitFormBoundaryjMbrck4eZnhvT9mC\r\nContent-Disposition: form-data; name=\"id\"\r\n\r\n{self.uuid}\r\n------WebKitFormBoundaryjMbrck4eZnhvT9mC\r\nContent-Disposition: form-data; name=\"filter\"\r\n\r\n1\r\n------WebKitFormBoundaryjMbrck4eZnhvT9mC\r\nContent-Disposition: form-data; name=\"stem\"\r\n\r\n{self.mode[0]}\r\n------WebKitFormBoundaryjMbrck4eZnhvT9mC\r\nContent-Disposition: form-data; name=\"splitter\"\r\n\r\n{self.mode[1]}\r\n------WebKitFormBoundaryjMbrck4eZnhvT9mC\r\nContent-Disposition: form-data; name=\"dereverb_enabled\"\r\n\r\nfalse\r\n------WebKitFormBoundaryjMbrck4eZnhvT9mC--\r\n"
 
-                        if self.testing:
-                            logger.logging("Response URL:", response_url, color=Color.GRAY)
+        headers = {
+            "Content-Type": "multipart/form-data; boundary=----WebKitFormBoundaryjMbrck4eZnhvT9mC",
+            "user-agent": self.user_agent,
+            "x-csrftoken": self.csrftoken_token
+        }
 
-                        responses.add(response_url)
-                except Exception as e:
-                    logger.logging(e)
-        # Отсортировать по длине
-        return sorted(responses, key=lambda x: (len(x), x))
+        response = requests.request("POST", url, data=payload, headers=headers)
 
-    def find_item_by_text(self, type: str, text: str, attribute=None):
-        elements = self.driver.find_elements(By.XPATH, f"//{type}")
-        if attribute:
-            for element in elements:
-                if element.get_attribute(attribute) == text:
-                    return element
-        else:
-            for element in elements:
-                if element.text == text:
-                    return element
-
-    def cancel_upload(self):
         if self.testing:
-            logger.logging("cancel upload try")
+            logger.logging(response, response.text)
+            logger.logging("PREVIEW END")
 
-        try:
-            cancel_button = self.find_item_by_text(type='span', text='Cancel')
-            if cancel_button:
-                self.driver.execute_script("arguments[0].click();", cancel_button)
-            elif self.testing:
-                logger.logging("No cancel button", color=Color.GRAY)
-        except Exception as e:
-            logger.logging("Error in cansel:", str(e)[:50])
+    def check(self):
+        print("CHECK")
+        url = "https://www.lalal.ai/api/check/"
 
-    def back_to_menu(self):
+        headers = {
+            "content-type": "multipart/form-data; boundary=----WebKitFormBoundary1dIVPH7jlxDN9TeD",
+            "user-agent": self.user_agent,
+            "x-csrftoken": self.csrftoken_token
+        }
+
+        data = f'------WebKitFormBoundary1dIVPH7jlxDN9TeD\r\nContent-Disposition: form-data; name="id"\r\n\r\n{self.uuid}\r\n------WebKitFormBoundary1dIVPH7jlxDN9TeD--\r\n'
+        response = self.session.post(url, headers=headers, data=data)
+
+        self.ready_id = response.json()['result'][self.uuid]['task']['id'][2]
+        resul_url_1 = f"https://d.lalal.ai/media/preview/{self.uuid}/{self.ready_id}/{self.mode[0]}"
+        resul_url_2 = f"https://d.lalal.ai/media/preview/{self.uuid}/{self.ready_id}/no_{self.mode[0]}"
+
         if self.testing:
-            logger.logging("back menu try")
+            logger.logging(response, response.text)
+            logger.logging("RESULT", resul_url_1, "\n", resul_url_2, color=Color.GREEN)
+            logger.logging("CHECK END")
 
-        back_button = self.find_item_by_text(type='button', text='← Back')
-        if back_button:
-            self.driver.execute_script("arguments[0].click();", back_button)
-            self.cancel_upload()  # баг сайта
-        elif self.testing:
-            logger.logging("no button back", color=Color.GRAY)
+        return resul_url_1, resul_url_2
 
-    def get_modes(self):
-        if self.testing:
-            logger.logging("get modes try")
-
-        modes = [{mode.text: mode} for mode in self.driver.find_elements(By.CSS_SELECTOR, 'li.M9vFq1co')]
-        return modes
-
-    def change_mode(self, selecting_mode):
-        if self.testing:
-            logger.logging("change mode try")
-
-        button_mode = self.find_item_by_text(type='button', text='Stem separation type', attribute='aria-label')
-        self.driver.execute_script("arguments[0].click();", button_mode)
-        modes = self.get_modes()
-        for mode in modes:
-            for mode_text, mode_element in mode.items():
-                # logger.logging(mode_text)
-                if selecting_mode == mode_text:
-                    self.driver.execute_script("arguments[0].click();", mode_element)
-                    return
-
-        raise Exception(
-            f'Not found mode. Mode list: {[mode for mode in dir(LalalAIModes) if not mode.startswith("__")]}')
-
-    def download_file(self, url, file_name=f'file_{random.randint(1, 999999)}'):
+    @staticmethod
+    def download_file(url, file_name):
         logger.logging(f"save as {file_name}", color=Color.GRAY)
         response = requests.get(url)
         with open(file_name, 'wb') as f:
@@ -280,49 +174,38 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
 
     if not lalala:
         lalala = LalalAI()
-        lalala.go_to_site()
+
+    if isinstance(mode, tuple):
+        lalala.mode = mode
+    elif isinstance(mode, str):
+        lalala.mode = LalalAIModes.get_mode("vocal_and_instrumental")
 
     crashed = False
+    first_paths = []
+    second_paths = []
     try:
-        mode = mode.replace("_", " ")
 
         if lalala.testing:
-            logger.logging("Selected model:", mode, color=Color.BLUE)
+            logger.logging("Selected model:", lalala.mode[0], color=Color.BLUE)
 
-        # С очень низкой вероятностью тут может быть ошибка.
-        while True:
-            try:
-                lalala.change_mode(mode)
-                break
-            except Exception as e:
-                logger.logging("ERROR: cant change mode:", e)
-                lalala.go_to_site()
-
-        # нарезаем файлы
         files = slice_file(large_file_name, random_factor=random_factor, file_format=file_format)
-        first_paths = []
-        second_paths = []
         for i, file in enumerate(files):
-            lalala.upload_file(file)
-            urls = lalala.wait_for_response()
+            lalala.upload(file)
+            lalala.preview()
+            urls = lalala.check()
             # сохраняем каждую дорожку
             for number, url in enumerate(urls):
                 if number == 0:
-                    file_name = os.path.join(SAVE_DIR, random_factor + f"{mode}_first_path{i}.mp3")
-                    lalala.download_file(url, file_name=file_name)
+                    file_name = os.path.join(SAVE_DIR, random_factor + f"{lalala.mode[0]}_first_path{i}.mp3")
+                    LalalAI.download_file(url, file_name=file_name)
                     first_paths.append(file_name)
                 elif number == 1:
-                    file_name = os.path.join(SAVE_DIR, random_factor + f"{mode}_second_path{i}.mp3")
-                    lalala.download_file(url, file_name=file_name)
+                    file_name = os.path.join(SAVE_DIR, random_factor + f"{lalala.mode[0]}_second_path{i}.mp3")
+                    LalalAI.download_file(url, file_name=file_name)
                     second_paths.append(file_name)
                 else:
                     raise Exception("Найдено более двух файлов")
-            # обратно в меню
-            lalala.back_to_menu()
 
-            if lalala.low_memory:
-                lalala.driver.refresh()
-            # удаляем временный файл
             try:
                 os.remove(file)
             except Exception as e:
@@ -348,7 +231,8 @@ def process_file_pipeline(large_file_name: str, mode, lalala=None, random_factor
     return crashed, first_result, second_result
 
 
-def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", modes=None, file_format=None, delete_file=False):
+def full_process_file_pipeline(input_text: str, random_factor="", modes=None, file_format=None,
+                               delete_file=False):
     timer = Time_Count()
 
     if not modes:
@@ -371,6 +255,7 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
         logger.logging("Обработка:", input_text, color=Color.GRAY)
 
         audio_path = None
+        downloaded_video = None
         if os.path.exists(input_text):
             audio_path = input_text
             downloaded_video = False
@@ -395,10 +280,6 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
         if file_format not in ["mp3", "wav"]:
             raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
 
-        if not lalala:
-            lalala = LalalAI()
-            lalala.go_to_site()
-
         process_file = f'{SAVE_DIR}/{random_factor}input.{file_format}'
         shutil.copy(audio_path, process_file)
 
@@ -407,7 +288,6 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
             results = process_file_pipeline(process_file,
                                             mode=mode,
                                             random_factor=random_factor,
-                                            lalala=lalala,
                                             file_format=file_format)
             all_results.append(results[1])
             process_file = results[2]
@@ -416,7 +296,6 @@ def full_process_file_pipeline(input_text: str, lalala=None, random_factor="", m
         os.rename(process_file, not_recognized)
 
         all_results.append(not_recognized)
-        lalala.driver.quit()
 
         if downloaded_video or delete_file:
             os.remove(audio_path)
