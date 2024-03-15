@@ -95,8 +95,9 @@ class LalalAI:
         self.csrftoken_token = uuid.uuid1().hex
         self.user_agent = UserAgent().random
         self.testing = testing
-        self.uuid = None
         self.mode = mode
+        self.uuid = None
+        self.temp_files = []
 
     def upload(self, file_path):
         if self.testing:
@@ -172,8 +173,7 @@ class LalalAI:
 
         return resul_url_1, resul_url_2
 
-    @staticmethod
-    def download_file(url, file_name):
+    def download_file(self, url, file_name):
         # Скачиваем, пока не скачается
         while True:
             try:
@@ -186,7 +186,16 @@ class LalalAI:
             except:
                 logger.logging("Cant decode file, download again")
                 time.sleep(0.5)
-                return LalalAI.download_file(url, f"{file_name[:-4]}-{file_name[-4:]}")
+                self.temp_files.append(file_name)
+                return self.download_file(url, f"{file_name[:-4]}-{file_name[-4:]}")
+
+    def delete_temp_files(self):
+        for file_path in self.temp_files:
+            try:
+                os.remove(file_path)
+                self.temp_files.remove(file_path)
+            except Exception as e:
+                logger.logging(f"Error in delete file {file_path} {e}")
 
 
 def process_one_piece(file, mode, testing, random_factor, i):
@@ -199,11 +208,11 @@ def process_one_piece(file, mode, testing, random_factor, i):
     for number, url in enumerate(urls):
         if number == 0:
             file_name = os.path.join(SAVE_DIR, random_factor + f"{mode}_first_path{i}.mp3")
-            file_name = LalalAI.download_file(url, file_name=file_name)
+            file_name = lalala.download_file(url, file_name=file_name)
             first_path = file_name
         elif number == 1:
             file_name = os.path.join(SAVE_DIR, random_factor + f"{mode}_second_path{i}.mp3")
-            file_name = LalalAI.download_file(url, file_name=file_name)
+            file_name = lalala.download_file(url, file_name=file_name)
             second_path = file_name
         else:
             raise Exception("Найдено более двух файлов")
@@ -212,6 +221,8 @@ def process_one_piece(file, mode, testing, random_factor, i):
         os.remove(file)
     except Exception as e:
         logger.logging("ERROR IN REMOVE FILE:", e)
+
+    lalala.delete_temp_files()
 
     return i, first_path, second_path
 
@@ -264,7 +275,7 @@ def process_file_pipeline(large_file_name: str, mode, testing=False, random_fact
 
 
 def full_process_file_pipeline(input_text: str, random_factor="", modes=None,
-                               delete_file=False, wav_always=None):
+                               delete_file=False, wav_always=None, testing=False):
     timer = Time_Count()
 
     if not modes:
@@ -329,7 +340,7 @@ def full_process_file_pipeline(input_text: str, random_factor="", modes=None,
             results = process_file_pipeline(process_file,
                                             mode=mode,
                                             random_factor=random_factor,
-                                            file_format=file_format, testing=True)
+                                            file_format=file_format, testing=testing)
             all_results.append(results[1])
             process_file = results[2]
 
