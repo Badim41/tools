@@ -126,9 +126,20 @@ def save_image_png(image_url, image_path):
         pass
 
 
-def upscale_image(image_path, upscale_factor:int, random_factor="", testing=False):
+def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False):
+    def get_image_dimensions(file_path):
+        with Image.open(file_path) as img:
+            width, height = img.size
+        x = int(width)
+        y = int(height)
+        return x, y
+
     if not random_factor:
         random_factor = os.path.basename(image_path)[:-4] + "_"
+    if not upscale_factor:
+        x, y = get_image_dimensions(image_path)
+        max_size = 9600 * 9600
+        upscale_factor = int((max_size / (x * y)) ** 0.5)
 
     fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor, testing=testing)
     fotor.get_upload_url()
