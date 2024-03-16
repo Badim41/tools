@@ -231,10 +231,6 @@ def process_file_pipeline(large_file_name: str, mode, testing=False, random_fact
     if file_format not in ["mp3", "wav"]:
         raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
 
-    crashed = False
-    first_paths = []
-    second_paths = []
-
     files = slice_file(large_file_name, random_factor=random_factor, file_format=file_format)
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future_to_file = {executor.submit(process_one_piece, file, mode, testing, random_factor, i): i for i, file
