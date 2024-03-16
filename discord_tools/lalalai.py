@@ -330,8 +330,8 @@ def full_process_file_pipeline(input_text: str, random_factor="", modes=None,
                                             mode=mode,
                                             random_factor=random_factor,
                                             file_format=file_format, testing=testing)
-            all_results.append(results[1])
-            process_file = results[2]
+            all_results.append(results[0])
+            process_file = results[1]
 
         not_recognized = f"{RESULT_DIR}/{random_factor}_Else.{file_format}"
         os.rename(process_file, not_recognized)
