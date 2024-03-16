@@ -234,33 +234,26 @@ def process_file_pipeline(large_file_name: str, mode, testing=False, random_fact
     crashed = False
     first_paths = []
     second_paths = []
-    try:
 
-        files = slice_file(large_file_name, random_factor=random_factor, file_format=file_format)
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future_to_file = {executor.submit(process_one_piece, file, mode, testing, random_factor, i): i for i, file
-                              in enumerate(files)}
+    files = slice_file(large_file_name, random_factor=random_factor, file_format=file_format)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_to_file = {executor.submit(process_one_piece, file, mode, testing, random_factor, i): i for i, file
+                          in enumerate(files)}
 
-            first_paths = [None] * len(files)
-            second_paths = [None] * len(files)
+        first_paths = [None] * len(files)
+        second_paths = [None] * len(files)
 
-            for future in concurrent.futures.as_completed(future_to_file):
-                try:
-                    index, first_path, second_path = future.result()
-                    first_paths[index] = first_path
-                    second_paths[index] = second_path
-                except Exception as e:
-                    logger.logging("Error processing file:", e)
-
-    except Exception as e:
-        traceback_str = traceback.format_exc()
-        logger.logging("ERROR ID:2", str(traceback_str))
-        crashed = True
+        for future in concurrent.futures.as_completed(future_to_file):
+            try:
+                index, first_path, second_path = future.result()
+                first_paths[index] = first_path
+                second_paths[index] = second_path
+            except Exception as e:
+                logger.logging("Error processing file:", e)
 
     # Правильные имена файлов. Например:
     # Voice.wav, Instrumental.wav
     # Without_Bass.wav, Bass.wav
-
     if mode.count(" ") >= 2:
         mode_words = mode.split(" ")
         first_result = random_factor + f"{mode_words[0]}.{file_format}"
@@ -271,7 +264,7 @@ def process_file_pipeline(large_file_name: str, mode, testing=False, random_fact
     # объединяем файлы
     first_result = join_files(first_paths, first_result, file_format=file_format, delete_paths=True)
     second_result = join_files(second_paths, second_result, file_format=file_format, delete_paths=True)
-    return crashed, first_result, second_result
+    return first_result, second_result
 
 
 def full_process_file_pipeline(input_text: str, random_factor="", modes=None,
