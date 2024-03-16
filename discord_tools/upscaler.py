@@ -138,7 +138,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
         random_factor = os.path.basename(image_path)[:-4] + "_"
     if not upscale_factor:
         x, y = get_image_dimensions(image_path)
-        max_size = 9600 * 9600
+        max_size = 8000 * 8000
         upscale_factor = int((max_size / (x * y)) ** 0.5)
 
     fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor, testing=testing)
