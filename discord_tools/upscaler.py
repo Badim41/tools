@@ -15,21 +15,21 @@ class FotorModes:
     # extender = "extender"
 
     @staticmethod
-    def get_mode(mode_key):
+    def get_mode(mode_key, upscale_factor=4):
         mode_key = mode_key.replace(" ", "_")
         modes_dict = {
-            "upscaler": {"mode": "enhancement", "upscaleFactor": 4}
+            "upscaler": {"mode": "enhancement", "upscaleFactor": upscale_factor}
         }
 
         return modes_dict[mode_key.lower()]
 
 
 class FotorAPI:
-    def __init__(self, mode, testing=False):
+    def __init__(self, mode, upscale_factor:int, testing=False):
         self.key = None
         self.upload_url = None
         self.mode = mode
-        self.mode_params = FotorModes.get_mode(mode)
+        self.mode_params = FotorModes.get_mode(mode, upscale_factor=upscale_factor)
         self.testing = testing
 
     def change_mode(self):
@@ -126,11 +126,11 @@ def save_image_png(image_url, image_path):
         pass
 
 
-def upscale_image(image_path, random_factor="", testing=False):
+def upscale_image(image_path, upscale_factor:int, random_factor="", testing=False):
     if not random_factor:
         random_factor = os.path.basename(image_path)[:-4] + "_"
 
-    fotor = FotorAPI(mode=FotorModes.upscaler, testing=testing)
+    fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor, testing=testing)
     fotor.get_upload_url()
     fotor.upload_on_url(image_path)
     fotor.change_mode()
