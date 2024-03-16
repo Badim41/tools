@@ -10,6 +10,8 @@ import zipfile
 from PIL import Image
 
 from discord_tools.character_ai_chat import Character_AI, char_id_images
+from discord_tools.upscaler import upscale_image
+
 async def get_image_size(image_path):
     try:
         with Image.open(image_path) as img:
