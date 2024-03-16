@@ -199,7 +199,8 @@ class GenerateImages:
             grid_image.save(final_path)
 
             for i in range(4):
-                os.remove(image_paths[i])
+                if delete_temp:
+                    os.remove(image_paths[i])
 
             return final_path
 
