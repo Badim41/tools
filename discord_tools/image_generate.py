@@ -124,7 +124,7 @@ class GenerateImages:
         self.queue = 0
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
-                       zip_name=None):
+                       zip_name=None, delete_temp=True):
         self.queue += 1
         if zip_name:
             text_name = f"prompt_{user_id}.txt"
@@ -138,7 +138,7 @@ class GenerateImages:
         if kandinsky:
             functions.append(self.kandinsky_generate(prompt, user_id))
         if polinations:
-            functions.append(self.image_polinations(prompt, user_id, zip_name))
+            functions.append(self.image_polinations(prompt, user_id, zip_name, delete_temp))
         if character_ai:
             functions.append(self.character_ai(prompt, user_id))
 
@@ -169,7 +169,7 @@ class GenerateImages:
         except Exception as e:
             print("Error in kandinsky:",e)
 
-    async def image_polinations(self, prompt, user_id, zip_name):
+    async def image_polinations(self, prompt, user_id, zip_name, delete_temp):
         def save_image_png(image_url, i):
             try:
                 response = requests.get(image_url)
