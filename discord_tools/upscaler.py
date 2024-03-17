@@ -147,4 +147,4 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
     fotor.change_mode()
     result_url = f"https://u-static.fotor.com/images/text-to-image/result/{fotor.get_result_upscale()}.jpg"
     result_path = save_image_png(result_url, random_factor + "upscaled.png")
-    return result_path
+    return result_path, result_url
