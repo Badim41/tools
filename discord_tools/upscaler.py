@@ -4,7 +4,7 @@ import requests
 import time
 from PIL import Image
 
-from discord_tools.logs import Logs
+from discord_tools.logs import Logs, Color
 
 logger = Logs(warnings=True)
 
@@ -141,6 +141,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
         x, y = get_image_dimensions(image_path)
         max_size = 8000 * 8000
         upscale_factor = int((max_size / (x * y)) ** 0.5)
+        logger.logging("Upscale factor:", upscale_factor, x*upscale_factor, y*upscale_factor, color=Color.GREEN)
 
     fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor, testing=testing)
     fotor.get_upload_url()
