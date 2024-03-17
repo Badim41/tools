@@ -227,7 +227,7 @@ def process_one_piece(file, mode, testing, random_factor, i):
     return i, first_path, second_path
 
 
-def process_file_pipeline(large_file_name: str, mode, testing=False, random_factor="", file_format="mp3"):
+def process_file_pipeline(large_file_name: str, mode, testing=False, random_factor="", file_format="wav"):
     if file_format not in ["mp3", "wav"]:
         raise Exception("Формат не поддерживается. Доступные форматы: mp3, wav")
 
