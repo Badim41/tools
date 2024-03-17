@@ -260,3 +260,11 @@ class GenerateImages:
             return image_path
         except Exception as e:
             print("error in character.ai:", e)
+
+async def reduce_image_resolution(image_path, target_size_mb=30):
+    img = Image.open(image_path)
+    while os.path.getsize(image_path) > target_size_mb * 1024 * 1024:
+        new_width = int(img.width * 0.95)
+        new_height = int(img.height * 0.95)
+        img = img.resize((new_width, new_height))
+        img.save(image_path)
