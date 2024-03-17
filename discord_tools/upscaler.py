@@ -49,31 +49,32 @@ class FotorAPI:
             logger.logging("CHANGE MODE:", response.text)
 
     def get_result_upscale(self):
-        url = "https://www.fotor.com/api/image/sr/result/v2"
-        headers = {
-            "accept": "application/json, text/plain, */*",
-            "x-app-id": "app-fotor-web"
-        }
+        while True:
+            url = "https://www.fotor.com/api/image/sr/result/v2"
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "x-app-id": "app-fotor-web"
+            }
 
-        params = {
-            "key": self.key
-        }
+            params = {
+                "key": self.key
+            }
 
-        response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, params=params)
 
-        # Проверка статуса ответа
-        if response.status_code == 200:
-            # Обработка успешного ответа
+            # Проверка статуса ответа
+            if response.status_code == 200:
+                # Обработка успешного ответа
 
-            if self.testing:
-                logger.logging("get result:", response.text)
-            result_status = response.json()['data']['status']
-            if not result_status:
-                time.sleep(2)
-                self.get_result_upscale()
-            return response.json()['data']['id']
-        else:
-            logger.logging("Ошибка:", response.status_code)
+                if self.testing:
+                    logger.logging("get result:", response.text)
+                result_status = response.json()['data']['status']
+                if not result_status:
+                    time.sleep(1)
+                    continue
+                return response.json()['data']['id']
+            else:
+                logger.logging("Ошибка:", response.status_code)
 
     def upload_on_url(self, image_path):
         if self.testing:
