@@ -126,7 +126,7 @@ def save_image_png(image_url, image_path):
         pass
 
 
-def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False):
+def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False, only_url=False):
     def get_image_dimensions(file_path):
         with Image.open(file_path) as img:
             width, height = img.size
@@ -146,5 +146,10 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
     fotor.upload_on_url(image_path)
     fotor.change_mode()
     result_url = f"https://u-static.fotor.com/images/text-to-image/result/{fotor.get_result_upscale()}.jpg"
-    result_path = save_image_png(result_url, random_factor + "upscaled.png")
+
+    if only_url:
+        result_path = ""
+    else:
+        result_path = save_image_png(result_url, random_factor + "upscaled.png")
+
     return result_path, result_url
