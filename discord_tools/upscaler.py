@@ -30,6 +30,7 @@ class FotorAPI:
         self.upload_url = None
         self.mode = mode
         self.mode_params = FotorModes.get_mode(mode, upscale_factor=upscale_factor)
+        self.upscale_factor = upscale_factor
         self.testing = testing
 
     def change_mode(self):
@@ -70,11 +71,12 @@ class FotorAPI:
                     logger.logging("get result:", response.text)
                 result_status = response.json()['data']['status']
                 if not result_status:
-                    time.sleep(1)
+                    time.sleep(1 * self.upscale_factor//2)
                     continue
                 return response.json()['data']['id']
             else:
                 logger.logging("Ошибка:", response.status_code)
+                return
 
     def upload_on_url(self, image_path):
         if self.testing:
