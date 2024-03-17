@@ -69,7 +69,7 @@ class FotorAPI:
                 logger.logging("get result:", response.text)
             result_status = response.json()['data']['status']
             if not result_status:
-                time.sleep(3)
+                time.sleep(2)
                 self.get_result_upscale()
             return response.json()['data']['id']
         else:
