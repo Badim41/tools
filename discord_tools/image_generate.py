@@ -215,13 +215,11 @@ class GenerateImages:
                         pass
                     else:
                         image = Image.open(result)
-                        cropped_image = image.crop((0, 0, 512, 468))
-                        resized_image = cropped_image.resize((768, 768))
+                        resized_image = image.resize((1024, 1024))
                         resized_image.save(result)
                 else:
                     image = Image.open(result)
-                    cropped_image = image.crop((0, 0, 512, 468))
-                    resized_image = cropped_image.resize((768, 768))
+                    resized_image = image.resize((1024, 1024))
                     resized_image.save(result)
 
                 all_results.append(result)
