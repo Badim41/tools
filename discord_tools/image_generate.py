@@ -214,10 +214,12 @@ class GenerateImages:
                     if x == 1024 and y == 1024:
                         pass
                     else:
+                        print("NOT 1024*1024")
                         image = Image.open(result)
                         resized_image = image.resize((1024, 1024))
                         resized_image.save(result)
                 else:
+                    print("NOT 1024*1024, NOT FOUND X AND Y")
                     image = Image.open(result)
                     resized_image = image.resize((1024, 1024))
                     resized_image.save(result)
