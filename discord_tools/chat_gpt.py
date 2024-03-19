@@ -354,8 +354,8 @@ class ChatGPT:
                 if "Incorrect API key provided" in str(e):
                     self.openAI_keys = self.openAI_keys[1:]
 
-                if self.openAI_keys:
-                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role)
+                if self.openAI_keys and not error:
+                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
                 else:
                     await asyncio.sleep(delay_for_gpt)
         else:
