@@ -211,11 +211,8 @@ class GenerateImages:
                 result = await asyncio.to_thread(save_image_png, image_site, i)
                 if await get_image_size(result):
                     x, y = await get_image_size(result)
-                    if x == 768 and y == 768:
-                        image = Image.open(result)
-                        cropped_image = image.crop((0, 0, 768, 725))
-                        resized_image = cropped_image.resize((768, 768))
-                        resized_image.save(result)
+                    if x == 1024 and y == 1024:
+                        pass
                     else:
                         image = Image.open(result)
                         cropped_image = image.crop((0, 0, 512, 468))
