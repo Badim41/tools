@@ -21,9 +21,6 @@ class Logs:
         if not isinstance(color, str) and color is not None:
             raise ValueError("Not a valid color")
 
-        with open("__logs__", "a", encoding="utf-8") as writer:
-            writer.write(f"({datetime.now().strftime('%d.%m.%H.%M')}){text}\n")
-
         if "error" in text.lower() or "traceback" in text.lower() or "ошибка" in text.lower():
             if self.errors:
                 colored_text = f"{Color.RED}{text}{Color.RESET}" if color is None else f"{color}{text}{Color.RESET}"
@@ -32,3 +29,8 @@ class Logs:
             if self.warnings:
                 colored_text = f"{Color.YELLOW}{text}{Color.RESET}" if color is None else f"{color}{text}{Color.RESET}"
                 print(colored_text)
+            else:
+                return
+
+        with open("__logs__", "a", encoding="utf-8") as writer:
+            writer.write(f"({datetime.now().strftime('%d.%m.%H.%M')}){text}\n")
