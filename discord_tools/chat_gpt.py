@@ -389,8 +389,8 @@ class ChatGPT:
                         or 'token is expired' in str(e)):
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
-                if self.openAI_auth_keys:
-                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role)
+                if self.openAI_auth_keys and not error:
+                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
                 else:
                     await asyncio.sleep(delay_for_gpt)
 
