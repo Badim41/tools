@@ -212,11 +212,15 @@ class GenerateImages:
                 if await get_image_size(result):
                     x, y = await get_image_size(result)
                     if x == 1024 and y == 1024:
-                        pass
+                        image = Image.open(result)
+                        cropeed_image = image.crop((0, 0, 1024, 950))
+                        resized_image = cropeed_image.resize((1024, 1024))
+                        resized_image.save(result)
                     else:
                         print("NOT 1024*1024")
                         image = Image.open(result)
-                        resized_image = image.resize((1024, 1024))
+                        cropeed_image = image.crop((0, 0, 1024, 950))
+                        resized_image = cropeed_image.resize((1024, 1024))
                         resized_image.save(result)
                 else:
                     print("NOT 1024*1024, NOT FOUND X AND Y")
