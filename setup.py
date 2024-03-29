@@ -7,7 +7,7 @@ setup(
     install_requires=[
         'requests==2.31.0',
         'Pillow==10.1.0',
-        'g4f==0.2.2.7',
+        'g4f==0.2.7.1',
         'openai==1.10.0',
         'selenium==4.16.0',
         'webdriver-manager==4.0.1',
