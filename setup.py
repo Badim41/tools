@@ -13,6 +13,7 @@ setup(
         'webdriver-manager==4.0.1',
         'beautifulsoup4==4.12.2',
         'characterai==0.8.0',
-        'mtranslate==1.8'
+        'mtranslate==1.8',
+        'websockets'
     ],
 )
