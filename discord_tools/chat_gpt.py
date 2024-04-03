@@ -370,7 +370,7 @@ class ChatGPT:
             
             response_parts = response.text.split("data: ")
             
-            return json.loads(last_response)['message']['content']['parts'][0]
+            return json.loads(response_parts[-2])['message']['content']['parts'][0]
         except Exception as e:
             self.logger.logging("error gpt-off3", str(traceback.format_exc()))
 
