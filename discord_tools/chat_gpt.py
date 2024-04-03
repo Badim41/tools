@@ -131,6 +131,17 @@ async def get_sys_prompt(user_id, gpt_role):
         sys_prompt = [{"role": "system", "content": gpt_role}]
     return sys_prompt
 
+def transform_messages(messages):
+    transformed_messages = []
+    for message in messages:
+        transformed_message = {
+            "id": str(uuid.uuid4()),
+            "author": {"role": message['role']},
+            "content": {"content_type": "text", "parts": [message['content']]},
+            "metadata": {}
+        }
+        transformed_messages.append(transformed_message)
+    return transformed_messages
 
 async def clear_history(user_id):
     try:
@@ -334,6 +345,7 @@ class ChatGPT:
     
     async def run_no_auth_official_gpt(self, messages, delay_for_gpt, user_id):
         try:
+            messages = transform_messages(messages)
             self.logger.logging(f"Run no auth GPT", color=Color.GRAY)
             
             device_id = str(uuid.uuid4())
