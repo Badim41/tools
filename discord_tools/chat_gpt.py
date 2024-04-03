@@ -405,7 +405,7 @@ class ChatGPT:
         else:
             # нет ключей
             if not self.openAI_auth_keys:
-                return await run_no_auth_official_gpt(messages, delay_for_gpt, user_id)
+                return await self.run_no_auth_official_gpt(messages, delay_for_gpt, user_id)
 
             try:
                 auth_key = self.openAI_auth_keys[self.gpt_queue % len(self.openAI_auth_keys)]
