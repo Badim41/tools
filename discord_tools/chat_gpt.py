@@ -5,6 +5,8 @@ import logging
 import os
 import requests
 import traceback
+import uuid
+
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessage
 
@@ -329,6 +331,48 @@ class ChatGPT:
             if self.testing:
                 self.logger.logging(f"Error in {str(provider)}", str(e), color=Color.GRAY)
             await asyncio.sleep(delay_for_gpt)
+    
+    async def run_no_auth_official_gpt(self, messages, delay_for_gpt, user_id):
+        try:
+            self.logger.logging(f"Run no auth GPT", color=Color.GRAY)
+            
+            device_id = str(uuid.uuid4())
+            user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+            
+            url = 'https://chat.openai.com/backend-anon/sentinel/chat-requirements'
+            
+            headers = {
+                'oai-device-id': device_id,
+                'user-agent': user_agent
+            }
+            data = {}
+            
+            response = requests.post(url, headers=headers, json=data)
+            auth_token = response.json()['token']
+            
+            url = 'https://chat.openai.com/backend-api/conversation'
+            headers = {
+                'cookie': f'oai-did={device_id}',
+                'oai-device-id': device_id,
+                'openai-sentinel-chat-requirements-token': auth_token,
+                'user-agent': user_agent,
+            }
+            
+            data = {
+                "action": "next",
+                "messages": messages,
+                "parent_message_id": str(uuid.uuid4()),
+                "model": "text-davinci-002-render-sha",
+                "websocket_request_id": str(uuid.uuid4())
+            }
+            
+            response = requests.post(url, json=data, headers=headers)
+            
+            response_parts = response.text.split("data: ")
+            
+            return json.loads(last_response)['message']['content']['parts'][0]
+        except Exception as e:
+            self.logger.logging("error gpt-off3", str(traceback.format_exc()))
 
     async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
 
@@ -361,8 +405,7 @@ class ChatGPT:
         else:
             # нет ключей
             if not self.openAI_auth_keys:
-                await asyncio.sleep(delay_for_gpt)
-                return
+                return await run_no_auth_official_gpt(messages, delay_for_gpt, user_id)
 
             try:
                 auth_key = self.openAI_auth_keys[self.gpt_queue % len(self.openAI_auth_keys)]
