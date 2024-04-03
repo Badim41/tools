@@ -369,10 +369,13 @@ class ChatGPT:
             response = requests.post(url, json=data, headers=headers)
             
             response_parts = response.text.split("data: ")
+
+            if self.testing:
+                self.logger.logging("ChatGPT_OFFICIAL_3 ", json.loads(response_parts[-2])['message']['content']['parts'][0], color=Color.GRAY)
             
             return json.loads(response_parts[-2])['message']['content']['parts'][0]
         except Exception as e:
-            self.logger.logging("error gpt-off3", str(traceback.format_exc()))
+            self.logger.logging("error gpt-off3", str(traceback.format_exc()), response_parts, response)
 
     async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
 
