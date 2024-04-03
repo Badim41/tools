@@ -173,7 +173,7 @@ class ChatGPT:
         elif isinstance(openAI_moderation, str):
             self.openAI_keys = [openAI_keys]
         else:
-            self.openAI_keys = openAI_keys
+            self.openAI_keys = None
 
         self.gpt_queue = 0
 
@@ -188,18 +188,14 @@ class ChatGPT:
         elif self.openAI_keys:
             self.openAI_moderation = self.openAI_keys
         else:
-            self.openAI_moderation = openAI_moderation
+            self.openAI_moderation = None
 
         if isinstance(auth_keys, list):
             self.openAI_auth_keys = auth_keys
         elif isinstance(auth_keys, str):
             self.openAI_auth_keys = [auth_keys]
         else:
-            self.openAI_auth_keys = auth_keys
-
-        if save_history:
-            if not os.path.exists('gpt_history'):
-                os.mkdir('gpt_history')
+            self.openAI_auth_keys = None
 
         self.character_queue = 0
 
@@ -233,6 +229,9 @@ class ChatGPT:
 
             return functions_add
 
+        if not os.path.exists('gpt_history'):
+            os.mkdir('gpt_history')
+        
         self.gpt_queue += 1
         if self.testing:
             self.logger.logging("run GPT", prompt, color=Color.GRAY)
