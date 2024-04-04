@@ -167,7 +167,9 @@ class ChatGPT:
     def __init__(self, openAI_keys=None, openAI_moderation=None,
                  auth_keys=None, save_history=True,
                  warnings=True,
-                 errors=True, testing=False, char_tokens=None, char_ids=None):
+                 errors=True, testing=False, char_tokens=None, char_ids=None,
+                deep_seek_keys=None,
+                deep_seek_auth_keys=None):
         if isinstance(openAI_moderation, list):
             self.openAI_keys = openAI_keys
         elif isinstance(openAI_moderation, str):
@@ -211,6 +213,20 @@ class ChatGPT:
                                        testing=testing) for number in range(len(char_ids))]
         else:
             self.chars = []
+
+        if isinstance(deep_seek_keys, list):
+            self.deep_seek_keys = deep_seek_keys
+        elif isinstance(deep_seek_keys, str):
+            self.deep_seek_keys = [deep_seek_keys]
+        else:
+            self.deep_seek_keys = None
+
+        if isinstance(deep_seek_auth_keys, list):
+            self.deep_seek_auth_keys = deep_seek_auth_keys
+        elif isinstance(deep_seek_auth_keys, str):
+            self.deep_seek_auth_keys = [deep_seek_auth_keys]
+        else:
+            self.deep_seek_auth_keys = None
 
         self.logger = Logs(warnings=warnings, errors=errors)
         self.testing = testing
@@ -450,6 +466,73 @@ class ChatGPT:
                     return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
                 else:
                     await asyncio.sleep(delay_for_gpt)
+
+    async def run_deep_seek(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
+        if key_gpt:
+            # нет ключей
+            if not self.deep_seek_keys:
+                await asyncio.sleep(delay_for_gpt)
+                return
+            
+            try:
+                client = OpenAI(api_key=self.deep_seek_keys[0], base_url="https://api.deepseek.com/v1")
+                
+                response = client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=messages
+                )
+                
+                if self.testing:
+                    self.logger.logging("DeepSeek_1:", response.choices[0].message.content, color=Color.GRAY)
+                
+                return response.choices[0].message.content
+            except Exceptiin as e:
+                if self.testing:
+                    self.logger.logging("Error in DeepSeek_1:", response.text, color=Color.GRAY)
+                
+                await asyncio.sleep(delay_for_gpt)
+        else:
+            # нет ключей
+            if not self.deep_seek_auth_keys:
+                await asyncio.sleep(delay_for_gpt)
+                return
+
+            try:
+                url = 'https://chat.deepseek.com/api/v0/chat/completions'
+                headers = {
+                    'authorization': f'Bearer {self.deep_seek_auth_keys[0]}',
+                }
+                data = {
+                    "message": prompt,
+                    "stream": True
+                }
+                
+                response = requests.post(url, headers=headers, json=data)
+                response_parts = response.text.split("data: ")
+                print(response_parts)
+                
+                full_answer = ""
+                for response_part in response_parts:
+                    try:
+                
+                        # Получение значения "content"
+                        content_value = json.loads(response_part)['choices'][0]['delta']['content']
+                        if content_value:
+                            full_answer += content_value
+                    except Exception as e:
+                      pass
+                
+                url = 'https://chat.deepseek.com/api/v0/chat/clear_context'
+                response = requests.post(url, headers=headers, json={})
+    
+                if self.testing:
+                    self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
+                    print(response.text)
+            except Exceptiin as e:
+                if self.testing:
+                    self.logger.logging("Error in DeepSeek_2:", response.text, color=Color.GRAY)
+                
+                await asyncio.sleep(delay_for_gpt)
 
     async def moderation_request(self, text, error=0):
         if not self.openAI_moderation:
