@@ -514,8 +514,6 @@ class ChatGPT:
                 full_answer = ""
                 for response_part in response_parts:
                     try:
-                
-                        # Получение значения "content"
                         content_value = json.loads(response_part)['choices'][0]['delta']['content']
                         if content_value:
                             full_answer += content_value
@@ -528,6 +526,7 @@ class ChatGPT:
                 if self.testing:
                     self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
                     print(response.text)
+                return full_answer
             except Exceptiin as e:
                 if self.testing:
                     self.logger.logging("Error in DeepSeek_2:", response.text, color=Color.GRAY)
