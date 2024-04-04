@@ -476,7 +476,7 @@ class ChatGPT:
             
             try:
                 
-                client = AsyncOpenAI(api_key=self.deep_seek_keys[0], base_url="https://api.deepseek.com/v1")
+                client = AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0], base_url="https://api.deepseek.com/v1")
                 
                 response = await client.chat.completions.create(
                     model="deepseek-chat",
