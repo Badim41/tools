@@ -475,9 +475,10 @@ class ChatGPT:
                 return
             
             try:
-                client = OpenAI(api_key=self.deep_seek_keys[0], base_url="https://api.deepseek.com/v1")
                 
-                response = client.chat.completions.create(
+                client = AsyncOpenAI(api_key=self.deep_seek_keys[0], base_url="https://api.deepseek.com/v1")
+                
+                response = await client.chat.completions.create(
                     model="deepseek-chat",
                     messages=messages
                 )
@@ -503,13 +504,12 @@ class ChatGPT:
                     'authorization': f'Bearer {self.deep_seek_auth_keys[0]}',
                 }
                 data = {
-                    "message": prompt,
+                    "message": messages[-1]['content'],
                     "stream": True
                 }
                 
                 response = requests.post(url, headers=headers, json=data)
                 response_parts = response.text.split("data: ")
-                print(response_parts)
                 
                 full_answer = ""
                 for response_part in response_parts:
