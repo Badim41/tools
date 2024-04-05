@@ -409,7 +409,7 @@ class ChatGPT:
             
             return json.loads(response_parts[-2])['message']['content']['parts'][0]
         except Exception as e:
-            self.logger.logging("error gpt-off3", str(traceback.format_exc()), response_parts, response)
+            self.logger.logging("error gpt-off3", str(traceback.format_exc()))
 
     async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
 
