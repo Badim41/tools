@@ -512,7 +512,8 @@ class ChatGPT:
                 }
                 data = {
                     "message": messages[-1]['content'],
-                    "stream": True
+                    "stream": True,
+                    "model_class": "deepseek_chat"
                 }
                 
                 response = requests.post(url, headers=headers, json=data)
