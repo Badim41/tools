@@ -479,7 +479,7 @@ class ChatGPT:
                 else:
                     await asyncio.sleep(delay_for_gpt)
 
-    async def run_deep_seek(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
+    async def run_deep_seek(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, clear_context=False):
         if key_gpt:
             # нет ключей
             if not self.deep_seek_keys:
@@ -532,13 +532,14 @@ class ChatGPT:
                             full_answer += content_value
                     except Exception as e:
                       pass
-                
-                url = 'https://chat.deepseek.com/api/v0/chat/clear_context'
-                response = await make_async_post_request(url, headers=headers, json={})
+
+                if clear_context:
+                    url = 'https://chat.deepseek.com/api/v0/chat/clear_context'
+                    response = await make_async_post_request(url, headers=headers, json={})
     
                 if self.testing:
                     self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
-                    print(response)
+                
                 return full_answer
             except Exception as e:
                 if self.testing:
