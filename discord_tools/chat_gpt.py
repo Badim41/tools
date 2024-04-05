@@ -387,7 +387,7 @@ class ChatGPT:
             data = {}
             
             response = await make_async_post_request(url, headers=headers, json=data)
-            auth_token = response.json()['token']
+            auth_token = (await response.json())['token']
             
             url = 'https://chat.openai.com/backend-api/conversation'
             headers = {
@@ -407,7 +407,7 @@ class ChatGPT:
             
             response = await make_async_post_request(url, json=data, headers=headers)
             
-            response_parts = response.text.split("data: ")
+            response_parts = (await response.text()).split("data: ")
 
             if self.testing:
                 self.logger.logging("ChatGPT_OFFICIAL_3 ", json.loads(response_parts[-2])['message']['content']['parts'][0], color=Color.GRAY)
@@ -522,7 +522,7 @@ class ChatGPT:
                 }
                 
                 response = await make_async_post_request(url, headers=headers, json=data)
-                response_parts = response.text.split("data: ")
+                response_parts = (await response.text()).split("data: ")
                 
                 full_answer = ""
                 for response_part in response_parts:
@@ -538,11 +538,11 @@ class ChatGPT:
     
                 if self.testing:
                     self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
-                    print(response.text)
+                    print(await response.text())
                 return full_answer
             except Exception as e:
                 if self.testing:
-                    self.logger.logging("Error in DeepSeek_2:", response.text, color=Color.GRAY)
+                    self.logger.logging("Error in DeepSeek_2:", await response.text(), color=Color.GRAY)
                 
                 await asyncio.sleep(delay_for_gpt)
 
