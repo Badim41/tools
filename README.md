@@ -60,6 +60,19 @@ chat_gpt = ChatGPT(auth_keys=AUTH_KEY: [str, list])
 # https://beta.character.ai - На F12 смотрите char_token в Local Storage
 chat_gpt = ChatGPT(char_tokens=CHAR_TOKEN: [str, list])
 ```
+
+### С аутентификационным ключом deepseek (бесплатно)  <a name="section-2.4.1"></a>
+```python
+# https://chat.deepseek.com - На F12 смотрите Authorization в любом запросе к сайту
+chat_gpt = ChatGPT(deep_seek_auth_keys=DEEP_SEEK_AUTH_KEYS: [str, list])
+```
+
+### С ключом deepseek (бесплатно)  <a name="section-2.4.2"></a>
+```python
+# https://platform.deepseek.com/api_keys
+chat_gpt = ChatGPT(deep_seek_keys=DEEP_SEEK_API_KEYS: [str, list])
+```
+
 ### Все сразу
 ```python
 chat_gpt = ChatGPT(OPEN_AI_KEY: [str, list],
