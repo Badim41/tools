@@ -6,6 +6,7 @@ import os
 import requests
 import traceback
 import uuid
+import aiohttp
 
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessage
@@ -82,6 +83,10 @@ _providers = [
     g4f.Provider.Llama2,
 ]
 
+async def make_async_post_request(url, json, headers):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=json, headers=headers) as response:
+            return await response.text()
 
 async def remove_last_format_simbols(text, format="```"):
     parts = text.split(format)
@@ -381,7 +386,7 @@ class ChatGPT:
             }
             data = {}
             
-            response = requests.post(url, headers=headers, json=data)
+            response = await make_async_post_request(url, headers=headers, json=data)
             auth_token = response.json()['token']
             
             url = 'https://chat.openai.com/backend-api/conversation'
@@ -400,7 +405,7 @@ class ChatGPT:
                 "websocket_request_id": str(uuid.uuid4())
             }
             
-            response = requests.post(url, json=data, headers=headers)
+            response = await make_async_post_request(url, json=data, headers=headers)
             
             response_parts = response.text.split("data: ")
 
@@ -516,7 +521,7 @@ class ChatGPT:
                     "model_class": "deepseek_chat"
                 }
                 
-                response = requests.post(url, headers=headers, json=data)
+                response = await make_async_post_request(url, headers=headers, json=data)
                 response_parts = response.text.split("data: ")
                 
                 full_answer = ""
@@ -529,7 +534,7 @@ class ChatGPT:
                       pass
                 
                 url = 'https://chat.deepseek.com/api/v0/chat/clear_context'
-                response = requests.post(url, headers=headers, json={})
+                response = await make_async_post_request(url, headers=headers, json={})
     
                 if self.testing:
                     self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
@@ -574,7 +579,7 @@ class ChatGPT:
         }
         url = "https://api.openai.com/v1/moderations"
 
-        response = requests.post(url, headers=headers, json=data)
+        response = await make_async_post_request(url, headers=headers, json=data)
         self.is_running_moderation = False
         if response.status_code == 200:
             self.logger.logging(f"api_key: {api_key[:10]}", color=Color.GRAY)
