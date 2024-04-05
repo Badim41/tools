@@ -86,7 +86,7 @@ _providers = [
 async def make_async_post_request(url, json, headers):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=json, headers=headers) as response:
-            return await response.text()
+            return await response
 
 async def remove_last_format_simbols(text, format="```"):
     parts = text.split(format)
