@@ -494,7 +494,7 @@ class ChatGPT:
                     self.logger.logging("DeepSeek_1:", response.choices[0].message.content, color=Color.GRAY)
                 
                 return response.choices[0].message.content
-            except Exceptiin as e:
+            except Exception as e:
                 if self.testing:
                     self.logger.logging("Error in DeepSeek_1:", response.text, color=Color.GRAY)
                 
@@ -534,7 +534,7 @@ class ChatGPT:
                     self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
                     print(response.text)
                 return full_answer
-            except Exceptiin as e:
+            except Exception as e:
                 if self.testing:
                     self.logger.logging("Error in DeepSeek_2:", response.text, color=Color.GRAY)
                 
