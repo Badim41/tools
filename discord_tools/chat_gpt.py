@@ -284,6 +284,12 @@ class ChatGPT:
                     chat_history.append({"role": "assistant", "content": answer})
                     await save_history(chat_history, user_id)
                     return answer
+                
+                answer = await self.run_deep_seek(messages, 1, value, user_id, gpt_role)
+                if answer:
+                    chat_history.append({"role": "assistant", "content": answer})
+                    await save_history(chat_history, user_id)
+                    return answer
 
             functions = get_fake_gpt_functions(30)
 
@@ -302,6 +308,7 @@ class ChatGPT:
 
         elif mode == ChatGPT_Mode.all:
             functions = [self.run_official_gpt(messages, 1, value, user_id, gpt_role) for value in values]
+            functions += [self.run_deep_seek(messages, 1, value, user_id, gpt_role) for value in values]
 
             functions += get_fake_gpt_functions(1)
 
