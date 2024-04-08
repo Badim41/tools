@@ -429,7 +429,7 @@ class GenerateImages:
             grind_image = await make_grind(all_results, delete_temp=delete_temp)
             return grind_image
         except Exception as e:
-            print("error in image_polinations:", e)
+            print("error in bing_image_generate:", e)
 
 async def reduce_image_resolution(image_path, target_size_mb=49):
     img = Image.open(image_path)
