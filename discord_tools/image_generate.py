@@ -178,8 +178,6 @@ class GenerateImages:
             functions.append(self.image_polinations(prompt, user_id, zip_name, delete_temp))
         if character_ai:
             functions.append(self.character_ai(prompt, user_id))
-        if character_ai:
-            functions.append(self.character_ai(prompt, user_id))
         if bing_image_generator:
             # bing_image_generate(self, prompt, user_id, zip_name, delete_temp, fast=False):
             functions.append(self.bing_image_generate(prompt, user_id, zip_name, delete_temp, bing_fast))
@@ -294,7 +292,7 @@ class GenerateImages:
                 headers = {
                     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                     'accept-language': 'ru,en-US;q=0.9,en;q=0.8',
-                    'cookie': self.bing_cookies,
+                    'cookie': self.bing_cookies[0],
                     'sec-ch-ua-platform-version': '"6.5.0"',
                     'user-agent': user_agent
                 }
@@ -349,7 +347,7 @@ class GenerateImages:
             headers = {
                 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'upgrade-insecure-requests': '1',
-                'cookie': self.bing_cookies,
+                'cookie': self.bing_cookies[0],
                 'user-agent': user_agent
             }
             
@@ -384,7 +382,7 @@ class GenerateImages:
                 url = f"https://www.bing.com/images/create/async/results/{request_id}?q={prompt}+&IG={image_group_id}&IID=images.as"
             
                 headers = {
-                    'cookie': self.bing_cookies,
+                    'cookie': self.bing_cookies[0],
                     'sec-ch-ua-platform-version': '"6.5.0"',
                     'user-agent': user_agent
                 }
