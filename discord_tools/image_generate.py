@@ -7,11 +7,18 @@ import random
 import requests
 import time
 import zipfile
+import urllib
+import uuid
+import re
+import shutil
+
 from PIL import Image
 
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.upscaler import upscale_image
 from discord_tools.describe_image import describe_image, detect_bad_image
+
+user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
 async def get_image_size(image_path):
     try:
@@ -22,6 +29,27 @@ async def get_image_size(image_path):
     except Exception as e:
         print(f"Ошибка при получении размера изображения: {e}")
         return None
+
+async def make_grind(image_paths, delete_temp=True):
+    images = [Image.open(path) for path in image_paths]
+    image_width, image_height = images[0].size
+    grid_width = 2 * image_width
+    grid_height = 2 * image_height
+    grid_image = Image.new('RGB', (grid_width, grid_height))
+
+    for i in range(2):
+        for j in range(2):
+            index = i * 2 + j
+            grid_image.paste(images[index], (j * image_width, i * image_height))
+
+    final_path = image_paths[3].replace(".png", "FINAL.png")
+    grid_image.save(final_path)
+
+    for i in range(4):
+        if delete_temp:
+            os.remove(image_paths[i])
+
+    return final_path
 
 
 class Kandinsky_API:
@@ -85,7 +113,7 @@ class Kandinsky_API:
 
 
 class GenerateImages:
-    def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None):
+    def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None, bing_cookies=None):
         if not os.path.exists('images'):
             os.mkdir('images')
 
@@ -110,6 +138,13 @@ class GenerateImages:
         else:
             self.char_tokens = char_tokens
 
+        if isinstance(bing_cookies, list):
+            self.bing_cookies = bing_cookies
+        elif isinstance(bing_cookies, str):
+            self.bing_cookies = [bing_cookies]
+        else:
+            self.bing_cookies = bing_cookies
+
         self.kandinskies = []
 
         for i in range(len(secret_keys_kandinsky)):
@@ -120,7 +155,8 @@ class GenerateImages:
         self.characters_ai = []
         for char_token in char_tokens:
             self.characters_ai.append(Character_AI(char_id=char_id_images, char_token=char_token, testing=True))
-
+        
+        self.blocked_requests = []
         self.queue = 0
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
@@ -139,6 +175,8 @@ class GenerateImages:
             functions.append(self.kandinsky_generate(prompt, user_id))
         if polinations:
             functions.append(self.image_polinations(prompt, user_id, zip_name, delete_temp))
+        if character_ai:
+            functions.append(self.character_ai(prompt, user_id))
         if character_ai:
             functions.append(self.character_ai(prompt, user_id))
 
@@ -183,27 +221,6 @@ class GenerateImages:
                 print("Ошибка при конвертации изображения:", e)
                 pass
 
-        async def make_grind(image_paths):
-            images = [Image.open(path) for path in image_paths]
-            image_width, image_height = images[0].size
-            grid_width = 2 * image_width
-            grid_height = 2 * image_height
-            grid_image = Image.new('RGB', (grid_width, grid_height))
-
-            for i in range(2):
-                for j in range(2):
-                    index = i * 2 + j
-                    grid_image.paste(images[index], (j * image_width, i * image_height))
-
-            final_path = image_paths[3].replace(".png", "FINAL.png")
-            grid_image.save(final_path)
-
-            for i in range(4):
-                if delete_temp:
-                    os.remove(image_paths[i])
-
-            return final_path
-
         try:
             all_results = []
             for i in range(4):
@@ -236,7 +253,7 @@ class GenerateImages:
                     with zipfile.ZipFile(zip_name, "a") as zipf:
                         zipf.write(result)
 
-            grind_image = await make_grind(all_results)
+            grind_image = await make_grind(all_results, delete_temp=delete_temp)
             return grind_image
         except Exception as e:
             print("error in image_polinations:", e)
@@ -261,6 +278,158 @@ class GenerateImages:
             return image_path
         except Exception as e:
             print("error in character.ai:", e)
+
+    async def bing_image_generate(self, prompt, user_id, zip_name, delete_temp, fast=False):
+        def generate_images():
+            while True:
+                if prompt_row.lower() in self.blocked_requests:
+                    raise Exception("Запрос уже был запрешён")
+                encoded_word = prompt_row.encode('utf-8')
+                prompt = urllib.parse.quote(encoded_word)
+            
+                headers = {
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                    'accept-language': 'ru,en-US;q=0.9,en;q=0.8',
+                    'cookie': self.bing_cookies,
+                    'sec-ch-ua-platform-version': '"6.5.0"',
+                    'user-agent': user_agent
+                }
+            
+                params = {
+                    'q': prompt_row,
+                    'rt': '3',
+                    'FORM': 'GENCRE',
+                }
+            
+                data = {
+                    'q': prompt_row,
+                    'qs': 'ds',
+                }
+            
+                response = requests.post('https://www.bing.com/images/create', params=params, headers=headers, data=data)
+            
+                # print(response.text)
+            
+                if "Предупреждение о содержимом" in response.text:
+                    blocked_requests.append(prompt_row.lower())
+                    raise Exception("Не пройдена модерация запроса")
+                elif "Предоставьте более описательный запрос" in response.text:
+                    print("Не достаточно описан")
+                    time.sleep(1)
+                    prompt_row += ", HD, " + prompt_row
+                else:
+                    break
+            
+            pattern = r'"([^"]*bing\.com[^"]*)"'
+            matches = re.findall(pattern, response.text)
+            
+            request_id = None
+            
+            if matches:
+                # Если найдены совпадения, выводим их
+                for match in matches:
+                    if "https://www.bing.com/images/create?q=" in match:
+                        id_match = re.search(r'id=([^&]+)', match)
+                        if id_match:
+                            request_id = id_match.group(1)
+                            print(request_id)
+                            break
+                    # print(match)
+            else:
+                print("Совпадения не найдены")
+
+            if request_id is None:
+                raise Exception("Нет ID, вероятно запрос заблокирован")
+
+            url = 'https://www.bing.com/images/create'
+            headers = {
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'upgrade-insecure-requests': '1',
+                'cookie': self.bing_cookies,
+                'user-agent': user_agent
+            }
+            
+            params = {
+                'q': prompt_row,
+                'rt': '3',
+                'FORM': 'GENCRE',
+                'id': request_id,
+                'nfy': '1'
+            }
+            
+            response = requests.get(url, headers=headers, params=params)
+            
+            # print(response.text)
+            
+            pattern = r'IG:"([^"]+)"'
+            match = re.search(pattern, response.text)
+            
+            if match:
+                image_group_id = match.group(1)
+                print(image_group_id)
+            else:
+                raise Exception("Совпадения не найдено")
+
+            matches = []
+            i = 0
+            
+            while len(matches) < 4:
+                if i > 100:
+                    raise Exception("Timeout bing error")
+                time.sleep(1)
+                url = f"https://www.bing.com/images/create/async/results/{request_id}?q={prompt}+&IG={image_group_id}&IID=images.as"
+            
+                headers = {
+                    'cookie': self.bing_cookies,
+                    'sec-ch-ua-platform-version': '"6.5.0"',
+                    'user-agent': user_agent
+                }
+            
+                response = requests.get(url, headers=headers)
+                
+                pattern = r'thId=([^&]+)&quot;'
+                matches = re.findall(pattern, response.text)
+                image_urls = set()
+                for match in matches:
+                    image_id = match.replace('\\', '')
+                    image_urls.add(f"https://th.bing.com/th/id/{image_id}?pid=ImgGn")
+                print(image_urls)
+                i+=1
+            all_results = []
+            for i, image_url in enumerate(image_urls):
+                result = save_image_png(image_url, i)
+                all_results.append(result)
+            return all_results
+            
+        
+        def save_image_png(image_url, i):
+            response = requests.get(url, stream=True)
+            image_path = f"images/{user_id}_{self.queue}_{i}_r4.png"
+            if response.status_code == 200:
+                with open(, 'wb') as file:
+                    response.raw.decode_content = True
+                    shutil.copyfileobj(response.raw, file)
+                return image_path
+    
+            else:
+                print(f"Ошибка при загрузке изображения. Код статуса: {response.status_code}")
+        
+        rt = 3 if fast else 4
+        prompt_row = prompt
+
+        try:
+            all_results = await asyncio.to_thread(generate_images)
+
+            if zip_name:
+                for result in all_results:
+                    with zipfile.ZipFile(zip_name, "a") as zipf:
+                        zipf.write(result)
+
+            print("Bing images done!")
+            grind_image = await make_grind(all_results, delete_temp=delete_temp)
+            return grind_image
+        except Exception as e:
+            print("error in image_polinations:", e)
 
 async def reduce_image_resolution(image_path, target_size_mb=49):
     img = Image.open(image_path)
