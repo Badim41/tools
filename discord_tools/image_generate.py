@@ -146,11 +146,12 @@ class GenerateImages:
             self.bing_cookies = bing_cookies
 
         self.kandinskies = []
-
-        for i in range(len(secret_keys_kandinsky)):
-            self.kandinskies.append(Kandinsky_API(url='https://api-key.fusionbrain.ai/',
-                                                  secret_key=secret_keys_kandinsky[i],
-                                                  api_key=apis_kandinsky[i]))
+        
+        if secret_keys_kandinsky:
+            for i in range(len(secret_keys_kandinsky)):
+                self.kandinskies.append(Kandinsky_API(url='https://api-key.fusionbrain.ai/',
+                                                      secret_key=secret_keys_kandinsky[i],
+                                                      api_key=apis_kandinsky[i]))
 
         self.characters_ai = []
         for char_token in char_tokens:
