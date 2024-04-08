@@ -160,7 +160,7 @@ class GenerateImages:
         self.queue = 0
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
-                       zip_name=None, delete_temp=True):
+                       zip_name=None, delete_temp=True, bing_fast=False):
         self.queue += 1
         if zip_name:
             text_name = f"prompt_{user_id}.txt"
@@ -179,6 +179,9 @@ class GenerateImages:
             functions.append(self.character_ai(prompt, user_id))
         if character_ai:
             functions.append(self.character_ai(prompt, user_id))
+        if bing_image_generator:
+            # bing_image_generate(self, prompt, user_id, zip_name, delete_temp, fast=False):
+            functions.append(self.bing_image_generate(prompt, user_id, zip_name, delete_temp, bing_fast))
 
         results = [result for result in await asyncio.gather(*functions) if result and os.path.exists(result)]
 
@@ -279,7 +282,7 @@ class GenerateImages:
         except Exception as e:
             print("error in character.ai:", e)
 
-    async def bing_image_generate(self, prompt, user_id, zip_name, delete_temp, fast=False):
+    async def bing_image_generate(self, prompt, user_id, zip_name, delete_temp, fast):
         def generate_images():
             while True:
                 if prompt_row.lower() in self.blocked_requests:
