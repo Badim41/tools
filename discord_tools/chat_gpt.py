@@ -551,6 +551,16 @@ class ChatGPT:
         if error == 20:
             return None, "Request failed"
         
+        if len(text) < 3:
+            return False, ""
+
+        if text in self.previous_requests_moderation:
+            if self.testing:
+                self.logger.logging(
+                    f"Запрос '{text}' уже был выполнен, категория нарушений: {self.previous_requests_moderation[text][1]}",
+                    color=Color.GRAY)
+            return self.previous_requests_moderation[text]
+        
         if not self.openAI_moderation:
             request_message = (
             "Тебе нужно модерировать запросы на создание изображений. "
@@ -572,21 +582,16 @@ class ChatGPT:
                 response = json.loads(result)
                 if response.get("blocked"):
                     blocked_category = response.get("category")
+                    self.previous_requests_moderation[text] = (True, blocked_category)
                     return True, blocked_category
+                else:
+                    self.previous_requests_moderation[text] = (False, "")
+                    return False, ""
             except json.JSONDecodeError as e:
                 self.logger.logging(f"Error in moderation", e, result, text, color=Color.GRAY)
                 result1, result2 = await self.moderation_request(text, error=error + 1)
                 return result1, result2
-
-        if len(text) < 3:
             return False, ""
-
-        if text in self.previous_requests_moderation:
-            if self.testing:
-                self.logger.logging(
-                    f"Запрос '{text}' уже был выполнен, категория нарушений: {self.previous_requests_moderation[text][1]}",
-                    color=Color.GRAY)
-            return self.previous_requests_moderation[text]
 
         if self.is_running_moderation:
             if self.testing:
