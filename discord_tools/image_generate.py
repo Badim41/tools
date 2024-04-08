@@ -424,7 +424,7 @@ class GenerateImages:
         rt = 3 if fast else 4
         
         try:
-            all_results = await asyncio.to_thread(generate_images, prompt)
+            all_results = await asyncio.to_thread(generate_images, prompt_row=prompt)
 
             if zip_name:
                 for result in all_results:
