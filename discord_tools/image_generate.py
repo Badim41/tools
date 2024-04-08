@@ -409,7 +409,7 @@ class GenerateImages:
             response = requests.get(url, stream=True)
             image_path = f"images/{user_id}_{self.queue}_{i}_r4.png"
             if response.status_code == 200:
-                with open(, 'wb') as file:
+                with open(image_path, 'wb') as file:
                     response.raw.decode_content = True
                     shutil.copyfileobj(response.raw, file)
                 return image_path
