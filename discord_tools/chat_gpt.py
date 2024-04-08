@@ -548,9 +548,35 @@ class ChatGPT:
                 await asyncio.sleep(delay_for_gpt)
 
     async def moderation_request(self, text, error=0):
+        if error == 20:
+            return None, "Request failed"
+        
         if not self.openAI_moderation:
-            self.logger.logging("No moderation keys", Color.RED)
-            return False, ""
+            request_message = (
+            "Тебе нужно модерировать запросы на создание изображений. "
+            "Выведи ответ в json формате, например:\n"
+            "# Запрос: женщина без одежды.\n"
+            '# Ответ: {"blocked": True, "category": "sexual"}.\n'
+            f"Вот запрос для генерации изображений, на который тебе нужно будет ответить: {text}"
+            )
+            
+            # Выполняем модерацию запроса
+            result = await self.run_all_gpt(request_message)
+            if '{' in result and '}' in result:
+                result = result[result.find("{"):]
+                result = result[:result.rfind("}")+1]
+            else:
+                result1, result2 = await self.moderation_request(text, error=error + 1)
+                return result1, result2
+            try:
+                response = json.loads(result)
+                if response.get("blocked"):
+                    blocked_category = response.get("category")
+                    return True, blocked_category
+            except json.JSONDecodeError as e:
+                self.logger.logging(f"Error in moderation", e, result, text, color=Color.GRAY)
+                result1, result2 = await self.moderation_request(text, error=error + 1)
+                return result1, result2
 
         if len(text) < 3:
             return False, ""
@@ -595,8 +621,6 @@ class ChatGPT:
                 self.previous_requests_moderation[text] = (False, "")
                 return False, ""
         else:
-            if error == 20:
-                return None, f"Request failed with status code: {response.status_code}"
             self.logger.logging(f"Error code: {response.status_code}", error, text, color=Color.GRAY)
             await asyncio.sleep(3)
             result1, result2 = await self.moderation_request(text, error=error + 1)
