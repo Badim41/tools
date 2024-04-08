@@ -284,7 +284,7 @@ class GenerateImages:
             print("error in character.ai:", e)
 
     async def bing_image_generate(self, prompt, user_id, zip_name, delete_temp, fast):
-        def generate_images():
+        def generate_images(prompt_row):
             while True:
                 if prompt_row.lower() in self.blocked_requests:
                     raise Exception("Запрос уже был запрешён")
@@ -422,10 +422,9 @@ class GenerateImages:
             return None
         
         rt = 3 if fast else 4
-        prompt_row = prompt
-
+        
         try:
-            all_results = await asyncio.to_thread(generate_images)
+            all_results = await asyncio.to_thread(generate_images, prompt)
 
             if zip_name:
                 for result in all_results:
