@@ -413,6 +413,9 @@ class GenerateImages:
     
             else:
                 print(f"Ошибка при загрузке изображения. Код статуса: {response.status_code}")
+
+        if not self.bing_cookies:
+            return None
         
         rt = 3 if fast else 4
         prompt_row = prompt
