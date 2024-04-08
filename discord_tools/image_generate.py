@@ -159,7 +159,7 @@ class GenerateImages:
         self.blocked_requests = []
         self.queue = 0
 
-    async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
+    async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True, bing_image_generator=True,
                        zip_name=None, delete_temp=True, bing_fast=False):
         self.queue += 1
         if zip_name:
