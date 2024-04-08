@@ -405,7 +405,7 @@ class GenerateImages:
             
         
         def save_image_png(image_url, i):
-            response = requests.get(url, stream=True)
+            response = requests.get(image_url, stream=True)
             image_path = f"images/{user_id}_{self.queue}_{i}_r4.png"
             if response.status_code == 200:
                 with open(image_path, 'wb') as file:
