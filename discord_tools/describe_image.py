@@ -65,7 +65,7 @@ class AiDescribePictureAPI():
         self.file_name_gemini = response.json()['fileName']
 
     def get_answer(self, prompt):
-        url = "https://us-central1-describepicture.cloudfunctions.net/ask_gemini_pro_vision_model"
+        url = "https://us-central1-describepicture.cloudfunctions.net/ask_gemini_pro_vision_model_new_public"
 
         payload = {
             "imageUrl": f"https://storage.googleapis.com/describe-picture-image/{self.file_name_gemini}",
