@@ -20,26 +20,7 @@ def join_files(audio_paths, output_path, file_format: str, delete_paths=False):
     return result_path
 
 
-def slice_audio_file(input_file_path, slice_duration_ms, output_file1, output_file2, file_format: str):
-    audio = AudioSegment.from_file(input_file_path)
-    audio_duration = len(audio)
-    # print(slice_duration_ms, audio_duration)
-
-    if slice_duration_ms == audio_duration:
-        audio.export(os.path.join(SAVE_DIR, output_file1), format=file_format)
-        os.remove(output_file2)
-        return True
-    elif slice_duration_ms <= 0 or slice_duration_ms > audio_duration:
-        raise Exception("Недопустимая длительность среза")
-
-    slice_1 = audio[:slice_duration_ms]
-    slice_2 = audio[slice_duration_ms:]
-    slice_1.export(os.path.join(SAVE_DIR, output_file1), format=file_format)
-    slice_2.export(os.path.join(output_file2), format=file_format)
-
-
-def find_min_volume_timecodes(audio_file_path, start_duration=15, end_duration=29):
-    audio = AudioSegment.from_file(audio_file_path)
+def find_min_volume_timecodes(audio, start_duration=15, end_duration=29):
     audio_duration = len(audio)
 
     start_duration = start_duration*1000
@@ -61,21 +42,38 @@ def find_min_volume_timecodes(audio_file_path, start_duration=15, end_duration=2
     return min_loud_piece[0]
 
 
+def slice_audio_file(audio, output_file1, file_format: str, slice_duration_ms=None):
+    if slice_duration_ms is None:
+        slice_duration_ms = find_min_volume_timecodes(audio)
+
+    audio_duration = len(audio)
+
+    if slice_duration_ms == audio_duration:
+        audio.export(os.path.join(SAVE_DIR, output_file1), format=file_format)
+        return None, None
+    elif slice_duration_ms <= 0 or slice_duration_ms > audio_duration:
+        raise Exception("Недопустимая длительность среза")
+
+    slice_1 = audio[:slice_duration_ms]
+    slice_2 = audio[slice_duration_ms:]
+
+    return slice_1, slice_2
+
 def slice_file(audio_file_path, file_format: str, random_factor=""):
+    audio = AudioSegment.from_file(audio_file_path)
     i = 0
     while True:
-        # Получаем таймкод минимальной громкости
-        timecode = find_min_volume_timecodes(audio_file_path)
-
-        end_generation = slice_audio_file(input_file_path=audio_file_path, slice_duration_ms=timecode,
+        slice_1, slice_2 = slice_audio_file(audio=audio,
                                           output_file1=random_factor + f"input_{i}.{file_format}",
-                                          output_file2=audio_file_path, file_format=file_format)
-        print("Sliced:", random_factor + f"input_{i}.{file_format}")
-        i += 1
-        if end_generation:
+                                          file_format=file_format)
+        if slice_2 is None:
+            i += 1
             break
-
-        # print(f"Min volume at {timecode} milliseconds")
+        else:
+            slice_1.export(os.path.join(SAVE_DIR, random_factor + f"input_{i}.{file_format}"), format=file_format)
+            print("Sliced:", random_factor + f"input_{i}.{file_format}")
+            audio = slice_2
+            i += 1
 
     files = [os.path.join(SAVE_DIR, random_factor + f"input_{j}.{file_format}") for j in range(i)]
     for file in files:
