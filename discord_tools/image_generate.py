@@ -211,7 +211,7 @@ class Polinations_API:
 class CharacterAI_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
-        queue = [generator.queue % len(generator.char_tokens)]
+        queue = generator.queue % len(generator.char_tokens)
         char_token = generator.char_tokens[queue]
         self.character = Character_AI(char_id=char_id_images, char_token=char_token, testing=True)
         self.suffix = "r2"
@@ -251,7 +251,7 @@ class Bing_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
         self.app_version = '"6.5.0"'
-        queue = [generator.queue % len(generator.apis_kandinsky)]
+        queue = generator.queue % len(generator.bing_cookies)
         self.bing_cookie = generator.bing_cookies[queue]
         self.suffix = "r4"
         self.return_images = 4
@@ -425,7 +425,7 @@ class Kandinsky_API:
     def __init__(self, generator: GenerateImages):
         self.URL = 'https://api-key.fusionbrain.ai/'
 
-        queue = [generator.queue % len(generator.apis_kandinsky)]
+        queue = generator.queue % len(generator.apis_kandinsky)
 
         self.AUTH_HEADERS = {
             'X-Key': f'Key {generator.apis_kandinsky[queue]}',
