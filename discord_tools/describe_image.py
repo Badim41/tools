@@ -107,3 +107,17 @@ def describe_image(image_path, prompt, testing=False):
     describer.upload(image_path)
     nswf, answer = describer.get_answer(prompt)
     return nswf, answer
+
+def describe_image_multy_prompt(image_path, prompts, testing=False):
+    describer = AiDescribePictureAPI(testing=testing)
+    describer.upload(image_path)
+
+    nswf_all = False
+    answers = []
+    for prompt in prompts:
+        nswf, answer = describer.get_answer(prompt)
+        answers.append(answer)
+        if nswf:
+            nswf_all = True
+
+    return nswf_all, answers
