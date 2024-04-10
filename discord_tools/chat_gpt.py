@@ -1,7 +1,6 @@
 import asyncio
 import g4f
 import json
-import logging
 import os
 import requests
 import traceback

@@ -31,8 +31,17 @@ async def get_image_size(image_path):
         return None
 
 async def make_grind(image_paths, delete_temp=True):
+    def create_black_image(width, height):
+        return Image.new('RGB', (width, height), (0, 0, 0))
+
     images = [Image.open(path) for path in image_paths]
-    image_width, image_height = images[0].size
+
+    image_width, image_height = Image.open(image_paths[0]).size
+    black_image = create_black_image(image_width, image_height)
+
+    for i in range(4):
+        images.append(black_image)
+
     grid_width = 2 * image_width
     grid_height = 2 * image_height
     grid_image = Image.new('RGB', (grid_width, grid_height))
@@ -42,12 +51,12 @@ async def make_grind(image_paths, delete_temp=True):
             index = i * 2 + j
             grid_image.paste(images[index], (j * image_width, i * image_height))
 
-    final_path = image_paths[3].replace(".png", "FINAL.png")
+    final_path = image_paths[0].replace(".png", "FINAL.png")
     grid_image.save(final_path)
 
-    for i in range(4):
-        if delete_temp:
-            os.remove(image_paths[i])
+    if delete_temp:
+        for image_path in image_paths:
+            os.remove(image_path)
 
     return final_path
 
@@ -313,7 +322,7 @@ class GenerateImages:
                 # print(response.text)
             
                 if "Предупреждение о содержимом" in response.text:
-                    blocked_requests.append(prompt_row.lower())
+                    self.blocked_requests.append(prompt_row.lower())
                     raise Exception("Не пройдена модерация запроса")
                 elif "Предоставьте более описательный запрос" in response.text:
                     print("Не достаточно описан")
@@ -353,7 +362,7 @@ class GenerateImages:
             
             params = {
                 'q': prompt_row,
-                'rt': '3',
+                'rt': rt,
                 'FORM': 'GENCRE',
                 'id': request_id,
                 'nfy': '1'
@@ -377,6 +386,8 @@ class GenerateImages:
             
             while len(matches) < 4:
                 if i > 100:
+                    if len(matches) > 0:
+                        break
                     raise Exception("Timeout bing error")
                 time.sleep(1)
                 url = f"https://www.bing.com/images/create/async/results/{request_id}?q={prompt}+&IG={image_group_id}&IID=images.as"
@@ -397,6 +408,7 @@ class GenerateImages:
                     image_urls.add(f"https://th.bing.com/th/id/{image_id}?pid=ImgGn")
                 print(image_urls)
                 i+=1
+
             all_results = []
             for i, image_url in enumerate(image_urls):
                 result = save_image_png(image_url, i)
@@ -418,7 +430,7 @@ class GenerateImages:
 
         if not self.bing_cookies:
             return None
-        
+
         rt = 3 if fast else 4
         
         try:
