@@ -88,6 +88,8 @@ class GenerateImages:
 
         image_path = f"{RESULT_PATH}/{image_name}_{model_instance.suffix}_{self.queue}"
 
+        image_paths = []
+
         try:
             if model_instance.return_images == 1:
                 tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
