@@ -206,7 +206,7 @@ class GenerateImages:
                 return None
             api = self.kandinskies[self.queue % len(self.kandinskies)]
             model_id = api.get_model()
-            uuid = api.generate(prompt, model_id, images=4)
+            uuid = api.generate(prompt, model_id, images=1)
             image_data_base64 = await api.check_generation(request_id=uuid, attempts=60, delay=1)
 
             all_results = []
