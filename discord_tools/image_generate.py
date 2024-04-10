@@ -183,7 +183,7 @@ class GenerateImages:
         functions = []
         if kandinsky:
             functions.append(self.kandinsky_generate(prompt, user_id, zip_name, delete_temp))
-        if pollinations.ai and False:
+        if pollinations and False:
             functions.append(self.image_polinations(prompt, user_id, zip_name, delete_temp))
         if character_ai:
             functions.append(self.character_ai(prompt, user_id))
