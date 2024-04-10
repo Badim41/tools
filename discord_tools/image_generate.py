@@ -182,7 +182,7 @@ class GenerateImages:
 
         functions = []
         if kandinsky:
-            functions.append(self.kandinsky_generate(prompt, user_id))
+            functions.append(self.kandinsky_generate(prompt, user_id, zip_name, delete_temp))
         if polinations:
             functions.append(self.image_polinations(prompt, user_id, zip_name, delete_temp))
         if character_ai:
@@ -200,21 +200,36 @@ class GenerateImages:
 
         return results
 
-    async def kandinsky_generate(self, prompt, user_id):
+    async def kandinsky_generate(self, prompt, user_id, zip_name, delete_temp):
         try:
             if not self.kandinskies:
                 return None
             api = self.kandinskies[self.queue % len(self.kandinskies)]
             model_id = api.get_model()
-            uuid = api.generate(prompt, model_id)
-            image_data_base64 = await api.check_generation(request_id=uuid, attempts=10, delay=1)
-            selected_image_base64 = image_data_base64[0]
-            image_data_binary = base64.b64decode(selected_image_base64)
-            image_path = f"images/{user_id}_{self.queue}_r1.png"
-            with open(image_path, 'wb') as file:
-                file.write(image_data_binary)
-            print("Kandinsky done!", image_path)
-            return image_path
+            uuid = api.generate(prompt, model_id, images=4)
+            image_data_base64 = await api.check_generation(request_id=uuid, attempts=60, delay=1)
+
+            all_results = []
+
+            for i in range(4):
+                try:
+                    selected_image_base64 = image_data_base64[i]
+                    image_data_binary = base64.b64decode(selected_image_base64)
+                    image_path = f"images/{user_id}_{self.queue}_{i}_r1.png"
+                    with open(image_path, 'wb') as file:
+                        file.write(image_data_binary)
+                    all_results.append(image_path)
+                    print(f"Kandinsky done {i+1}/4", image_path)
+                except Exception as e:
+                    print(f"Error in kandisky_i({i+1}):", e)
+
+            if zip_name:
+                for result in all_results:
+                    with zipfile.ZipFile(zip_name, "a") as zipf:
+                        zipf.write(result)
+
+            grind_image = await make_grind(all_results, delete_temp=delete_temp)
+            return grind_image
         except Exception as e:
             print("Error in kandinsky:",e)
 
