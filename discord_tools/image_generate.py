@@ -255,7 +255,6 @@ class Bing_API:
         self.bing_cookie = generator.bing_cookies[queue]
         self.suffix = "r4"
         self.return_images = 4
-
         self.user_agent = user_agent
 
     def get_request_id(self, prompt_row, rt):
