@@ -17,8 +17,11 @@ from bs4 import BeautifulSoup
 from PIL import Image
 
 from discord_tools.character_ai_chat import Character_AI, char_id_images
+from discord_tools.logs import Logs, Color
 from discord_tools.upscaler import upscale_image
 from discord_tools.describe_image import describe_image, detect_bad_image
+
+logger = Logs(warnings=True)
 
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
@@ -29,10 +32,10 @@ async def get_image_size(image_path):
     try:
         with Image.open(image_path) as img:
             width, height = img.size
-            # print(f"Ширина изображения: {width}px, Высота изображения: {height}px")
+            # logger.logging(f"Ширина изображения: {width}px, Высота изображения: {height}px")
             return width, height
     except Exception as e:
-        print(f"Ошибка при получении размера изображения: {e}")
+        logger.logging(f"Ошибка при получении размера изображения: {e}")
         return None
 
 
@@ -197,15 +200,17 @@ class Polinations_API:
                 resized_image = cropeed_image.resize((1024, 1024))
                 resized_image.save(image_path)
             else:
-                print("NOT 1024*1024")
+                logger.logging("NOT 1024*1024")
                 image = Image.open(image_path)
                 cropeed_image = image.crop((0, 0, 1024, 950))
                 resized_image = cropeed_image.resize((1024, 1024))
                 resized_image.save(image_path)
 
+            logger.logging(f"{self.__class__.__name__} done: {image_path}")
+
             return image_path
         except:
-            print(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
 
 class CharacterAI_API:
@@ -234,9 +239,11 @@ class CharacterAI_API:
 
             loop.close()
 
+            logger.logging(f"{self.__class__.__name__} done: {image_path}")
+
             return image_path
         except:
-            print(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
     async def generate_image(self, prompt, image_path):
 
@@ -299,18 +306,18 @@ class Bing_API:
 
             # Не найден?
             if not element:
-                print("ERROR IN BING: NOT FOUND ELEMENT")
+                logger.logging("ERROR IN BING: NOT FOUND ELEMENT")
                 element = response.text
 
             if "Предупреждение о содержимом" in element:
                 self.generator.blocked_requests.append(prompt_row.lower())
                 raise Exception("Не пройдена модерация запроса")
             elif "Предоставьте более описательный запрос" in element:
-                print("Недостаточно описан")
+                logger.logging("Недостаточно описан")
                 time.sleep(1)
                 prompt_row += ", HD, " + prompt_row
             else:
-                print("Generate text:", element)
+                logger.logging("Generate text:", element)
                 break
 
             i += 1
@@ -400,7 +407,7 @@ class Bing_API:
             return image_path
 
         else:
-            print(f"Ошибка при загрузке изображения. Код статуса: {response.status_code}")
+            logger.logging(f"Ошибка при загрузке изображения. Код статуса: {response.status_code}")
 
     def generate(self, prompt, image_path, fast=False):
         try:
@@ -415,9 +422,11 @@ class Bing_API:
                 result = self.save_image(image_url=image_url, image_path=image_path + f"_{i}.png")
                 results.append(result)
 
+            logger.logging(f"{self.__class__.__name__} done: {results}")
+
             return results
         except:
-            print(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
 
 class Kandinsky_API:
@@ -481,9 +490,12 @@ class Kandinsky_API:
             uuid = self.generate_request(prompt, model_id)
             image_data_base64 = self.check_generation(request_id=uuid, attempts=60, delay=1)
             self.save_image(image_data_base64, image_path)
+
+            logger.logging(f"{self.__class__.__name__} done: {image_path}")
+
             return image_path
         except:
-            print(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
 
 async def reduce_image_resolution(image_path, target_size_mb=49):
