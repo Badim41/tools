@@ -383,6 +383,7 @@ class GenerateImages:
 
             matches = []
             i = 0
+            image_urls = set()
             
             while len(matches) < 4:
                 if i > 100:
@@ -402,7 +403,6 @@ class GenerateImages:
                 
                 pattern = r'thId=([^&]+)&quot;'
                 matches = re.findall(pattern, response.text)
-                image_urls = set()
                 for match in matches:
                     image_id = match.replace('\\', '')
                     image_urls.add(f"https://th.bing.com/th/id/{image_id}?pid=ImgGn")
