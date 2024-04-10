@@ -223,13 +223,16 @@ class CharacterAI_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
         queue = generator.queue % len(generator.char_tokens)
-        char_token = generator.char_tokens[queue]
-        self.character = Character_AI(char_id=char_id_images, char_token=char_token, testing=True)
+        self.char_token = generator.char_tokens[queue]
+        self.character = Character_AI(char_id=char_id_images, char_token=self.char_token, testing=True)
         self.suffix = "r2"
         self.return_images = 1
 
     def save_image(self, image_url, image_path):
-        response = requests.get(image_url, stream=True)
+        headers = {
+            'Authorization': f'Token {self.char_token}'
+        }
+        response = requests.get(image_url, stream=True, headers=headers)
         if response.status_code == 200:
             image = Image.open(io.BytesIO(response.content))
             image.save(image_path, "PNG")
