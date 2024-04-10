@@ -317,7 +317,7 @@ class Bing_API:
                 time.sleep(1)
                 prompt_row += ", HD, " + prompt_row
             else:
-                logger.logging("Generate text:", element)
+                logger.logging("Generate text:", element.text)
                 break
 
             i += 1
