@@ -192,7 +192,7 @@ class Polinations_API:
             return width, height
 
     def generate(self, prompt, image_path, seed=None):
-        if seed in None:
+        if seed is None:
             seed = random.randint(1, 9999999)
         try:
             image_site = f"https://image.pollinations.ai/prompt/{prompt}?&seed={seed}&nologo=true"
