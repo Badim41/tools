@@ -234,6 +234,30 @@ class GenerateImages:
             print("Error in kandinsky:",e)
 
     async def image_polinations(self, prompt, user_id, zip_name, delete_temp):
+        async def process_image(prompt, i):
+            image_site = f"https://image.pollinations.ai/prompt/{prompt}?&seed={random.randint(1, 9999999)}&nologo=true"
+            result = await asyncio.to_thread(save_image_png, image_site, i)
+            if await get_image_size(result):
+                x, y = await get_image_size(result)
+                if x == 1024 and y == 1024:
+                    image = Image.open(result)
+                    cropeed_image = image.crop((0, 0, 1024, 950))
+                    resized_image = cropeed_image.resize((1024, 1024))
+                    resized_image.save(result)
+                else:
+                    print("NOT 1024*1024")
+                    image = Image.open(result)
+                    cropeed_image = image.crop((0, 0, 1024, 950))
+                    resized_image = cropeed_image.resize((1024, 1024))
+                    resized_image.save(result)
+            else:
+                print("NOT 1024*1024, NOT FOUND X AND Y")
+                image = Image.open(result)
+                resized_image = image.resize((1024, 1024))
+                resized_image.save(result)
+
+            all_results.append(result)
+            print(f"image_polinations done{i + 1}/4!", result)
         def save_image_png(image_url, i):
             try:
                 response = requests.get(image_url)
@@ -248,31 +272,13 @@ class GenerateImages:
                 pass
 
         try:
-            all_results = []
-            for i in range(4):
-                image_site = f"https://image.pollinations.ai/prompt/{prompt}?&seed={random.randint(1, 9999999)}&nologo=true"
-                result = await asyncio.to_thread(save_image_png, image_site, i)
-                if await get_image_size(result):
-                    x, y = await get_image_size(result)
-                    if x == 1024 and y == 1024:
-                        image = Image.open(result)
-                        cropeed_image = image.crop((0, 0, 1024, 950))
-                        resized_image = cropeed_image.resize((1024, 1024))
-                        resized_image.save(result)
-                    else:
-                        print("NOT 1024*1024")
-                        image = Image.open(result)
-                        cropeed_image = image.crop((0, 0, 1024, 950))
-                        resized_image = cropeed_image.resize((1024, 1024))
-                        resized_image.save(result)
-                else:
-                    print("NOT 1024*1024, NOT FOUND X AND Y")
-                    image = Image.open(result)
-                    resized_image = image.resize((1024, 1024))
-                    resized_image.save(result)
 
-                all_results.append(result)
-                print(f"image_polinations done{i + 1}/4!", result)
+            all_results = []
+            tasks = []
+            for i in range(4):
+                tasks.append(process_image(prompt, i))
+
+            all_results = await asyncio.gather(*tasks)
 
             if zip_name:
                 for result in all_results:
