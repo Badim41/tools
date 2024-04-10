@@ -102,13 +102,13 @@ def detect_bad_image(image_path, testing=False):
     return nswf
 
 
-def describe_image(image_path, prompt, testing=False):
+def describe_image(image_path, prompt:str, testing=False):
     describer = AiDescribePictureAPI(testing=testing)
     describer.upload(image_path)
     nswf, answer = describer.get_answer(prompt)
     return nswf, answer
 
-def describe_image_multy_prompt(image_path, prompts, testing=False):
+def describe_image_multy_prompt(image_path, prompts:list, testing=False):
     describer = AiDescribePictureAPI(testing=testing)
     describer.upload(image_path)
 
