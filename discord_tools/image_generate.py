@@ -144,13 +144,13 @@ class GenerateImages:
 
         models = []
         if kandinsky:
-            models.append(Kandinsky_API(self))
+            models.append(Kandinsky_API)
         if polinations:
-            models.append(Polinations_API(self))
+            models.append(Polinations_API)
         if character_ai:
-            models.append(CharacterAI_API(self))
+            models.append(CharacterAI_API)
         if bing_image_generator:
-            models.append(Bing_API(self))
+            models.append(Bing_API)
 
         functions = [self.generate_image_grid(model_class=model, image_name=user_id, prompt=prompt, zip_name=zip_name,
                                               delete_temp=delete_temp, row_prompt=row_prompt) for model in models]
