@@ -87,13 +87,16 @@ class GenerateImages:
 
         image_path = f"{RESULT_PATH}/{image_name}_{model_instance.suffix}_{self.queue}"
 
-        if model_instance.return_images == 1:
-            tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
-            image_paths = await asyncio.gather(*tasks)
-        elif model_instance.return_images == 4:
-            image_paths = await asyncio.to_thread(model_instance.generate, prompt, image_path)
-        else:
-            raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
+        try:
+            if model_instance.return_images == 1:
+                tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
+                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=60)
+            elif model_instance.return_images == 4:
+                image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path), timeout=60)
+            else:
+                raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
+        except TimeoutError:
+            logger.logging(f"Image timeout {model_instance.__class__.__name__}")
 
         if not image_paths:
             return
