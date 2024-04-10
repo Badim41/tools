@@ -191,9 +191,12 @@ class Polinations_API:
             width, height = img.size
             return width, height
 
-    def generate(self, prompt, image_path, seed=random.randint(1, 9999999)):
+    def generate(self, prompt, image_path, seed=None):
+        if seed in None:
+            seed = random.randint(1, 9999999)
         try:
             image_site = f"https://image.pollinations.ai/prompt/{prompt}?&seed={seed}&nologo=true"
+            print("Polination ai:", seed, prompt)
             self.save_image(image_url=image_site, image_path=image_path)
 
             x, y = Polinations_API.get_image_size(image_path)
