@@ -96,8 +96,8 @@ class GenerateImages:
                 image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path), timeout=60)
             else:
                 raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
-        except TimeoutError:
-            logger.logging(f"Image timeout {model_instance.__class__.__name__}")
+        except Exception as e:
+            logger.logging(f"Image timeout {model_instance.__class__.__name__}", e)
 
         if not image_paths:
             return
@@ -196,7 +196,6 @@ class Polinations_API:
             seed = random.randint(1, 9999999)
         try:
             image_site = f"https://image.pollinations.ai/prompt/{prompt}?&seed={seed}&nologo=true"
-            print("Polination ai:", seed, prompt)
             self.save_image(image_url=image_site, image_path=image_path)
 
             x, y = Polinations_API.get_image_size(image_path)
