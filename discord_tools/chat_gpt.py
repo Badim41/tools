@@ -500,7 +500,7 @@ class ChatGPT:
                 return response.choices[0].message.content
             except Exception as e:
                 if self.testing:
-                    self.logger.logging("Error in DeepSeek_1:", response.text, color=Color.GRAY)
+                    self.logger.logging("Error in DeepSeek_1:", e, color=Color.GRAY)
                 
                 await asyncio.sleep(delay_for_gpt)
         else:

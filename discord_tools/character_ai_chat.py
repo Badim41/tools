@@ -23,12 +23,13 @@ class ModerateParams:
 
 
 class Character_AI:
-    def __init__(self, char_id, char_token, testing=False):
+    def __init__(self, char_id, char_token, testing=False, username_in_answer=False):
         self.char_id = char_id
         self.char_token = char_token
         self.user_id = None
         self.room_id = None
         self.testing = testing
+        self.username_in_answer = username_in_answer
 
     async def create_chat(self):
         client = characterai.PyAsyncCAI(self.char_token)
@@ -71,7 +72,7 @@ class Character_AI:
             print("No such url", e)
             pass
 
-    async def decode_response(self, data: dict, username_in_answer):
+    async def decode_response(self, data: dict):
         if self.testing:
             print("JSON DATA:", data)
         turn = data["turn"]
@@ -91,12 +92,12 @@ class Character_AI:
             await self.wait_for_image(image)
         except Exception:
             pass
-        if username_in_answer:
+        if self.username_in_answer:
             return f'{name}: {text}', turn_id, candidate_id, chat_id, primary_candidate_id, image
         else:
             return text, turn_id, candidate_id, chat_id, primary_candidate_id, image
 
-    async def get_answer(self, message: str, username_in_answer=False, moderate_answer=ModerateParams.until_good,
+    async def get_answer(self, message: str, moderate_answer=ModerateParams.until_good,
                          return_image=False):
         try:
             if not self.room_id or not self.user_id:
@@ -113,8 +114,7 @@ class Character_AI:
                                                 {'author_id': f'{self.user_id}'})
 
                 text, turn_id, candidate_id, chat_id, primary_candidate_id, image = \
-                    await self.decode_response(data,
-                                               username_in_answer)
+                    await self.decode_response(data)
 
                 # пока есть маты
                 while True:
@@ -131,8 +131,7 @@ class Character_AI:
                         await chat2.rate(1, chat_id, turn_id, candidate_id)
                         logger.logging("Оставлен плохой отзыв!", color=Color.GRAY)
                         data = await chat2.next_message(self.char_id, chat_id, turn_id)
-                        text, turn_id, candidate_id, chat_id, primary_candidate_id, image = await self.decode_response(data,
-                                                                                                                       username_in_answer)
+                        text, turn_id, candidate_id, chat_id, primary_candidate_id, image = await self.decode_response(data)
                     else:
                         raise Exception("Не выбран тип модерации")
 
