@@ -283,13 +283,13 @@ class ChatGPT:
         if mode == ChatGPT_Mode.fast:
             # Пробуем запустить настоящие GPT первыми
             for value in values:
-                answer = await self.run_official_gpt(messages, 1, value, user_id, gpt_role)
+                answer = await self.run_official_gpt(messages, 1, value, gpt_role)
                 if answer and prompt not in answer:
                     chat_history.append({"role": "assistant", "content": answer})
                     await save_history(chat_history, user_id)
                     return answer
                 
-                answer = await self.run_deep_seek(messages, 1, value, user_id, gpt_role)
+                answer = await self.run_deep_seek(messages, 1, value, gpt_role)
                 if answer:
                     chat_history.append({"role": "assistant", "content": answer})
                     await save_history(chat_history, user_id)
@@ -311,8 +311,8 @@ class ChatGPT:
                 return result
 
         elif mode == ChatGPT_Mode.all:
-            functions = [self.run_official_gpt(messages, 1, value, user_id, gpt_role) for value in values]
-            functions += [self.run_deep_seek(messages, 1, value, user_id, gpt_role) for value in values]
+            functions = [self.run_official_gpt(messages, 1, value, gpt_role) for value in values]
+            functions += [self.run_deep_seek(messages, 1, value, gpt_role) for value in values]
 
             functions += get_fake_gpt_functions(1)
 
@@ -415,7 +415,7 @@ class ChatGPT:
         except Exception as e:
             self.logger.logging("error gpt-off3", str(traceback.format_exc()))
 
-    async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
+    async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, gpt_role, error=False):
 
         if key_gpt:
             # нет ключей
@@ -425,7 +425,7 @@ class ChatGPT:
 
             try:
                 openai_key = self.openAI_keys[self.gpt_queue % len(self.openAI_keys)]
-                client = AsyncOpenAI(api_key="sk-" + openai_key)
+                client = AsyncOpenAI(api_key="sk-" + openai_key.replace("sk-",""))
                 completion = await client.chat.completions.create(
                     model="gpt-3.5-turbo-1106",
                     messages=messages
@@ -440,13 +440,13 @@ class ChatGPT:
                     self.openAI_keys = self.openAI_keys[1:]
 
                 if self.openAI_keys and not error:
-                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
+                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, error=True)
                 else:
                     await asyncio.sleep(delay_for_gpt)
         else:
             # нет ключей
             if not self.openAI_auth_keys:
-                return await self.run_no_auth_official_gpt(messages, delay_for_gpt, user_id)
+                return await self.run_no_auth_official_gpt(messages, delay_for_gpt)
 
             try:
                 auth_key = self.openAI_auth_keys[self.gpt_queue % len(self.openAI_auth_keys)]
@@ -474,11 +474,11 @@ class ChatGPT:
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
                 if self.openAI_auth_keys and not error:
-                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
+                    return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, error=True)
                 else:
                     await asyncio.sleep(delay_for_gpt)
 
-    async def run_deep_seek(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, clear_context=False):
+    async def run_deep_seek(self, messages, delay_for_gpt: int, key_gpt: bool, gpt_role, clear_context=False):
         if key_gpt:
             # нет ключей
             if not self.deep_seek_keys:
@@ -487,7 +487,7 @@ class ChatGPT:
             
             try:
                 
-                client = AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0], base_url="https://api.deepseek.com/v1")
+                client = AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0].replace("sk-",""), base_url="https://api.deepseek.com/v1")
                 
                 response = await client.chat.completions.create(
                     model="deepseek-chat",
