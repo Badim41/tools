@@ -84,6 +84,7 @@ class GenerateImages:
 
         if model_instance.suffix not in ["r2", "r3"]:
             prompt = row_prompt
+            print(f"Changed prompt for {model_instance.__class__.__name__}: {row_prompt}")
 
         image_path = f"{RESULT_PATH}/{image_name}_{model_instance.suffix}_{self.queue}"
 
