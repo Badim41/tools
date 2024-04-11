@@ -189,7 +189,7 @@ class Polinations_API:
         self.suffix = "r3"
         self.return_images = 1
 
-    def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT//1.2):
+    def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
         response = requests.get(image_url, timeout=timeout)
         if response.status_code == 200:
             image = Image.open(io.BytesIO(response.content))
@@ -321,6 +321,10 @@ class Bing_API:
 
             response = requests.post('https://www.bing.com/images/create', params=params, headers=headers,
                                      data=data)
+
+            if not response.status_code == 200:
+                logger.logging("Bing image status:", response.status_code, color=Color.RED)
+                continue
 
             soup = BeautifulSoup(response.text, 'html.parser')
 
