@@ -348,6 +348,7 @@ class Bing_API:
             i += 1
             if len(prompt) > max_request_len:
                 prompt = f"Табличка с текстом \"{prompt_row}\""
+                logger.logging("Запрос изменён на:", prompt, color=Color.BLUE)
 
     def get_image_group_id(self, prompt_row, rt, request_id):
         url = 'https://www.bing.com/images/create'
