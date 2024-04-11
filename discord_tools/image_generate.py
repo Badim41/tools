@@ -26,6 +26,7 @@ logger = Logs(warnings=True)
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
 RESULT_PATH = 'images'
+GLOBAL_IMAGE_TIMEOUT = 120
 
 
 async def get_image_size(image_path):
@@ -93,7 +94,7 @@ class GenerateImages:
         try:
             if model_instance.return_images == 1:
                 tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
-                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=120)
+                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT)
             elif model_instance.return_images == 4:
                 image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
                                                      timeout=60)
@@ -182,8 +183,8 @@ class Polinations_API:
         self.suffix = "r3"
         self.return_images = 1
 
-    def save_image(self, image_url, image_path):
-        response = requests.get(image_url)
+    def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT//1.2):
+        response = requests.get(image_url, timeout=timeout)
         if response.status_code == 200:
             image = Image.open(io.BytesIO(response.content))
             image.save(image_path, "PNG")
