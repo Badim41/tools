@@ -276,12 +276,15 @@ class Bing_API:
         self.user_agent = user_agent
 
     def get_request_id(self, prompt_row, rt):
+        max_request_len = 479
+        prompt = prompt_row[:max_request_len]
+
         i = 0
         while True:
             if i == 50:
                 raise Exception("Спустя 50 попыток не отправлен запрос")
 
-            if prompt_row.lower() in self.generator.blocked_requests:
+            if prompt.lower() in self.generator.blocked_requests:
                 raise Exception("Запрос уже был запрешён")
 
             headers = {
@@ -293,13 +296,13 @@ class Bing_API:
             }
 
             params = {
-                'q': prompt_row,
+                'q': prompt,
                 'rt': rt,
                 'FORM': 'GENCRE',
             }
 
             data = {
-                'q': prompt_row,
+                'q': prompt,
                 'qs': 'ds',
             }
 
@@ -321,14 +324,13 @@ class Bing_API:
                 element = response.text
 
             if "Предупреждение о содержимом" in element:
-                self.generator.blocked_requests.append(prompt_row.lower())
+                self.generator.blocked_requests.append(prompt.lower())
                 raise Exception("Не пройдена модерация запроса")
             elif "Предоставьте более описательный запрос" in element:
                 logger.logging("Недостаточно описан")
                 time.sleep(1)
-                prompt_row += ", HD, " + prompt_row
+                prompt += ", HD, " + prompt
             else:
-                i += 5
                 logger.logging("Generate text:", element.text)
                 pattern = r'"([^"]*bing\.com[^"]*)"'
                 matches = re.findall(pattern, response.text)
@@ -341,9 +343,11 @@ class Bing_API:
                                 return id_match.group(1)
                 logger.logging("Вероятно недостаточно описан")
                 time.sleep(1)
-                prompt_row += ", HD, " + prompt_row
+                prompt += ", HD, " + prompt
 
             i += 1
+            if len(prompt) > max_request_len:
+                prompt = f"Табличка с текстом \"{prompt_row}\""
 
     def get_image_group_id(self, prompt_row, rt, request_id):
         url = 'https://www.bing.com/images/create'
