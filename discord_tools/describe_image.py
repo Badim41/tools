@@ -82,7 +82,7 @@ class AiDescribePictureAPI():
         response = requests.request("POST", url, json=payload, headers=headers)
 
         if response.status_code == 500:
-            return True, "NSFW DETECTED"
+            return False, "-"
 
         if self.testing:
             logger.logging("ANSWER:", response, response.text)
