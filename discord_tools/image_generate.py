@@ -106,7 +106,13 @@ class GenerateImages:
         if not image_paths:
             return
 
-        images = [Image.open(path) for path in image_paths]
+        images = []
+
+        for path in image_paths:
+            try:
+                images.append(Image.open(path))
+            except Exception as e:
+                logger.logging(f"warn in {model_instance.__class__.__name__}", e)
 
         image_width, image_height = Image.open(image_paths[0]).size
         black_image = create_black_image(image_width, image_height)
