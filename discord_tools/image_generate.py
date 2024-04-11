@@ -328,7 +328,7 @@ class Bing_API:
                 time.sleep(1)
                 prompt_row += ", HD, " + prompt_row
             else:
-                i += 10
+                i += 5
                 logger.logging("Generate text:", element.text)
                 pattern = r'"([^"]*bing\.com[^"]*)"'
                 matches = re.findall(pattern, response.text)
