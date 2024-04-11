@@ -282,7 +282,7 @@ class Bing_API:
         i = 0
         while True:
             if i == attempts:
-                raise Exception("Спустя 50 попыток не отправлен запрос")
+                raise Exception(f"Спустя {attempts} попыток не отправлен запрос")
 
             if prompt.lower() in self.generator.blocked_requests:
                 raise Exception("Запрос уже был запрешён")
