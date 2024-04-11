@@ -276,7 +276,7 @@ class Bing_API:
         self.return_images = 4
         self.user_agent = user_agent
 
-    def get_request_id(self, prompt_row, rt, attempts=50, adding_details=None):
+    def get_request_id(self, prompt_row, rt, attempts=50, adding_details=None, delay=0.5):
         if not adding_details:
             adding_details = ["HD, 4K, 8K", "высокого разрешения, качественные, четкие",
                               "подробные, детализированные, 3D рендер",
@@ -334,7 +334,7 @@ class Bing_API:
                 raise Exception("Не пройдена модерация запроса")
             elif "Предоставьте более описательный запрос" in response.text:
                 logger.logging("Недостаточно описан")
-                time.sleep(1)
+                time.sleep(delay)
                 prompt += ", " + adding_details[i % len(adding_details)] + ", " + prompt
             else:
                 logger.logging("Generate text:", element.text)
@@ -348,7 +348,7 @@ class Bing_API:
                             if id_match:
                                 return id_match.group(1)
                 logger.logging("Вероятно недостаточно описан")
-                time.sleep(1)
+                time.sleep(delay)
                 prompt += ", " + adding_details[i % len(adding_details)] + ", " + prompt
 
             i += 1
