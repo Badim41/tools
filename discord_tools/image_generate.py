@@ -384,7 +384,7 @@ class Bing_API:
         else:
             raise Exception("Совпадения не найдено")
 
-    def check_generation(self, prompt_row, request_id, image_group_id, timeout=45):
+    def check_generation(self, prompt_row, request_id, image_group_id, timeout=30):
 
         encoded_word = prompt_row.encode('utf-8')
         prompt = urllib.parse.quote(encoded_word)
@@ -412,10 +412,11 @@ class Bing_API:
 
             pattern = r'thId=([^&]+)&quot;'
             matches = re.findall(pattern, response.text)
-            for match in matches:
-                image_id = match.replace('\\', '')
-                image_urls.add(f"https://th.bing.com/th/id/{image_id}?pid=ImgGn")
             i += 1
+
+        for match in matches:
+            image_id = match.replace('\\', '')
+            image_urls.add(f"https://th.bing.com/th/id/{image_id}?pid=ImgGn")
 
         return image_urls
 
