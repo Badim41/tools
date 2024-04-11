@@ -96,10 +96,13 @@ class AiDescribePictureAPI():
 
 
 def detect_bad_image(image_path, testing=False):
-    describer = AiDescribePictureAPI(testing=testing)
-    describer.upload(image_path)
-    nswf, _ = describer.get_answer(".")  # Запрос неважен
-    return nswf
+    try:
+        describer = AiDescribePictureAPI(testing=testing)
+        describer.upload(image_path)
+        nswf, _ = describer.get_answer(".")  # Запрос неважен
+        return nswf
+    except:
+        return None
 
 
 def describe_image(image_path, prompt:str, testing=False):
