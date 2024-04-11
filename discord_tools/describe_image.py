@@ -106,10 +106,15 @@ def detect_bad_image(image_path, testing=False):
 
 
 def describe_image(image_path, prompt:str, testing=False):
-    describer = AiDescribePictureAPI(testing=testing)
-    describer.upload(image_path)
-    nswf, answer = describer.get_answer(prompt)
-    return nswf, answer
+    try:
+        describer = AiDescribePictureAPI(testing=testing)
+        describer.upload(image_path)
+        nswf, answer = describer.get_answer(prompt)
+        return nswf, answer
+    except Exception as e:
+        print(e)
+        return None, "-"
+
 
 def describe_image_multy_prompt(image_path, prompts:list, testing=False):
     describer = AiDescribePictureAPI(testing=testing)
