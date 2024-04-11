@@ -95,7 +95,8 @@ class GenerateImages:
                 tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
                 image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=120)
             elif model_instance.return_images == 4:
-                image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path), timeout=60)
+                image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
+                                                     timeout=60)
             else:
                 raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
         except Exception as e:
@@ -275,7 +276,12 @@ class Bing_API:
         self.return_images = 4
         self.user_agent = user_agent
 
-    def get_request_id(self, prompt_row, rt, attempts=50, adding_details=", HD, 4K, 8K, "):
+    def get_request_id(self, prompt_row, rt, attempts=50, adding_details=None):
+        if not adding_details:
+            adding_details = ["HD, 4K, 8K", "высокого разрешения, качественные, четкие",
+                              "подробные, детализированные, 3D рендер",
+                              "яркие, реалистичные, превосходные"]
+
         max_request_len = 479
         prompt = prompt_row[:max_request_len]
 
@@ -329,7 +335,7 @@ class Bing_API:
             elif "Предоставьте более описательный запрос" in response.text:
                 logger.logging("Недостаточно описан")
                 time.sleep(1)
-                prompt += adding_details + prompt
+                prompt += ", " + adding_details[i % len(adding_details)] + ", " + prompt
             else:
                 logger.logging("Generate text:", element.text)
                 pattern = r'"([^"]*bing\.com[^"]*)"'
@@ -343,11 +349,11 @@ class Bing_API:
                                 return id_match.group(1)
                 logger.logging("Вероятно недостаточно описан")
                 time.sleep(1)
-                prompt += adding_details + prompt
+                prompt += ", " + adding_details[i % len(adding_details)] + ", " + prompt
 
             i += 1
             if len(prompt) > max_request_len:
-                i = attempts - 1 # ещё 1 шанс на запрос
+                i = attempts - 1  # ещё 1 шанс на запрос
                 prompt = f"Табличка с текстом \"{prompt_row}\""
                 logger.logging("Запрос изменён на:", prompt, color=Color.BLUE)
 
