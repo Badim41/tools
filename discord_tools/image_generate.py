@@ -329,7 +329,7 @@ class Bing_API:
             elif "Предоставьте более описательный запрос" in element:
                 logger.logging("Недостаточно описан")
                 time.sleep(1)
-                prompt += ", HD, " + prompt
+                prompt += ", HD, 4K, 8K, " + prompt
             else:
                 logger.logging("Generate text:", element.text)
                 pattern = r'"([^"]*bing\.com[^"]*)"'
