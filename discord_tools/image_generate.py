@@ -328,24 +328,19 @@ class Bing_API:
                 time.sleep(1)
                 prompt_row += ", HD, " + prompt_row
             else:
+                i += 10
                 logger.logging("Generate text:", element.text)
-                break
+                pattern = r'"([^"]*bing\.com[^"]*)"'
+                matches = re.findall(pattern, response.text)
+
+                if matches:
+                    for match in matches:
+                        if "https://www.bing.com/images/create?q=" in match:
+                            id_match = re.search(r'id=([^&]+)', match)
+                            if id_match:
+                                return id_match.group(1)
 
             i += 1
-
-        pattern = r'"([^"]*bing\.com[^"]*)"'
-        matches = re.findall(pattern, response.text)
-
-        if matches:
-            for match in matches:
-                if "https://www.bing.com/images/create?q=" in match:
-                    id_match = re.search(r'id=([^&]+)', match)
-                    if id_match:
-                        return id_match.group(1)
-        else:
-            raise Exception("Совпадения не найдены")
-
-        raise Exception("Нет ID, вероятно запрос заблокирован")
 
     def get_image_group_id(self, prompt_row, rt, request_id):
         url = 'https://www.bing.com/images/create'
