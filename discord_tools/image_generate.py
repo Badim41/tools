@@ -512,6 +512,11 @@ class Kandinsky_API:
             model_id = self.get_model()
             uuid = self.generate_request(prompt, model_id)
             image_data_base64 = self.check_generation(request_id=uuid, attempts=60, delay=1)
+
+            if image_data_base64 is None:
+                logger.logging(f"Error: image_data_base64 in {self.__class__.__name__} is None")
+                return
+
             self.save_image(image_data_base64, image_path)
 
             logger.logging(f"{self.__class__.__name__} done: {image_path}")
