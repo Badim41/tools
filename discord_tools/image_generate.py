@@ -26,7 +26,7 @@ logger = Logs(warnings=True)
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
 RESULT_PATH = 'images'
-GLOBAL_IMAGE_TIMEOUT = 120
+GLOBAL_IMAGE_TIMEOUT = 60
 
 
 async def get_image_size(image_path):
@@ -94,10 +94,10 @@ class GenerateImages:
         try:
             if model_instance.return_images == 1:
                 tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
-                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT)
+                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT+60)
             elif model_instance.return_images == 4:
                 image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
-                                                     timeout=60)
+                                                     timeout=GLOBAL_IMAGE_TIMEOUT+60)
             else:
                 raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
         except Exception as e:
@@ -395,7 +395,7 @@ class Bing_API:
         else:
             raise Exception("Совпадения не найдено")
 
-    def check_generation(self, prompt_row, request_id, image_group_id, timeout=30, delay=1):
+    def check_generation(self, prompt_row, request_id, image_group_id, timeout=GLOBAL_IMAGE_TIMEOUT, delay=1):
 
         encoded_word = prompt_row.encode('utf-8')
         prompt = urllib.parse.quote(encoded_word)
