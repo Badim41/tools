@@ -93,7 +93,7 @@ class GenerateImages:
         try:
             if model_instance.return_images == 1:
                 tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
-                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=60)
+                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=180)
             elif model_instance.return_images == 4:
                 image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path), timeout=60)
             else:
