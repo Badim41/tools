@@ -384,7 +384,7 @@ class Bing_API:
         else:
             raise Exception("Совпадения не найдено")
 
-    def check_generation(self, prompt_row, request_id, image_group_id, timeout=30):
+    def check_generation(self, prompt_row, request_id, image_group_id, timeout=30, delay=1):
 
         encoded_word = prompt_row.encode('utf-8')
         prompt = urllib.parse.quote(encoded_word)
@@ -399,7 +399,7 @@ class Bing_API:
                     break
                 raise Exception("Timeout bing error")
 
-            time.sleep(1)
+            time.sleep(delay)
             url = f"https://www.bing.com/images/create/async/results/{request_id}?q={prompt}+&IG={image_group_id}&IID=images.as"
 
             headers = {
