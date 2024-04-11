@@ -275,13 +275,13 @@ class Bing_API:
         self.return_images = 4
         self.user_agent = user_agent
 
-    def get_request_id(self, prompt_row, rt):
+    def get_request_id(self, prompt_row, rt, attempts=50, adding_details=", HD, 4K, 8K, "):
         max_request_len = 479
         prompt = prompt_row[:max_request_len]
 
         i = 0
         while True:
-            if i == 50:
+            if i == attempts:
                 raise Exception("Спустя 50 попыток не отправлен запрос")
 
             if prompt.lower() in self.generator.blocked_requests:
@@ -323,13 +323,13 @@ class Bing_API:
                 logger.logging("ERROR IN BING: NOT FOUND ELEMENT")
                 element = response.text
 
-            if "Предупреждение о содержимом" in element:
+            if "Предупреждение о содержимом" in response.text:
                 self.generator.blocked_requests.append(prompt.lower())
                 raise Exception("Не пройдена модерация запроса")
-            elif "Предоставьте более описательный запрос" in element:
+            elif "Предоставьте более описательный запрос" in response.text:
                 logger.logging("Недостаточно описан")
                 time.sleep(1)
-                prompt += ", HD, 4K, 8K, " + prompt
+                prompt += adding_details + prompt
             else:
                 logger.logging("Generate text:", element.text)
                 pattern = r'"([^"]*bing\.com[^"]*)"'
@@ -343,10 +343,11 @@ class Bing_API:
                                 return id_match.group(1)
                 logger.logging("Вероятно недостаточно описан")
                 time.sleep(1)
-                prompt += ", HD, " + prompt
+                prompt += adding_details + prompt
 
             i += 1
             if len(prompt) > max_request_len:
+                i = attempts - 1 # ещё 1 шанс на запрос
                 prompt = f"Табличка с текстом \"{prompt_row}\""
                 logger.logging("Запрос изменён на:", prompt, color=Color.BLUE)
 
