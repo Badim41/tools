@@ -478,7 +478,7 @@ class ChatGPT:
                 else:
                     await asyncio.sleep(delay_for_gpt)
 
-    async def run_deep_seek(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, clear_context=False):
+    async def run_deep_seek(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, clear_context=True):
         if key_gpt:
             # нет ключей
             if not self.deep_seek_keys:
