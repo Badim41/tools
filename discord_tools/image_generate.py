@@ -339,6 +339,10 @@ class Bing_API:
                             id_match = re.search(r'id=([^&]+)', match)
                             if id_match:
                                 return id_match.group(1)
+                else:
+                    logger.logging("Вероятно недостаточно описан")
+                    time.sleep(1)
+                    prompt_row += ", HD, " + prompt_row
 
             i += 1
 
