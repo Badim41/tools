@@ -239,6 +239,7 @@ class Lmsys_API:
 
         library_path = os.path.dirname(__file__)
         file_path = f"{library_path}\examples\cookie.png"
+        print("Library path?", file_path)
         subprocess.run(f'start {file_path}', shell=True)
         self.cookie = input()
         set_database("default", "cookie", self.cookie)
