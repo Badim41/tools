@@ -510,12 +510,14 @@ class ChatGPT:
                 return
 
             try:
+                formatted_messages = '\n'.join(f"# {message['role']}:\n{message['content']}" for message in messages)
+
                 url = 'https://chat.deepseek.com/api/v0/chat/completions'
                 headers = {
                     'authorization': f'Bearer {self.deep_seek_auth_keys[0]}',
                 }
                 data = {
-                    "message": messages[-1]['content'],
+                    "message": formatted_messages,
                     "stream": True,
                     "model_class": "deepseek_chat"
                 }
@@ -656,3 +658,21 @@ class ChatGPT:
         summarized_text = '\n'.join(gpt_responses)
 
         return summarized_text
+
+def convert_answer_to_json(answer, keys):
+    if '{' in answer and '}' in answer:
+        answer = answer[answer.find("{"):]
+        answer = answer[:answer.rfind("}") + 1]
+    else:
+        print("Не json")
+        return False, "Не json"
+
+    try:
+        response = json.loads(answer)
+        for key in keys:
+            if not response.get(key):
+                print("Нет ключа")
+                return False, "Нет ключа"
+    except json.JSONDecodeError as e:
+        print("Error", e)
+        return False, str(e)

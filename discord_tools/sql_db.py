@@ -18,6 +18,7 @@ cursor.execute('''
 ''')
 conn.commit()
 
+
 @asynccontextmanager
 async def database_lock():
     lock = asyncio.Lock()
@@ -138,3 +139,30 @@ async def set_database(section, key, value):
 
         # Закрываем соединение
         conn.close()
+
+
+def set_database_not_async(section, key, value):
+    section = str(section)
+    key = str(key)
+    value = str(value)
+    # Создаем подключение к SQLite и курсор
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Создаем таблицу, если она не существует
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                section TEXT,
+                key TEXT NOT NULL UNIQUE,
+                value TEXT
+            )
+        ''')
+    conn.commit()
+
+    # Устанавливаем значение для ключа
+    cursor.execute('INSERT OR REPLACE INTO config (section, key, value) VALUES (?, ?, ?)', (section, key, value))
+    conn.commit()
+
+    # Закрываем соединение
+    conn.close()
