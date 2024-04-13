@@ -1,0 +1,944 @@
+import base64
+import json
+import os
+import re
+import requests
+import time
+from requests.utils import dict_from_cookiejar
+
+
+class Astica_Describe_Params:
+    describe = "describe"
+    objects = "objects"
+    categories = "categories"
+    moderate = "moderate"
+    tags = "tags"
+    brands = "brands"
+    color = "color"
+    faces = "faces"
+    celebrities = "celebrities"
+    landmarks = "landmarks"
+    gpt = "gpt"  # caption_GPTS
+    gpt_detailed = "gpt_detailed"  # Slower
+
+
+class Astica_Response_Example:
+    describe = {
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 2.3449999999999998
+        },
+        "status": "success",
+        "caption": {
+            "text": "a close-up of a computer screen",
+            "confidence": 0.7
+        },
+        "metadata": {
+            "width": 250,
+            "height": 250
+        },
+        "celebrities": [],
+        "landmarks": []
+    }
+
+    objects = {
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        },
+        "status": "success",
+        "objects": [],
+        "metadata": {
+            "width": 250,
+            "height": 250
+        },
+        "celebrities": [],
+        "landmarks": []
+    }
+
+    categories = {
+        "status": "success",
+        "categories": [
+            {
+                "name": "others_",
+                "score": 0.0078125
+            },
+            {
+                "name": "outdoor_",
+                "score": 0.01171875
+            },
+            {
+                "name": "text_sign",
+                "score": 0.84375
+            }
+        ],
+        "celebrities": [],
+        "landmarks": [],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        }
+    }
+
+    moderate = {
+        "status": "success",
+        "moderate": {
+            "isAdultContent": False,
+            "isRacyContent": False,
+            "isGoryContent": False,
+            "adultScore": 0.0022407304495573044,
+            "racyScore": 0.003612220985814929,
+            "goreScore": 0.000581094529479742
+        },
+        "celebrities": [],
+        "landmarks": [],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        }
+    }
+    tags = {
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        },
+        "status": "success",
+        "tags": [
+            {
+                "name": "screenshot",
+                "confidence": 0.94
+            },
+            {
+                "name": "graphic design",
+                "confidence": 0.9
+            },
+            {
+                "name": "graphics",
+                "confidence": 0.89
+            },
+            {
+                "name": "colorfulness",
+                "confidence": 0.88
+            },
+            {
+                "name": "rectangle",
+                "confidence": 0.87
+            },
+            {
+                "name": "text",
+                "confidence": 0.84
+            },
+            {
+                "name": "design",
+                "confidence": 0.52
+            }
+        ],
+        "metadata": {
+            "width": 250,
+            "height": 250
+        },
+        "celebrities": [],
+        "landmarks": []
+    }
+    brands = {
+        "status": "success",
+        "brands": [],
+        "celebrities": [],
+        "landmarks": [],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        }
+    }
+
+    color = {
+        "status": "success",
+        "colors": {
+            "dominantColorForeground": "White",
+            "dominantColorBackground": "Blue",
+            "dominantColors": [
+                "White",
+                "Blue"
+            ],
+            "accentColor": "0132CA",
+            "isBwImg": False,
+            "isBWImg": False
+        },
+        "celebrities": [],
+        "landmarks": [],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        }
+    }
+
+    faces = {
+        "status": "success",
+        "faces": [],
+        "celebrities": [],
+        "landmarks": [],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        }
+    }
+
+    celebrities = {
+        "status": "success",
+        "celebrities": [],
+        "landmarks": [],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        }
+    }
+
+    landmarks = {
+        "status": "success",
+        "celebrities": [],
+        "landmarks": [],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 1.65
+        }
+    }
+    gpt = {
+        "readResult": {
+            "stringIndexType": "TextElements",
+            "content": "8K",
+            "pages": {}
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 31.211699999999997
+        },
+        "status": "success",
+        "caption": {
+            "text": "a close-up of a computer screen",
+            "confidence": 0.7
+        },
+        "caption_list": [
+            {
+                "text": "a close-up of a computer screen",
+                "confidence": 0.7,
+                "rectangle": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 250,
+                    "h": 250
+                }
+            },
+            {
+                "text": "a white arrow with black text",
+                "confidence": 0.68,
+                "rectangle": {
+                    "x": 46,
+                    "y": 0,
+                    "w": 177,
+                    "h": 243
+                }
+            },
+            {
+                "text": "a number and k on a white background",
+                "confidence": 0.7,
+                "rectangle": {
+                    "x": 51,
+                    "y": 0,
+                    "w": 149,
+                    "h": 68
+                }
+            },
+            {
+                "text": "a white arrow pointing to a colorful background",
+                "confidence": 0.68,
+                "rectangle": {
+                    "x": 55,
+                    "y": 64,
+                    "w": 160,
+                    "h": 131
+                }
+            },
+            {
+                "text": "a green and white square with a black corner",
+                "confidence": 0.66,
+                "rectangle": {
+                    "x": 120,
+                    "y": 168,
+                    "w": 78,
+                    "h": 78
+                }
+            }
+        ],
+        "objects": [],
+        "tags": [
+            {
+                "name": "screenshot",
+                "confidence": 0.94
+            },
+            {
+                "name": "graphic design",
+                "confidence": 0.9
+            },
+            {
+                "name": "graphics",
+                "confidence": 0.89
+            },
+            {
+                "name": "colorfulness",
+                "confidence": 0.88
+            },
+            {
+                "name": "rectangle",
+                "confidence": 0.87
+            },
+            {
+                "name": "text",
+                "confidence": 0.84
+            },
+            {
+                "name": "design",
+                "confidence": 0.52
+            }
+        ],
+        "people_list": [
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 1,
+                    "y": 0,
+                    "w": 209,
+                    "h": 70
+                }
+            },
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 0,
+                    "y": 1,
+                    "w": 55,
+                    "h": 240
+                }
+            },
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 227,
+                    "h": 249
+                }
+            },
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 54,
+                    "h": 69
+                }
+            }
+        ],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "categories": [
+            {
+                "name": "others_",
+                "score": 0.0078125
+            },
+            {
+                "name": "outdoor_",
+                "score": 0.01171875,
+                "detail": {
+                    "landmarks": []
+                }
+            },
+            {
+                "name": "text_sign",
+                "score": 0.84375
+            }
+        ],
+        "moderate": {
+            "isAdultContent": False,
+            "isRacyContent": False,
+            "isGoryContent": False,
+            "adultScore": 0.0022407304495573044,
+            "racyScore": 0.003612220985814929,
+            "goreScore": 0.000581094529479742
+        },
+        "faces": [],
+        "brands": [],
+        "colors": {
+            "dominantColorForeground": "White",
+            "dominantColorBackground": "Blue",
+            "dominantColors": [
+                "White",
+                "Blue"
+            ],
+            "accentColor": "0132CA",
+            "isBwImg": False,
+            "isBWImg": False
+        },
+        "celebrities": [],
+        "landmarks": [],
+        "imageType": {
+            "clipArtType": 0,
+            "lineDrawingType": 0
+        },
+        "ocr": {
+            "text": "8K",
+            "writing_style": [],
+            "pages": [
+                {
+                    "page_number": {
+                        "height": 250,
+                        "width": 250,
+                        "angle": 0.3283,
+                        "pageNumber": 1,
+                        "words": [
+                            {
+                                "content": "8K",
+                                "boundingBox": [
+                                    82,
+                                    6,
+                                    150,
+                                    6,
+                                    149,
+                                    64,
+                                    82,
+                                    64
+                                ],
+                                "confidence": 0.993,
+                                "span": {
+                                    "offset": 0,
+                                    "length": 2
+                                }
+                            }
+                        ],
+                        "spans": [
+                            {
+                                "offset": 0,
+                                "length": 2
+                            }
+                        ],
+                        "lines": [
+                            {
+                                "content": "8K",
+                                "boundingBox": [
+                                    82,
+                                    6,
+                                    166,
+                                    8,
+                                    164,
+                                    63,
+                                    83,
+                                    64
+                                ],
+                                "spans": [
+                                    {
+                                        "offset": 0,
+                                        "length": 2
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "page_height": 250,
+                    "page_width": 250,
+                    "page_angle": 0.3283,
+                    "page_text": [
+                        {
+                            "text": "8K",
+                            "bbox": {
+                                "x": 82,
+                                "y": 6,
+                                "w": 68,
+                                "h": 0
+                            },
+                            "wordShape": "rectangle"
+                        }
+                    ]
+                }
+            ]
+        },
+        "caption_GPTS": "A close-up image of a computer screen is shown, with a dominant foreground color of white and a dominant background color of blue. The screen displays a white arrow with black text, along with a number and the letter \"K\" on a white background. A white arrow is also seen pointing to a colorful background. Additionally, there is a green and white square with a black corner visible on the screen. The image appears to be a screenshot or graphic design, showcasing elements of colorfulness and rectangles. The overall design is clean and modern, with a focus on text and graphics. The image is not explicit or gory in any way, making it suitable for a wide audience.",
+        "GPT_level": 0
+    }
+    gpt_detailed = {
+        "readResult": {
+            "stringIndexType": "TextElements",
+            "content": "8K",
+            "pages": {}
+        },
+        "astica": {
+            "request": "vision",
+            "requestType": "analyze",
+            "modelVersion": "2.1",
+            "api_qty": 37.2917
+        },
+        "status": "success",
+        "caption": {
+            "text": "a close-up of a computer screen",
+            "confidence": 0.7
+        },
+        "caption_list": [
+            {
+                "text": "a close-up of a computer screen",
+                "confidence": 0.7,
+                "rectangle": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 250,
+                    "h": 250
+                }
+            },
+            {
+                "text": "a white arrow with black text",
+                "confidence": 0.68,
+                "rectangle": {
+                    "x": 46,
+                    "y": 0,
+                    "w": 177,
+                    "h": 243
+                }
+            },
+            {
+                "text": "a number and k on a white background",
+                "confidence": 0.7,
+                "rectangle": {
+                    "x": 51,
+                    "y": 0,
+                    "w": 149,
+                    "h": 68
+                }
+            },
+            {
+                "text": "a white arrow pointing to a colorful background",
+                "confidence": 0.68,
+                "rectangle": {
+                    "x": 55,
+                    "y": 64,
+                    "w": 160,
+                    "h": 131
+                }
+            },
+            {
+                "text": "a green and white square with a black corner",
+                "confidence": 0.66,
+                "rectangle": {
+                    "x": 120,
+                    "y": 168,
+                    "w": 78,
+                    "h": 78
+                }
+            }
+        ],
+        "objects": [],
+        "tags": [
+            {
+                "name": "screenshot",
+                "confidence": 0.94
+            },
+            {
+                "name": "graphic design",
+                "confidence": 0.9
+            },
+            {
+                "name": "graphics",
+                "confidence": 0.89
+            },
+            {
+                "name": "colorfulness",
+                "confidence": 0.88
+            },
+            {
+                "name": "rectangle",
+                "confidence": 0.87
+            },
+            {
+                "name": "text",
+                "confidence": 0.84
+            },
+            {
+                "name": "design",
+                "confidence": 0.52
+            }
+        ],
+        "people_list": [
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 1,
+                    "y": 0,
+                    "w": 209,
+                    "h": 70
+                }
+            },
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 0,
+                    "y": 1,
+                    "w": 55,
+                    "h": 240
+                }
+            },
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 227,
+                    "h": 249
+                }
+            },
+            {
+                "confidence": 0,
+                "rectangle": {
+                    "x": 0,
+                    "y": 0,
+                    "w": 54,
+                    "h": 69
+                }
+            }
+        ],
+        "metadata": {
+            "height": 250,
+            "width": 250,
+            "format": "Png"
+        },
+        "categories": [
+            {
+                "name": "others_",
+                "score": 0.0078125
+            },
+            {
+                "name": "outdoor_",
+                "score": 0.01171875,
+                "detail": {
+                    "landmarks": []
+                }
+            },
+            {
+                "name": "text_sign",
+                "score": 0.84375
+            }
+        ],
+        "moderate": {
+            "isAdultContent": False,
+            "isRacyContent": False,
+            "isGoryContent": False,
+            "adultScore": 0.0022407304495573044,
+            "racyScore": 0.003612220985814929,
+            "goreScore": 0.000581094529479742
+        },
+        "faces": [],
+        "brands": [],
+        "colors": {
+            "dominantColorForeground": "White",
+            "dominantColorBackground": "Blue",
+            "dominantColors": [
+                "White",
+                "Blue"
+            ],
+            "accentColor": "0132CA",
+            "isBwImg": False,
+            "isBWImg": False
+        },
+        "celebrities": [],
+        "landmarks": [],
+        "imageType": {
+            "clipArtType": 0,
+            "lineDrawingType": 0
+        },
+        "ocr": {
+            "text": "8K",
+            "writing_style": [],
+            "pages": [
+                {
+                    "page_number": {
+                        "height": 250,
+                        "width": 250,
+                        "angle": 0.3283,
+                        "pageNumber": 1,
+                        "words": [
+                            {
+                                "content": "8K",
+                                "boundingBox": [
+                                    82,
+                                    6,
+                                    150,
+                                    6,
+                                    149,
+                                    64,
+                                    82,
+                                    64
+                                ],
+                                "confidence": 0.993,
+                                "span": {
+                                    "offset": 0,
+                                    "length": 2
+                                }
+                            }
+                        ],
+                        "spans": [
+                            {
+                                "offset": 0,
+                                "length": 2
+                            }
+                        ],
+                        "lines": [
+                            {
+                                "content": "8K",
+                                "boundingBox": [
+                                    82,
+                                    6,
+                                    166,
+                                    8,
+                                    164,
+                                    63,
+                                    83,
+                                    64
+                                ],
+                                "spans": [
+                                    {
+                                        "offset": 0,
+                                        "length": 2
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "page_height": 250,
+                    "page_width": 250,
+                    "page_angle": 0.3283,
+                    "page_text": [
+                        {
+                            "text": "8K",
+                            "bbox": {
+                                "x": 82,
+                                "y": 6,
+                                "w": 68,
+                                "h": 0
+                            },
+                            "wordShape": "rectangle"
+                        }
+                    ]
+                }
+            ]
+        },
+        "caption_GPTS": "The image is a close-up of a computer screen featuring a design that leans heavily on graphics. It has a dominant color scheme of white and blue, with an accent of a deeper shade of blue. There is also a hint of colorfulness in the background, possibly suggesting other colors being present. The screen displays a white arrow with black text, a number, and 'k' on a white background. There seems to be no identifiable faces, landmarks, or celebrities. The content on the screen appears to be safe and non-explicit.",
+        "GPT_level": 1
+    }
+
+
+class Astica_Free_API_key:
+    def __init__(self, proxies=None):
+        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
+        self.proxies = proxies
+        self.accesstok, self.ret, self.cookie = self.get_access_tokens()
+        self.tkn = self.get_token()
+
+    def get_access_tokens(self):
+        url = "https://astica.ai/vision/describe-images"
+
+        payload = ""
+        headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Language": "ru,en;q=0.9",
+            "Connection": "keep-alive",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1",
+            "User-Agent": self.user_agent
+        }
+
+        try:
+            response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
+        except requests.exceptions.TooManyRedirects:
+            raise Exception("Твой IP заблокирован. Используйте proxy")
+
+        # print(response.text)
+        key_1 = "accesstok"
+        key_2 = "ret"
+        return Astica_Free_API_key.find_key(response.text, rf"{key_1}\s*:\s*'([^']*)'"), \
+            int(Astica_Free_API_key.find_key(response.text, rf"{key_2}\s*=\s*(\d+)")), \
+            "; ".join([f"{k}={v}" for k, v in dict_from_cookiejar(response.cookies).items()])
+
+    def get_token(self):
+        url = "https://astica.ai/ajax/pa.ajax.php"
+
+        payload = f"dt=1&dtv=2&accesstok=1060D625-527E-4E95-B108-A64A38FA6F5A14BC9AF8-9043-44C2-9D75-566E454E74FF"
+        headers = {
+            # "cookie": self.cookie,
+        }
+
+        try:
+            response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
+        except requests.exceptions.TooManyRedirects:
+            raise Exception("Твой IP заблокирован. Используйте proxy")
+
+        key = "ur_api_key"
+        api_key = Astica_Free_API_key.find_key(response.text, rf"{key}\s*=\s*'([^']*)'")
+        print("refresh API key", api_key)
+        return api_key
+
+    @staticmethod
+    def find_key(text, pattern):
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1)
+        else:
+            return None
+
+
+class Astica_API:
+    def __init__(self, api_key=None, proxies=None):
+        self.proxies = proxies
+        if api_key is None:
+            api_key = Astica_Free_API_key(self.proxies).tkn
+
+        self.api_key = api_key
+        self.timeout = 25
+
+    def get_image_description(self, image_path: str, prompt="", length=90,
+                              vision_params=Astica_Describe_Params.gpt) -> dict:
+        def get_image_base64_encoding() -> str:
+            with open(image_path, 'rb') as file:
+                image_data = file.read()
+            image_extension = os.path.splitext(image_path)[1]
+            base64_encoded = base64.b64encode(image_data).decode('utf-8')
+            return f"data:image/{image_extension[1:]};base64,{base64_encoded}"
+
+        input_image = get_image_base64_encoding()
+
+        payload = {
+            'tkn': self.api_key,
+            'modelVersion': '2.1_full',
+            'visionParams': vision_params,
+            'input': input_image,
+            'gpt_prompt': prompt,
+            'prompt_length': length
+        }
+
+        response = requests.post('https://vision.astica.ai/describe', data=json.dumps(payload), timeout=self.timeout,
+                                 headers={'Content-Type': 'application/json', })
+
+        return self.handle_response(response, self.get_image_description, image_path, prompt, length, vision_params)
+
+    def generate_text(self, input_text, instruction='', think_pass=1, temperature=0.7,
+                      top_p=0.35, token_limit=16000):
+        """
+                Генерирует текст на основе входных данных.
+
+                Параметры:
+                - input_text (str): Входной текст, на основе которого будет сгенерирован текст.
+                - instruction (str): Дополнительный контекст или инструкция для модели. По умолчанию пустая строка.
+                - think_pass (int): Количество проходов модели. По умолчанию 1.
+                - temperature (float): Креативность ответа модели. По умолчанию 0.7.
+                - top_p (float): Разнообразие и предсказуемость ответа модели. По умолчанию 0.35.
+                - token_limit (int): Максимальная длина ответа модели в токенах. По умолчанию 55.
+                - stop_sequence (str): Строка, означающая конец генерации текста. По умолчанию пустая строка.
+                - stream_output (int): Определяет, следует ли отображать ответы в реальном времени. 0 или 1. По умолчанию 0.
+                - low_priority (int): Определяет, следует ли использовать низкий приоритет для снижения стоимости запроса. 0 или 1. По умолчанию 0.
+        """
+        payload = {
+            'tkn': self.api_key,
+            'modelVersion': 'GPT-S2',
+            'instruction': instruction,
+            'input': input_text,
+            'think_pass': think_pass,
+            'temperature': temperature,
+            'top_p': top_p,
+            'token_limit': token_limit,
+            'stop_sequence': '',
+            'stream_output': 0,
+            'low_priority': 0
+        }
+
+        response = requests.post('https://nlp.astica.ai/generate', data=json.dumps(payload), timeout=self.timeout,
+                                 headers={'Content-Type': 'application/json'})
+
+        return self.handle_response(response, self.generate_text, input_text, instruction, think_pass, temperature,
+                                    top_p, token_limit)
+
+    def handle_response(self, response, function, *args, **kwargs):
+        if response.status_code == 200:
+            if response.json().get('error'):
+                error = response.json()['error']
+                print("warn:", error)
+                if (error == "invalid api token"
+                        or error == 'missing API key'
+                        or 'Visit billing at astica.ai/account' in error):
+                    self.api_key = Astica_Free_API_key(self.proxies).tkn
+                    return function(*args, **kwargs)
+                elif error == 'astica.org API: Please do not exceed 45 requests per minute.':
+                    time.sleep(5)
+                    return function(*args, **kwargs)
+                else:
+                    raise Exception("Error in response:", error)
+
+            return response.json()
+        else:
+            return {'status': 'error', 'error': 'Failed to connect to the API.'}

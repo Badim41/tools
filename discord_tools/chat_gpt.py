@@ -660,6 +660,9 @@ class ChatGPT:
         return summarized_text
 
 def convert_answer_to_json(answer, keys):
+    if isinstance(keys, str):
+        keys = [keys]
+
     if '{' in answer and '}' in answer:
         answer = answer[answer.find("{"):]
         answer = answer[:answer.rfind("}") + 1]

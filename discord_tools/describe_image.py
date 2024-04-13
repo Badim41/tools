@@ -1,8 +1,15 @@
+import base64
+import hashlib
 import os
+import random
+import re
 import requests
 import time
+import uuid
+from requests.utils import dict_from_cookiejar
 
 from discord_tools.logs import Logs
+from discord_tools.chat_gpt import convert_answer_to_json
 
 logger = Logs(warnings=True)
 
@@ -105,7 +112,7 @@ def detect_bad_image(image_path, testing=False):
         return None
 
 
-def describe_image(image_path, prompt:str, testing=False):
+def describe_image(image_path, prompt: str, testing=False):
     try:
         describer = AiDescribePictureAPI(testing=testing)
         describer.upload(image_path)
@@ -116,7 +123,7 @@ def describe_image(image_path, prompt:str, testing=False):
         return None, "-"
 
 
-def describe_image_multy_prompt(image_path, prompts:list, testing=False):
+def describe_image_multy_prompt(image_path, prompts: list, testing=False):
     describer = AiDescribePictureAPI(testing=testing)
     describer.upload(image_path)
 
