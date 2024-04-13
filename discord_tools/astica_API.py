@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import random
 import re
 import requests
 import time
@@ -20,6 +21,13 @@ class Astica_Describe_Params:
     landmarks = "landmarks"
     gpt = "gpt"  # caption_GPTS
     gpt_detailed = "gpt_detailed"  # Slower
+
+
+class GenerateQuality:
+    high = 'high'
+    standard = 'standard'
+    fast = 'fast'
+    faster = 'faster'
 
 
 class Astica_Response_Example:
@@ -791,6 +799,13 @@ class Astica_Response_Example:
     }
 
 
+def get_image_base64_encoding(file_path) -> str:
+    with open(file_path, 'rb') as file:
+        image_data = file.read()
+    image_extension = os.path.splitext(file_path)[1]
+    base64_encoded = base64.b64encode(image_data).decode('utf-8')
+    return f"data:image/{image_extension[1:]};base64,{base64_encoded}"
+
 class Astica_Free_API_key:
     def __init__(self, proxies=None):
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
@@ -860,35 +875,32 @@ class Astica_API:
             api_key = Astica_Free_API_key(self.proxies).tkn
 
         self.api_key = api_key
-        self.timeout = 25
 
     def get_image_description(self, image_path: str, prompt="", length=90,
-                              vision_params=Astica_Describe_Params.gpt) -> dict:
-        def get_image_base64_encoding() -> str:
-            with open(image_path, 'rb') as file:
-                image_data = file.read()
-            image_extension = os.path.splitext(image_path)[1]
-            base64_encoded = base64.b64encode(image_data).decode('utf-8')
-            return f"data:image/{image_extension[1:]};base64,{base64_encoded}"
+                              vision_params=Astica_Describe_Params.gpt, timeout=25) -> dict:
+        try:
 
-        input_image = get_image_base64_encoding()
+            input_image = get_image_base64_encoding(image_path)
 
-        payload = {
-            'tkn': self.api_key,
-            'modelVersion': '2.1_full',
-            'visionParams': vision_params,
-            'input': input_image,
-            'gpt_prompt': prompt,
-            'prompt_length': length
-        }
+            payload = {
+                'tkn': self.api_key,
+                'modelVersion': '2.1_full',
+                'visionParams': vision_params,
+                'input': input_image,
+                'gpt_prompt': prompt,
+                'prompt_length': length
+            }
 
-        response = requests.post('https://vision.astica.ai/describe', data=json.dumps(payload), timeout=self.timeout,
-                                 headers={'Content-Type': 'application/json', })
+            response = requests.post('https://vision.astica.ai/describe', data=json.dumps(payload),
+                                     timeout=timeout,
+                                     headers={'Content-Type': 'application/json', })
 
-        return self.handle_response(response, self.get_image_description, image_path, prompt, length, vision_params)
+            return self.handle_response(response, self.get_image_description, image_path, prompt, length, vision_params, timeout)
+        except Exception as e:
+            print("Ошибка при получении описания изображения (astica API):", e)
 
     def generate_text(self, input_text, instruction='', think_pass=1, temperature=0.7,
-                      top_p=0.35, token_limit=16000):
+                      top_p=0.35, token_limit=16000, timeout=25):
         """
                 Генерирует текст на основе входных данных.
 
@@ -903,25 +915,116 @@ class Astica_API:
                 - stream_output (int): Определяет, следует ли отображать ответы в реальном времени. 0 или 1. По умолчанию 0.
                 - low_priority (int): Определяет, следует ли использовать низкий приоритет для снижения стоимости запроса. 0 или 1. По умолчанию 0.
         """
+        try:
+            payload = {
+                'tkn': self.api_key,
+                'modelVersion': 'GPT-S2',
+                'instruction': instruction,
+                'input': input_text,
+                'think_pass': think_pass,
+                'temperature': temperature,
+                'top_p': top_p,
+                'token_limit': token_limit,
+                'stop_sequence': '',
+                'stream_output': 0,
+                'low_priority': 0
+            }
+
+            response = requests.post('https://nlp.astica.ai/generate', data=json.dumps(payload), timeout=timeout,
+                                     headers={'Content-Type': 'application/json'})
+
+            return self.handle_response(response, self.generate_text, input_text, instruction, think_pass, temperature,
+                                        top_p, token_limit, timeout)
+
+        except Exception as e:
+            print("Ошибка при генерации текста (astica API):", e)
+
+    def text_to_speech(self, input_text, voice_id=0, lang='en-US', output_file='output.wav', timeout=20):
+        try:
+            result = self.handle_audio_request(input_text=input_text, voice_id=voice_id, lang=lang,
+                                               output_file=output_file, timeout=timeout)
+            wav_data = bytes(result['wavBuffer']['data'])
+            with open(output_file, 'wb') as f:
+                f.write(wav_data)
+            return True
+        except Exception as e:
+            print("Ошибка при озвучивании текста (astica API):", e)
+
+    def handle_audio_request(self, input_text, voice_id=0, lang='en-US', output_file='output.wav', timeout=20):
         payload = {
             'tkn': self.api_key,
-            'modelVersion': 'GPT-S2',
-            'instruction': instruction,
+            'modelVersion': '1.0_full',
             'input': input_text,
-            'think_pass': think_pass,
-            'temperature': temperature,
-            'top_p': top_p,
-            'token_limit': token_limit,
-            'stop_sequence': '',
-            'stream_output': 0,
+            'voice': voice_id,
+            'lang': lang,
+        }
+
+        response = requests.post('https://voice.astica.ai/speak', data=json.dumps(payload), timeout=timeout,
+                                 headers={'Content-Type': 'application/json'})
+
+        return self.handle_response(response, self.handle_audio_request,
+                                    input_text=input_text, voice_id=voice_id,
+                                    lang=lang, output_file=output_file, timeout=timeout)
+
+    def generate_image(self, prompt, prompt_negative='', generate_quality=GenerateQuality.faster, generate_lossless=0,
+                       seed=None, moderate=1, timeout=60):
+        try:
+            result = self.handle_image_request(prompt=prompt, prompt_negative=prompt_negative, generate_quality=generate_quality,
+                                      generate_lossless=generate_lossless,
+                                      seed=seed, moderate=moderate, timeout=timeout)
+            print(json.dumps(result, indent=4))
+            if 'resultURI' in result:
+                print("URL")
+                return result['resultURI']
+            else:
+                print("OUTPUT")
+                return result['output']
+        except Exception as e:
+            print("Ошибка при генерации изображения (astica API):", e)
+
+    def handle_image_request(self, prompt, prompt_negative='', generate_quality=GenerateQuality.faster,
+                             generate_lossless=0,
+                             seed=None, moderate=1, timeout=60):
+
+        if seed is None:
+            seed = random.randint(1, 99999999)
+
+        payload = {
+            'tkn': self.api_key,
+            'modelVersion': '2.0_full',
+            'prompt': prompt,
+            'prompt_negative': prompt_negative,
+            'generate_quality': generate_quality,
+            'generate_lossless': generate_lossless,
+            'seed': seed,
+            'moderate': moderate,
+            'low_priority': 0,
+        }
+
+        response = requests.post('https://design.astica.ai/generate_image', data=json.dumps(payload),
+                                 timeout=timeout,
+                                 headers={'Content-Type': 'application/json'})
+
+        return self.handle_response(response, self.handle_image_request,
+                                    prompt=prompt, prompt_negative=prompt_negative,
+                                    generate_quality=generate_quality, generate_lossless=generate_lossless,
+                                    seed=seed, moderate=moderate, low_priority=0)
+
+    def transcribe_audio(self, audio_path, timeout=25):
+        audio_input = get_image_base64_encoding(audio_path)
+
+        payload = {
+            'tkn': self.api_key,
+            'modelVersion': '1.0_full',
+            'input': audio_input,
+            'doStream': 0,
             'low_priority': 0
         }
 
-        response = requests.post('https://nlp.astica.ai/generate', data=json.dumps(payload), timeout=self.timeout,
+        response = requests.post('https://listen.astica.ai/transcribe', data=json.dumps(payload), timeout=timeout,
                                  headers={'Content-Type': 'application/json'})
 
-        return self.handle_response(response, self.generate_text, input_text, instruction, think_pass, temperature,
-                                    top_p, token_limit)
+        return self.handle_response(response, self.transcribe_audio, audio_path,timeout)
 
     def handle_response(self, response, function, *args, **kwargs):
         if response.status_code == 200:
@@ -942,3 +1045,4 @@ class Astica_API:
             return response.json()
         else:
             return {'status': 'error', 'error': 'Failed to connect to the API.'}
+
