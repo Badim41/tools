@@ -846,7 +846,7 @@ class Astica_Free_API_key:
 
         payload = f"dt=1&dtv=2&accesstok={self.accesstok}"
         headers = {
-            # "cookie": self.cookie,
+            "cookie": self.cookie,
         }
 
         try:
