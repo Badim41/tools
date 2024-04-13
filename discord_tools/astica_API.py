@@ -858,6 +858,8 @@ class Astica_Free_API_key:
         api_key = Astica_Free_API_key.find_key(response.text, rf"{key}\s*=\s*'([^']*)'")
         if not api_key:
             if error == 3:
+                with open("temp_response_key.txt", "w", encoding='utf-8') as writer:
+                    writer.write(response.text)
                 raise Exception("Не удалось получить ключ")
             time.sleep(10)
             return self.get_token(error=error+1)
