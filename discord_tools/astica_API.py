@@ -799,12 +799,13 @@ class Astica_Response_Example:
     }
 
 
-def get_image_base64_encoding(file_path) -> str:
+def get_image_base64_encoding(file_path, type) -> str:
     with open(file_path, 'rb') as file:
         image_data = file.read()
     image_extension = os.path.splitext(file_path)[1]
     base64_encoded = base64.b64encode(image_data).decode('utf-8')
-    return f"data:image/{image_extension[1:]};base64,{base64_encoded}"
+    return f"data:{type}/{image_extension[1:]};base64,{base64_encoded}"
+
 
 class Astica_Free_API_key:
     def __init__(self, proxies=None):
@@ -887,7 +888,7 @@ class Astica_API:
                               vision_params=Astica_Describe_Params.gpt, timeout=25) -> dict:
         try:
 
-            input_image = get_image_base64_encoding(image_path)
+            input_image = get_image_base64_encoding(image_path, "image")
 
             payload = {
                 'tkn': self.api_key,
@@ -1018,7 +1019,7 @@ class Astica_API:
                                     seed=seed, moderate=moderate)
 
     def transcribe_audio(self, audio_path, timeout=25):
-        audio_input = get_image_base64_encoding(audio_path)
+        audio_input = get_image_base64_encoding(audio_path, "audio")
 
         payload = {
             'tkn': self.api_key,
