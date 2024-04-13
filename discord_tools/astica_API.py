@@ -841,10 +841,10 @@ class Astica_Free_API_key:
             int(Astica_Free_API_key.find_key(response.text, rf"{key_2}\s*=\s*(\d+)")), \
             "; ".join([f"{k}={v}" for k, v in dict_from_cookiejar(response.cookies).items()])
 
-    def get_token(self):
+    def get_token(self, error=0):
         url = "https://astica.ai/ajax/pa.ajax.php"
 
-        payload = f"dt=1&dtv=2&accesstok=1060D625-527E-4E95-B108-A64A38FA6F5A14BC9AF8-9043-44C2-9D75-566E454E74FF"
+        payload = f"dt=1&dtv=2&accesstok={self.accesstok}"
         headers = {
             # "cookie": self.cookie,
         }
@@ -856,6 +856,11 @@ class Astica_Free_API_key:
 
         key = "ur_api_key"
         api_key = Astica_Free_API_key.find_key(response.text, rf"{key}\s*=\s*'([^']*)'")
+        if not api_key:
+            if error == 3:
+                raise Exception("Не удалось получить ключ")
+            time.sleep(10)
+            return self.get_token(error=error+1)
         print("refresh API key", api_key)
         return api_key
 
