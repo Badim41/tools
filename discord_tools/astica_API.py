@@ -1015,7 +1015,7 @@ class Astica_API:
         return self.handle_response(response, self.handle_image_request,
                                     prompt=prompt, prompt_negative=prompt_negative,
                                     generate_quality=generate_quality, generate_lossless=generate_lossless,
-                                    seed=seed, moderate=moderate, low_priority=0)
+                                    seed=seed, moderate=moderate)
 
     def transcribe_audio(self, audio_path, timeout=25):
         audio_input = get_image_base64_encoding(audio_path)
