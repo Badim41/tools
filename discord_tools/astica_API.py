@@ -799,12 +799,21 @@ class Astica_Response_Example:
     }
 
 
-def get_image_base64_encoding(file_path, type) -> str:
+def get_image_base64_encoding(file_path) -> str:
     with open(file_path, 'rb') as file:
         image_data = file.read()
     image_extension = os.path.splitext(file_path)[1]
     base64_encoded = base64.b64encode(image_data).decode('utf-8')
-    return f"data:{type}/{image_extension[1:]};base64,{base64_encoded}"
+    return f"data:image/{image_extension[1:]};base64,{base64_encoded}"
+
+
+def get_audio_base64_encoding(audio_path: str) -> str:
+    with open(audio_path, 'rb') as file:
+        audio_data = file.read()
+    audio_extension = os.path.splitext(audio_path)[1]
+    base64_encoded = base64.b64encode(audio_data).decode('utf-8')
+    # Make sure to append base64 header
+    return f"data:audio/{audio_extension[1:]};base64,{base64_encoded}"
 
 
 class Astica_Free_API_key:
@@ -863,7 +872,7 @@ class Astica_Free_API_key:
                     writer.write(response.text)
                 raise Exception("Не удалось получить ключ")
             time.sleep(10)
-            return self.get_token(error=error+1)
+            return self.get_token(error=error + 1)
         print("refresh API key", api_key)
         return api_key
 
@@ -888,7 +897,7 @@ class Astica_API:
                               vision_params=Astica_Describe_Params.gpt, timeout=25) -> dict:
         try:
 
-            input_image = get_image_base64_encoding(image_path, "image")
+            input_image = get_image_base64_encoding(image_path)
 
             payload = {
                 'tkn': self.api_key,
@@ -903,7 +912,8 @@ class Astica_API:
                                      timeout=timeout,
                                      headers={'Content-Type': 'application/json', })
 
-            return self.handle_response(response, self.get_image_description, image_path, prompt, length, vision_params, timeout)
+            return self.handle_response(response, self.get_image_description, image_path, prompt, length, vision_params,
+                                        timeout)
         except Exception as e:
             print("Ошибка при получении описания изображения (astica API):", e)
 
@@ -977,9 +987,10 @@ class Astica_API:
     def generate_image(self, prompt, prompt_negative='', generate_quality=GenerateQuality.faster, generate_lossless=0,
                        seed=None, moderate=1, timeout=60):
         try:
-            result = self.handle_image_request(prompt=prompt, prompt_negative=prompt_negative, generate_quality=generate_quality,
-                                      generate_lossless=generate_lossless,
-                                      seed=seed, moderate=moderate, timeout=timeout)
+            result = self.handle_image_request(prompt=prompt, prompt_negative=prompt_negative,
+                                               generate_quality=generate_quality,
+                                               generate_lossless=generate_lossless,
+                                               seed=seed, moderate=moderate, timeout=timeout)
             print(json.dumps(result, indent=4))
             if 'resultURI' in result:
                 print("URL")
@@ -1019,7 +1030,7 @@ class Astica_API:
                                     seed=seed, moderate=moderate)
 
     def transcribe_audio(self, audio_path, timeout=25):
-        audio_input = get_image_base64_encoding(audio_path, "audio")
+        audio_input = get_audio_base64_encoding(audio_path)
 
         payload = {
             'tkn': self.api_key,
@@ -1032,7 +1043,7 @@ class Astica_API:
         response = requests.post('https://listen.astica.ai/transcribe', data=json.dumps(payload), timeout=timeout,
                                  headers={'Content-Type': 'application/json'})
 
-        return self.handle_response(response, self.transcribe_audio, audio_path,timeout)
+        return self.handle_response(response, self.transcribe_audio, audio_path, timeout)
 
     def handle_response(self, response, function, *args, **kwargs):
         if response.status_code == 200:
@@ -1053,4 +1064,3 @@ class Astica_API:
             return response.json()
         else:
             return {'status': 'error', 'error': 'Failed to connect to the API.'}
-
