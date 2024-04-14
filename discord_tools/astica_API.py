@@ -874,8 +874,8 @@ class Astica_Free_API_key:
                     writer.write(self.cookie + "\n")
                     writer.write(self.accesstok + "\n")
                 raise Exception("Не удалось получить ключ")
-            print("Нет ключа доступа. Задержка 30 секунд. Попытка:", error)
-            time.sleep(30)
+            print("Нет ключа доступа. Задержка 120 секунд. Попытка:", error)
+            time.sleep(120)
             self.accesstok, self.ret, self.cookie = self.get_access_tokens()
             return self.get_token(error=error + 1)
 
