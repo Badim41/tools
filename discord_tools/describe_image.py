@@ -25,7 +25,7 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
         def get_object_info(data, result="", indent=0):
             for item in data:
                 object_name = item['object']
-                result += '  ' * indent + f'Object: {object_name}'
+                result += '  ' * indent + f'Object: {object_name}' + "\n"
                 if 'parent' in item:
                     result = get_object_info([item['parent']], result=result, indent=indent + 1)
             return result
