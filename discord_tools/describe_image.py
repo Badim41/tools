@@ -36,6 +36,8 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             prompt=prompt,
             vision_params=Astica_Describe_Params.gpt_detailed)
 
+        print("Response from server:", result)
+
         if result.get('caption_GPTS'):
             caption = result['caption_GPTS']
         else:
