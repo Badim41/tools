@@ -1003,12 +1003,8 @@ class Astica_API:
                                                generate_lossless=generate_lossless,
                                                seed=seed, moderate=moderate, timeout=timeout)
             print(json.dumps(result, indent=4))
-            if 'resultURI' in result:
-                print("URL")
-                return result['resultURI']
-            else:
-                print("OUTPUT")
-                return result['output']
+
+            return result['output']
         except Exception as e:
             print("Ошибка при генерации изображения (astica API):", e)
 

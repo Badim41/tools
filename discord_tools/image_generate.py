@@ -9,7 +9,6 @@ import time
 import traceback
 import zipfile
 import urllib
-import uuid
 import re
 import shutil
 from bs4 import BeautifulSoup
@@ -18,8 +17,6 @@ from PIL import Image
 
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
-from discord_tools.upscaler import upscale_image
-from discord_tools.describe_image import describe_image, detect_bad_image
 
 logger = Logs(warnings=True)
 
