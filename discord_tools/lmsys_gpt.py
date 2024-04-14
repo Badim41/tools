@@ -84,7 +84,7 @@ class Lmsys_API:
 
         if "Just a moment..." in response.text:
             print("Токен для cloudflare устарел")
-            set_database("default", "cookie", "None")
+            set_database("default", "cloudflare_token", "None")
             self.get_cloudflare_token()
 
     def get_request_answer(self, return_answer=False):
@@ -229,7 +229,7 @@ class Lmsys_API:
         else:
             return []
     def get_cloudflare_token(self):
-        db_cookie = get_database("default", "cookie")
+        db_cookie = get_database("default", "cloudflare_token")
         if not str(db_cookie) == "None":
             self.cookie = db_cookie
             return
@@ -242,7 +242,7 @@ class Lmsys_API:
         print("Library path?", file_path)
         subprocess.run(f'start {file_path}', shell=True)
         self.cookie = input()
-        set_database("default", "cookie", self.cookie)
+        set_database("default", "cloudflare_token", self.cookie)
         print("Cookie получены!")
         # print("Нажмите галочку в открывшемся окне")
         # from selenium import webdriver

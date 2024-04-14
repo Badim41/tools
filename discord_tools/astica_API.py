@@ -7,6 +7,8 @@ import requests
 import time
 from requests.utils import dict_from_cookiejar
 
+from discord_tools.sql_db import get_database, set_database_not_async as set_database
+
 
 class Astica_Describe_Params:
     describe = "describe"
@@ -822,6 +824,7 @@ class Astica_Free_API_key:
         self.proxies = proxies
         self.accesstok, self.ret, self.cookie = self.get_access_tokens()
         self.tkn = self.get_token()
+        set_database("default", "astica_api", self.tkn)
 
     def get_access_tokens(self):
         url = "https://astica.ai/vision/describe-images"
@@ -868,16 +871,16 @@ class Astica_Free_API_key:
         api_key = Astica_Free_API_key.find_key(response.text, rf"{key}\s*=\s*'([^']*)'")
 
         if not api_key:
-            if error == 3:
-                with open("temp_response_key.txt", "w", encoding='utf-8') as writer:
-                    writer.write(response.text + "\n")
-                    writer.write(self.cookie + "\n")
-                    writer.write(self.accesstok + "\n")
-                raise Exception("Не удалось получить ключ")
-            print("Нет ключа доступа. Задержка 120 секунд. Попытка:", error)
-            time.sleep(120)
-            self.accesstok, self.ret, self.cookie = self.get_access_tokens()
-            return self.get_token(error=error + 1)
+            # if error == 3:
+            #     with open("temp_response_key.txt", "w", encoding='utf-8') as writer:
+            #         writer.write(response.text + "\n")
+            #         writer.write(self.cookie + "\n")
+            #         writer.write(self.accesstok + "\n")
+                raise Exception("Не удалось получить ключ, повторите попытку через несколько минут")
+            # print("Нет ключа доступа. Задержка 120 секунд. Попытка:", error)
+            # time.sleep(120)
+            # self.accesstok, self.ret, self.cookie = self.get_access_tokens()
+            # return self.get_token(error=error + 1)
 
         print("refresh API key", api_key)
         return api_key
@@ -895,7 +898,9 @@ class Astica_API:
     def __init__(self, api_key=None, proxies=None):
         self.proxies = proxies
         if api_key is None:
-            api_key = Astica_Free_API_key(self.proxies).tkn
+            api_key = get_database("default", "astica_api")
+            if str(api_key) == "None":
+                api_key = Astica_Free_API_key(self.proxies).tkn
 
         self.api_key = api_key
 
