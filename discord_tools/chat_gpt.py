@@ -82,10 +82,12 @@ _providers = [
     g4f.Provider.Llama2,
 ]
 
+
 async def make_async_post_request(url, json, headers):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=json, headers=headers) as response:
             return await response.text()
+
 
 async def remove_last_format_simbols(text, format="```"):
     parts = text.split(format)
@@ -135,6 +137,7 @@ async def get_sys_prompt(user_id, gpt_role):
         sys_prompt = [{"role": "system", "content": gpt_role}]
     return sys_prompt
 
+
 def transform_messages(messages):
     transformed_messages = []
     for message in messages:
@@ -146,6 +149,7 @@ def transform_messages(messages):
         }
         transformed_messages.append(transformed_message)
     return transformed_messages
+
 
 async def clear_history(user_id):
     try:
@@ -172,8 +176,8 @@ class ChatGPT:
                  auth_keys=None, save_history=True,
                  warnings=True,
                  errors=True, testing=False, char_tokens=None, char_ids=None,
-                deep_seek_keys=None,
-                deep_seek_auth_keys=None):
+                 deep_seek_keys=None,
+                 deep_seek_auth_keys=None):
         if isinstance(openAI_moderation, list):
             self.openAI_keys = openAI_keys
         elif isinstance(openAI_moderation, str):
@@ -252,7 +256,7 @@ class ChatGPT:
 
         if not os.path.exists('gpt_history'):
             os.mkdir('gpt_history')
-        
+
         self.gpt_queue += 1
         if self.testing:
             self.logger.logging("run GPT", prompt, color=Color.GRAY)
@@ -289,7 +293,7 @@ class ChatGPT:
                     chat_history.append({"role": "assistant", "content": answer})
                     await save_history(chat_history, user_id)
                     return answer
-                
+
                 answer = await self.run_deep_seek(messages, 1, value, user_id, gpt_role)
                 if answer:
                     chat_history.append({"role": "assistant", "content": answer})
@@ -369,28 +373,28 @@ class ChatGPT:
             if self.testing:
                 self.logger.logging(f"Error in {str(provider)}", str(e), color=Color.GRAY)
             await asyncio.sleep(delay_for_gpt)
-    
+
     async def run_no_auth_official_gpt(self, messages, delay_for_gpt, user_id):
         if self.blocked_chatgpt_location:
             return
         try:
             messages = transform_messages(messages)
             self.logger.logging(f"Run no auth GPT", color=Color.GRAY)
-            
+
             device_id = str(uuid.uuid4())
             user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
-            
+
             url = 'https://chat.openai.com/backend-anon/sentinel/chat-requirements'
-            
+
             headers = {
                 'oai-device-id': device_id,
                 'user-agent': user_agent
             }
             data = {}
-            
+
             response = await make_async_post_request(url, headers=headers, json=data)
             auth_token = json.loads(response)['token']
-            
+
             url = 'https://chat.openai.com/backend-api/conversation'
             headers = {
                 'cookie': f'oai-did={device_id}',
@@ -398,7 +402,7 @@ class ChatGPT:
                 'openai-sentinel-chat-requirements-token': auth_token,
                 'user-agent': user_agent,
             }
-            
+
             data = {
                 "action": "next",
                 "messages": messages,
@@ -406,22 +410,21 @@ class ChatGPT:
                 "model": "text-davinci-002-render-sha",
                 "websocket_request_id": str(uuid.uuid4())
             }
-            
+
             response = await make_async_post_request(url, json=data, headers=headers)
-            
+
             response_parts = response.split("data: ")
 
             if self.testing:
-                self.logger.logging("ChatGPT_OFFICIAL_3 ", json.loads(response_parts[-2])['message']['content']['parts'][0], color=Color.GRAY)
-            
+                self.logger.logging("ChatGPT_OFFICIAL_3 ",
+                                    json.loads(response_parts[-2])['message']['content']['parts'][0], color=Color.GRAY)
+
             return json.loads(response_parts[-2])['message']['content']['parts'][0]
+        except KeyError:
+            self.blocked_chatgpt_location = True
+            self.logger.logging("Неправильная локация для gpt-off3", color=Color.PURPLE)
         except Exception as e:
-            error = str(traceback.format_exc())
-            if "auth_token = json.loads(response)['token']" in error:
-                self.blocked_chatgpt_location = True
-                self.logger.logging("Неправильная локация для gpt-off3", color=Color.PURPLE)
-            else:
-                self.logger.logging("error gpt-off3", error)
+            self.logger.logging("error gpt-off3", str(traceback.format_exc()))
 
     async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
 
@@ -433,7 +436,7 @@ class ChatGPT:
 
             try:
                 openai_key = self.openAI_keys[self.gpt_queue % len(self.openAI_keys)]
-                client = AsyncOpenAI(api_key="sk-" + openai_key.replace("sk-",""))
+                client = AsyncOpenAI(api_key="sk-" + openai_key.replace("sk-", ""))
                 completion = await client.chat.completions.create(
                     model="gpt-3.5-turbo-1106",
                     messages=messages
@@ -444,7 +447,8 @@ class ChatGPT:
             except Exception as e:
                 self.logger.logging("error (id gpt-off1)", e)
 
-                if "Incorrect API key provided" in str(e) or "You exceeded your current quota, please check your plan and billing details." in str(e):
+                if "Incorrect API key provided" in str(
+                        e) or "You exceeded your current quota, please check your plan and billing details." in str(e):
                     self.openAI_keys = self.openAI_keys[1:]
 
                 if self.openAI_keys and not error:
@@ -492,24 +496,25 @@ class ChatGPT:
             if not self.deep_seek_keys:
                 await asyncio.sleep(delay_for_gpt)
                 return
-            
+
             try:
-                
-                client = AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0].replace("sk-",""), base_url="https://api.deepseek.com/v1")
-                
+
+                client = AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0].replace("sk-", ""),
+                                     base_url="https://api.deepseek.com/v1")
+
                 response = await client.chat.completions.create(
                     model="deepseek-chat",
                     messages=messages
                 )
-                
+
                 if self.testing:
                     self.logger.logging("DeepSeek_1:", response.choices[0].message.content, color=Color.GRAY)
-                
+
                 return response.choices[0].message.content
             except Exception as e:
                 if self.testing:
                     self.logger.logging("Error in DeepSeek_1:", e, color=Color.GRAY)
-                
+
                 await asyncio.sleep(delay_for_gpt)
         else:
             # нет ключей
@@ -529,10 +534,10 @@ class ChatGPT:
                     "stream": True,
                     "model_class": "deepseek_chat"
                 }
-                
+
                 response = await make_async_post_request(url, headers=headers, json=data)
                 response_parts = response.split("data: ")
-                
+
                 full_answer = ""
                 for response_part in response_parts:
                     try:
@@ -540,26 +545,26 @@ class ChatGPT:
                         if content_value:
                             full_answer += content_value
                     except Exception as e:
-                      pass
+                        pass
 
                 if clear_context:
                     url = 'https://chat.deepseek.com/api/v0/chat/clear_context'
                     response = await make_async_post_request(url, headers=headers, json={})
-    
+
                 if self.testing:
                     self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
-                
+
                 return full_answer
             except Exception as e:
                 if self.testing:
                     self.logger.logging("Error in DeepSeek_2:", str(e), color=Color.GRAY)
-                
+
                 await asyncio.sleep(delay_for_gpt)
 
     async def moderation_request(self, text, error=0):
         if error == 20:
             return None, "Request failed"
-        
+
         if len(text) < 3:
             return False, ""
 
@@ -569,24 +574,24 @@ class ChatGPT:
                     f"Запрос '{text}' уже был выполнен, категория нарушений: {self.previous_requests_moderation[text][1]}",
                     color=Color.GRAY)
             return self.previous_requests_moderation[text]
-        
+
         if not self.openAI_moderation:
             request_message = (
-            "Тебе нужно модерировать запросы на создание изображений. "
-            "Выведи ответ в json формате, например:\n"
-            "# Примеры ответа"
-            "## Запрос 1: женщина без одежды.\n"
-            '## Ответ 1: {"blocked": true, "category": "sexual"}.\n'
-            "## Запрос 2: Невежливый человек.\n"
-            '## Ответ 2: {"blocked": false, "category": "None"}.\n'
-            f"Вот запрос для генерации изображений, на который тебе нужно будет ответить: {text}"
+                "Тебе нужно модерировать запросы на создание изображений. "
+                "Выведи ответ в json формате, например:\n"
+                "# Примеры ответа"
+                "## Запрос 1: женщина без одежды.\n"
+                '## Ответ 1: {"blocked": true, "category": "sexual"}.\n'
+                "## Запрос 2: Невежливый человек.\n"
+                '## Ответ 2: {"blocked": false, "category": "None"}.\n'
+                f"Вот запрос для генерации изображений, на который тебе нужно будет ответить: {text}"
             )
-            
+
             # Выполняем модерацию запроса
             result = await self.run_all_gpt(request_message)
             if '{' in result and '}' in result:
                 result = result[result.find("{"):]
-                result = result[:result.rfind("}")+1]
+                result = result[:result.rfind("}") + 1]
             else:
                 result1, result2 = await self.moderation_request(text, error=error + 1)
                 return result1, result2
@@ -666,6 +671,7 @@ class ChatGPT:
         summarized_text = '\n'.join(gpt_responses)
 
         return summarized_text
+
 
 def convert_answer_to_json(answer, keys):
     if isinstance(keys, str):
