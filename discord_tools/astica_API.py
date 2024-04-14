@@ -1023,7 +1023,6 @@ class Astica_API:
             return image_path if os.path.exists(image_path) else None
         except Exception as e:
             logger.logging("Ошибка при генерации изображения (astica API):", e)
-            return False
 
     def handle_image_request(self, prompt, prompt_negative='', generate_quality=GenerateQuality.faster,
                              generate_lossless=0,
