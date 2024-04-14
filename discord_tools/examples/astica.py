@@ -15,6 +15,13 @@ result = astica_api.get_image_description(
     vision_params=Astica_Describe_Params.gpt_detailed)
 print(result['caption_GPTS'])
 
+# Но так лучше
+from discord_tools.describe_image import describe_image
+
+image_path = "temp.png"
+result = describe_image(image_path)
+print(result)
+
 
 
 
