@@ -868,8 +868,16 @@ class Astica_Free_API_key:
         api_key = Astica_Free_API_key.find_key(response.text, rf"{key}\s*=\s*'([^']*)'")
 
         if not api_key:
-            print("no API key, use accesstok")
-            return self.accesstok
+            if error == 3:
+                with open("temp_response_key.txt", "w", encoding='utf-8') as writer:
+                    writer.write(response.text + "\n")
+                    writer.write(self.cookie + "\n")
+                    writer.write(self.accesstok + "\n")
+                raise Exception("Не удалось получить ключ")
+            print("Нет ключа доступа. Задержка 30 секунд. Попытка:", error)
+            time.sleep(30)
+            self.accesstok, self.ret, self.cookie = self.get_access_tokens()
+            return self.get_token(error=error + 1)
 
         print("refresh API key", api_key)
         return api_key
