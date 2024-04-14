@@ -234,6 +234,7 @@ class ChatGPT:
 
         self.logger = Logs(warnings=warnings, errors=errors)
         self.testing = testing
+        self.blocked_chatgpt_location = False
 
     async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
                           translate_lang=None):
@@ -370,6 +371,8 @@ class ChatGPT:
             await asyncio.sleep(delay_for_gpt)
     
     async def run_no_auth_official_gpt(self, messages, delay_for_gpt, user_id):
+        if self.blocked_chatgpt_location:
+            return
         try:
             messages = transform_messages(messages)
             self.logger.logging(f"Run no auth GPT", color=Color.GRAY)
@@ -413,7 +416,12 @@ class ChatGPT:
             
             return json.loads(response_parts[-2])['message']['content']['parts'][0]
         except Exception as e:
-            self.logger.logging("error gpt-off3", str(traceback.format_exc()))
+            error = str(traceback.format_exc())
+            if "auth_token = json.loads(response)['token']" in error:
+                self.blocked_chatgpt_location = True
+                self.logger.logging("Неправильная локация для gpt-off3", color=Color.PURPLE)
+            else:
+                self.logger.logging("error gpt-off3", error)
 
     async def run_official_gpt(self, messages, delay_for_gpt: int, key_gpt: bool, user_id, gpt_role, error=False):
 
