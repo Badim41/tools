@@ -872,6 +872,7 @@ class Astica_Free_API_key:
                     writer.write(response.text)
                 raise Exception("Не удалось получить ключ")
             time.sleep(10)
+            self.accesstok, self.ret, self.cookie = self.get_access_tokens()
             return self.get_token(error=error + 1)
         print("refresh API key", api_key)
         return api_key
