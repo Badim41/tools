@@ -915,7 +915,7 @@ class Astica_API:
             input_image = get_image_base64_encoding(image_path)
 
             if len(prompt) < 8:
-                prompt = "Что на изображении? " + prompt
+                prompt = "Что на изображение? " + prompt
             payload = {
                 'tkn': self.api_key,
                 'modelVersion': '2.1_full',
