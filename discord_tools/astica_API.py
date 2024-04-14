@@ -1030,7 +1030,7 @@ class Astica_API:
         except Exception as e:
             logger.logging("Ошибка при генерации изображения (astica API):", e)
 
-    def handle_image_request(self, prompt, prompt_negative='', generate_quality=GenerateQuality.faster,
+    def handle_image_request(self, prompt, prompt_negative='', generate_quality=GenerateQuality.high, 
                              generate_lossless=0,
                              seed=None, moderate=1, timeout=60):
 
