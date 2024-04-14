@@ -1,3 +1,5 @@
+import traceback
+
 from discord_tools.logs import Logs
 from discord_tools.astica_API import Astica_Describe_Params, Astica_API
 
@@ -43,5 +45,5 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
                (result['moderate']['isRacyContent'] and isRacyContent) or \
                (result['moderate']['isGoryContent'] and isGoryContent), caption
     except Exception as e:
-        logger.logging(e)
+        logger.logging("error in describe_image", str(traceback.format_exc()))
         return None, "-"
