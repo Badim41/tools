@@ -81,67 +81,71 @@ class GenerateImages:
         def create_black_image(width, height):
             return Image.new('RGB', (width, height), (0, 0, 0))
 
-        model_instance = model_class(self)
-
-        if model_instance.suffix not in ["r2", "r3"]:
-            prompt = row_prompt
-            print(f"Changed prompt for {model_instance.__class__.__name__}: {row_prompt}")
-
-        image_path = f"{RESULT_PATH}/{image_name}_{model_instance.suffix}_{self.queue}"
-
-        image_paths = []
-
         try:
-            if model_instance.return_images == 1:
-                tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
-                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT + 60)
-            elif model_instance.return_images == 4:
-                image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
-                                                     timeout=GLOBAL_IMAGE_TIMEOUT + 60)
-            else:
-                raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
-        except Exception as e:
-            logger.logging(f"Image timeout {model_instance.__class__.__name__}", e)
+            model_instance = model_class(self)
 
-        if not image_paths:
-            return
+            if model_instance.suffix not in ["r2", "r3"]:
+                prompt = row_prompt
+                print(f"Changed prompt for {model_instance.__class__.__name__}: {row_prompt}")
 
-        images = []
+            image_path = f"{RESULT_PATH}/{image_name}_{model_instance.suffix}_{self.queue}"
 
-        for path in image_paths:
+            image_paths = []
+
             try:
-                images.append(Image.open(path))
+                if model_instance.return_images == 1:
+                    tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in
+                             range(4)]
+                    image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT + 60)
+                elif model_instance.return_images == 4:
+                    image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
+                                                         timeout=GLOBAL_IMAGE_TIMEOUT + 60)
+                else:
+                    raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
             except Exception as e:
-                logger.logging(f"warn in {model_instance.__class__.__name__}", e)
+                logger.logging(f"Image timeout {model_instance.__class__.__name__}", e)
 
-        image_width, image_height = Image.open(image_paths[0]).size
-        black_image = create_black_image(image_width, image_height)
+            images = []
 
-        for i in range(4):
-            images.append(black_image)
+            for path in image_paths:
+                try:
+                    images.append(Image.open(path))
+                except Exception as e:
+                    logger.logging(f"warn in {model_instance.__class__.__name__}", e)
 
-        grid_width = 2 * image_width
-        grid_height = 2 * image_height
-        grid_image = Image.new('RGB', (grid_width, grid_height))
+            if not images:
+                return
 
-        for i in range(2):
-            for j in range(2):
-                index = i * 2 + j
-                grid_image.paste(images[index], (j * image_width, i * image_height))
+            image_width, image_height = Image.open(image_paths[0]).size
+            black_image = create_black_image(image_width, image_height)
 
-        final_path = image_paths[0].replace(".png", "FINAL.png")
-        grid_image.save(final_path)
+            for i in range(4):
+                images.append(black_image)
 
-        if zip_name:
-            for result in image_paths:
-                with zipfile.ZipFile(zip_name, "a") as zipf:
-                    zipf.write(result)
+            grid_width = 2 * image_width
+            grid_height = 2 * image_height
+            grid_image = Image.new('RGB', (grid_width, grid_height))
 
-        if delete_temp:
-            for image_path in image_paths:
-                os.remove(image_path)
+            for i in range(2):
+                for j in range(2):
+                    index = i * 2 + j
+                    grid_image.paste(images[index], (j * image_width, i * image_height))
 
-        return final_path
+            final_path = image_paths[0].replace(".png", "FINAL.png")
+            grid_image.save(final_path)
+
+            if zip_name:
+                for result in image_paths:
+                    with zipfile.ZipFile(zip_name, "a") as zipf:
+                        zipf.write(result)
+
+            if delete_temp:
+                for image_path in image_paths:
+                    os.remove(image_path)
+
+            return final_path
+        except:
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
                        bing_image_generator=True, zip_name=None, delete_temp=True, bing_fast=False, astica=True,
