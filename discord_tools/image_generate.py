@@ -304,7 +304,7 @@ class Bing_API:
         self.return_images = 4
         self.user_agent = user_agent
 
-    def get_request_id(self, prompt_row, rt, attempts=50, adding_details=None, delay=0.5):
+    def get_request_id(self, prompt_row, rt, attempts=5, adding_details=None, delay=0.5):
         if not adding_details:
             adding_details = ["HD, 4K, 8K", "высокого разрешения, качественные, четкие",
                               "подробные, детализированные, 3D рендер",
