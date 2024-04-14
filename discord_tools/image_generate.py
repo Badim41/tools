@@ -315,8 +315,6 @@ class Bing_API:
 
         i = 0
         while True:
-            if i == attempts:
-                raise Exception(f"Спустя {attempts} попыток не отправлен запрос")
 
             if prompt.lower() in self.generator.blocked_requests:
                 raise Exception("Запрос уже был запрешён")
@@ -346,6 +344,11 @@ class Bing_API:
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
                 continue
+
+            if i == attempts:
+                with open("temp_response_bing.txt", "w", encoding="utf-8") as writer:
+                    writer.write(response.text)
+                raise Exception(f"Спустя {attempts} попыток не отправлен запрос")
 
             soup = BeautifulSoup(response.text, 'html.parser')
 
