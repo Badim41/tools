@@ -1,5 +1,3 @@
-import json
-
 from discord_tools.astica_API import Astica_API
 
 # создание класса

@@ -39,7 +39,14 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
         if result.get('caption_GPTS'):
             caption = result['caption_GPTS']
         else:
-            caption = result['caption']['text'] + "\n\n" + get_object_info(data=result['objects'])
+            text = ""
+            if 'caption' in result:
+                try:
+                    text = result['caption']['text'] + "\n\n" if result['caption']['text'] else ""
+                except Exception as e:
+                    print("Idk why error", e) # TODO :D
+
+            caption = text + get_object_info(data=result['objects'])
 
         return (result['moderate']['isAdultContent'] and isAdultContent) or \
                (result['moderate']['isRacyContent'] and isRacyContent) or \
