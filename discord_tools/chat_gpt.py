@@ -83,7 +83,7 @@ _providers = [
 ]
 
 
-async def make_async_post_request(url, json, headers):
+async def make_async_post_request(url, json, headers, timeout=120):
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=json, headers=headers) as response:
             return await response.text()
@@ -392,7 +392,7 @@ class ChatGPT:
             }
             data = {}
 
-            response = await make_async_post_request(url, headers=headers, json=data)
+            response = await make_async_post_request(url, headers=headers, json=data, timeout=20)
             auth_token = json.loads(response)['token']
 
             url = 'https://chat.openai.com/backend-api/conversation'

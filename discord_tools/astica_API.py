@@ -909,7 +909,7 @@ class Astica_API:
         self.api_key = api_key
 
     def get_image_description(self, image_path: str, prompt="", length=90,
-                              vision_params=Astica_Describe_Params.gpt, timeout=25) -> dict:
+                              vision_params=Astica_Describe_Params.gpt, timeout=25, error=False) -> dict:
         try:
 
             input_image = get_image_base64_encoding(image_path)
@@ -930,6 +930,10 @@ class Astica_API:
             return self.handle_response(response, self.get_image_description, image_path, prompt, length, vision_params,
                                         timeout)
         except Exception as e:
+            if 'Invalid v1.0_full parameter provided: caption' in  str(e) and not error:
+                print("Модель v2.0 недоступна (потому что сервер параша). Используемые параметры: describe,objects,moderate")
+                return self.get_image_description(image_path=image_path, prompt=prompt, length=length,
+                              vision_params="describe,objects,moderate", timeout=timeout, error=True)
             logger.logging("Ошибка при получении описания изображения (astica API):", e)
 
     def generate_text(self, input_text, instruction='', think_pass=1, temperature=0.7,
