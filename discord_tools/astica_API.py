@@ -868,6 +868,7 @@ class Astica_Free_API_key:
         api_key = Astica_Free_API_key.find_key(response.text, rf"{key}\s*=\s*'([^']*)'")
 
         if not api_key:
+            print("no API key, use accesstok")
             return self.accesstok
 
         print("refresh API key", api_key)
