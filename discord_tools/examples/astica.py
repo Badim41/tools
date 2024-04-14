@@ -30,8 +30,10 @@ print(result['output'])
 from discord_tools.astica_API import GenerateQuality
 
 prompt = "Wonderful tree"
-result = astica_api.generate_image(prompt, generate_quality=GenerateQuality.faster)
-print(json.dumps(result, indent=4))
+image_path = "image.png"
+
+result_path = astica_api.generate_image(prompt, generate_quality=GenerateQuality.faster, image_path=image_path)
+print(result_path)
 
 
 

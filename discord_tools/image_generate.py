@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 
 from PIL import Image
 
+from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
 
@@ -38,7 +39,8 @@ async def get_image_size(image_path):
 
 
 class GenerateImages:
-    def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None, bing_cookies=None):
+    def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None, bing_cookies=None,
+                 proxies=None):
         if not os.path.exists(RESULT_PATH):
             os.mkdir(RESULT_PATH)
 
@@ -71,6 +73,7 @@ class GenerateImages:
             self.bing_cookies = bing_cookies
 
         self.blocked_requests = []
+        self.proxies = proxies
         self.queue = 0
 
     # [Kandinsky_API, Polinations_API, CharacterAI_API, Bing_API]
@@ -91,10 +94,10 @@ class GenerateImages:
         try:
             if model_instance.return_images == 1:
                 tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in range(4)]
-                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT+60)
+                image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT + 60)
             elif model_instance.return_images == 4:
                 image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
-                                                     timeout=GLOBAL_IMAGE_TIMEOUT+60)
+                                                     timeout=GLOBAL_IMAGE_TIMEOUT + 60)
             else:
                 raise Exception(f"Неправильное количество возвращаемых изображений:{model_instance.return_images}")
         except Exception as e:
@@ -141,8 +144,8 @@ class GenerateImages:
         return final_path
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
-                       bing_image_generator=True,
-                       zip_name=None, delete_temp=True, bing_fast=False, row_prompt=None):
+                       bing_image_generator=True, zip_name=None, delete_temp=True, bing_fast=False, astica=True,
+                       row_prompt=None):
         self.queue += 1
 
         if not row_prompt:
@@ -165,6 +168,8 @@ class GenerateImages:
             models.append(CharacterAI_API)
         if bing_image_generator and self.bing_cookies:
             models.append(Bing_API)
+        if astica:
+            models.append(Astica_Desinger_API)
 
         functions = [self.generate_image_grid(model_class=model, image_name=user_id, prompt=prompt, zip_name=zip_name,
                                               delete_temp=delete_temp, row_prompt=row_prompt) for model in models]
@@ -268,6 +273,21 @@ class CharacterAI_API:
         await self.save_image(image_url, image_path)
 
         return image_path
+
+
+class Astica_Desinger_API:
+    def __init__(self, generator: GenerateImages):
+        self.generator = generator
+        self.api = Astica_API(proxies=generator.proxies)
+        self.suffix = "r5"
+        self.return_images = 1
+
+    def generate(self, prompt, image_path, quality=GenerateQuality.faster):
+        try:
+            result_path = self.api.generate_image(prompt, generate_quality=quality, image_path=image_path)
+            return result_path
+        except:
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
 
 class Bing_API:

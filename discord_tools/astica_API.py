@@ -4,10 +4,14 @@ import os
 import random
 import re
 import requests
+import shutil
 import time
 from requests.utils import dict_from_cookiejar
 
 from discord_tools.sql_db import get_database, set_database_not_async as set_database
+from discord_tools.logs import Logs, Color
+
+logger = Logs(warnings=True)
 
 
 class Astica_Describe_Params:
@@ -847,7 +851,7 @@ class Astica_Free_API_key:
         except requests.exceptions.TooManyRedirects:
             raise Exception("Твой IP заблокирован. Используйте proxy")
 
-        # print(response.text)
+        # logger.logging(response.text)
         key_1 = "accesstok"
         key_2 = "ret"
         return Astica_Free_API_key.find_key(response.text, rf"{key_1}\s*:\s*'([^']*)'"), \
@@ -876,13 +880,13 @@ class Astica_Free_API_key:
             #         writer.write(response.text + "\n")
             #         writer.write(self.cookie + "\n")
             #         writer.write(self.accesstok + "\n")
-                raise Exception("Не удалось получить ключ, повторите попытку через несколько минут")
-            # print("Нет ключа доступа. Задержка 120 секунд. Попытка:", error)
-            # time.sleep(120)
-            # self.accesstok, self.ret, self.cookie = self.get_access_tokens()
-            # return self.get_token(error=error + 1)
+            raise Exception("Не удалось получить ключ, повторите попытку через несколько минут")
+        # logger.logging("Нет ключа доступа. Задержка 120 секунд. Попытка:", error)
+        # time.sleep(120)
+        # self.accesstok, self.ret, self.cookie = self.get_access_tokens()
+        # return self.get_token(error=error + 1)
 
-        print("refresh API key", api_key)
+        logger.logging("refresh API key", api_key)
         return api_key
 
     @staticmethod
@@ -926,7 +930,7 @@ class Astica_API:
             return self.handle_response(response, self.get_image_description, image_path, prompt, length, vision_params,
                                         timeout)
         except Exception as e:
-            print("Ошибка при получении описания изображения (astica API):", e)
+            logger.logging("Ошибка при получении описания изображения (astica API):", e)
 
     def generate_text(self, input_text, instruction='', think_pass=1, temperature=0.7,
                       top_p=0.35, token_limit=16000, timeout=25):
@@ -966,18 +970,18 @@ class Astica_API:
                                         top_p, token_limit, timeout)
 
         except Exception as e:
-            print("Ошибка при генерации текста (astica API):", e)
+            logger.logging("Ошибка при генерации текста (astica API):", e)
 
     def text_to_speech(self, input_text, voice_id=0, lang='en-US', output_file='output.wav', timeout=20):
         try:
             result = self.handle_audio_request(input_text=input_text, voice_id=voice_id, lang=lang,
                                                output_file=output_file, timeout=timeout)
-            wav_data = bytes(result['wavBuffer']['data'])
+            wav_data = bytes(result['wavBuffer']['data'])  # it's ok
             with open(output_file, 'wb') as f:
                 f.write(wav_data)
             return True
         except Exception as e:
-            print("Ошибка при озвучивании текста (astica API):", e)
+            logger.logging("Ошибка при озвучивании текста (astica API):", e)
 
     def handle_audio_request(self, input_text, voice_id=0, lang='en-US', output_file='output.wav', timeout=20):
         payload = {
@@ -995,18 +999,30 @@ class Astica_API:
                                     input_text=input_text, voice_id=voice_id,
                                     lang=lang, output_file=output_file, timeout=timeout)
 
-    def generate_image(self, prompt, prompt_negative='', generate_quality=GenerateQuality.faster, generate_lossless=0,
+    def generate_image(self, prompt, image_path, prompt_negative='', generate_quality=GenerateQuality.faster, generate_lossless=0,
                        seed=None, moderate=1, timeout=60):
+        def save_image(image_url):
+            response = requests.get(image_url, stream=True)
+            if response.status_code == 200:
+                with open(image_path, 'wb') as file:
+                    response.raw.decode_content = True
+                    shutil.copyfileobj(response.raw, file)
+                return image_path
+            else:
+                raise Exception(f"Ошибка при загрузке изображения. Код статуса: {response.status_code}")
+
         try:
             result = self.handle_image_request(prompt=prompt, prompt_negative=prompt_negative,
                                                generate_quality=generate_quality,
                                                generate_lossless=generate_lossless,
                                                seed=seed, moderate=moderate, timeout=timeout)
-            print(json.dumps(result, indent=4))
+            logger.logging("image json generated:", result, color=Color.GRAY)
 
-            return result['output']
+            save_image(result['output'])
+
+            return image_path if os.path.exists(image_path) else None
         except Exception as e:
-            print("Ошибка при генерации изображения (astica API):", e)
+            logger.logging("Ошибка при генерации изображения (astica API):", e)
 
     def handle_image_request(self, prompt, prompt_negative='', generate_quality=GenerateQuality.faster,
                              generate_lossless=0,
@@ -1056,7 +1072,7 @@ class Astica_API:
         if response.status_code == 200:
             if response.json().get('error'):
                 error = response.json()['error']
-                print("warn:", error)
+                logger.logging("warn:", error)
                 if (error == "invalid api token"
                         or error == 'missing API key'
                         or 'Visit billing at astica.ai/account' in error):
