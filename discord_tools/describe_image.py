@@ -27,8 +27,8 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
                 object_name = item['object']
                 result += '  ' * indent + f'Object: {object_name}'
                 if 'parent' in item:
-                    get_object_info([item['parent']], result=result, indent=indent + 1)
-                return result
+                    result = get_object_info([item['parent']], result=result, indent=indent + 1)
+            return result
 
         astica_api = Astica_API(proxies=proxies)
         result = astica_api.get_image_description(
@@ -42,11 +42,8 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             caption = result['caption_GPTS']
         else:
             text = ""
-            if 'caption' in result:
-                try:
-                    text = result['caption']['text'] + "\n\n" if result['caption']['text'] else ""
-                except Exception as e:
-                    print("Idk why error", e) # TODO :D
+            if 'caption' in result and 'text' in result['caption']:
+                text = result['caption']['text'] + "\n\n"
 
             caption = text + get_object_info(data=result['objects'])
 
