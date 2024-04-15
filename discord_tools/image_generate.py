@@ -308,7 +308,7 @@ class Waifus_API:
         self.return_images = 1
         self.support_russian = False
 
-    def check_generation(self, request_id, model, delay=0.5):
+    def check_generation(self, request_id, model, delay=5):
         for i in range(int(GLOBAL_IMAGE_TIMEOUT // delay)):
             url = f"https://waifus-api.nemusona.com/job/status/{model}/{request_id}"
 
@@ -361,9 +361,15 @@ class Waifus_API:
                                                     cfg_scale=cfg_scale,
                                                     denoising_strength=denoising_strength,
                                                     seed=seed, model=model)
+
+            time.sleep(5)
+
             generated = self.check_generation(request_id, model)
             if not generated:
                 raise Exception("Not generated!")
+
+            time.sleep(1)
+
             base64_image = self.get_result(request_id, model)
             image_path = self.save_image(base64_image, image_path)
 
