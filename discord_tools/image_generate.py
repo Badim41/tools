@@ -98,12 +98,15 @@ class GenerateImages:
                              range(4)]
 
                     if model_instance.support_async:
-                        image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT + 60)
+                        # 4 функции сразу
+                        image_paths.append(await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT + 60))
                     else:
+                        # последовательно 4 функции
                         for task in tasks:
                             image_paths += await asyncio.wait_for(task, timeout=GLOBAL_IMAGE_TIMEOUT + 60)
 
                 elif model_instance.return_images == 4:
+                    # 1 функция для 4 изображений
                     image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
                                                          timeout=GLOBAL_IMAGE_TIMEOUT + 60)
                 else:
