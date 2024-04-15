@@ -96,7 +96,13 @@ class GenerateImages:
                 if model_instance.return_images == 1:
                     tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in
                              range(4)]
-                    image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT + 60)
+
+                    if model_instance.support_async:
+                        image_paths = await asyncio.wait_for(asyncio.gather(*tasks), timeout=GLOBAL_IMAGE_TIMEOUT + 60)
+                    else:
+                        for task in tasks:
+                            image_paths +=await asyncio.wait_for(task, timeout=GLOBAL_IMAGE_TIMEOUT + 60)
+
                 elif model_instance.return_images == 4:
                     image_paths = await asyncio.wait_for(asyncio.to_thread(model_instance.generate, prompt, image_path),
                                                          timeout=GLOBAL_IMAGE_TIMEOUT + 60)
@@ -198,6 +204,7 @@ class Polinations_API:
         self.suffix = "r3"
         self.return_images = 1
         self.support_russian = False
+        self.support_async = True
 
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
         response = requests.get(image_url, timeout=timeout)
@@ -248,6 +255,7 @@ class CharacterAI_API:
         self.suffix = "r2"
         self.return_images = 1
         self.support_russian = False
+        self.support_async = True
 
     def save_image(self, image_url, image_path):
         headers = {
@@ -291,6 +299,7 @@ class Astica_Desinger_API:
         self.suffix = "r5"
         self.return_images = 1
         self.support_russian = False
+        self.support_async = True
 
     def generate(self, prompt, image_path, quality=GenerateQuality.high):
         try:
@@ -307,6 +316,7 @@ class Waifus_API:
         self.suffix = "r6"
         self.return_images = 1
         self.support_russian = False
+        self.support_async = False
 
     def check_generation(self, request_id, model, delay=5):
         for i in range(int(GLOBAL_IMAGE_TIMEOUT // delay)):
@@ -390,6 +400,7 @@ class Bing_API:
         self.return_images = 4
         self.user_agent = user_agent
         self.support_russian = True
+        self.support_async = True
 
     def get_request_id(self, prompt_row, rt, attempts=5, adding_details=None, delay=0.5):
         if not adding_details:
@@ -594,6 +605,7 @@ class Kandinsky_API:
         self.suffix = "r1"
         self.return_images = 1
         self.support_russian = True
+        self.support_async = True
 
     def get_model(self):
         response = requests.get(self.URL + 'key/api/v1/models', headers=self.AUTH_HEADERS)
