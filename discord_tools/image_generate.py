@@ -255,7 +255,7 @@ class Polinations_API:
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
         for i in range(2):
             try:
-                response = requests.get(image_url, timeout=timeout)
+                response = requests.get(image_url, timeout=timeout-5)
                 if response.status_code == 200:
                     image = Image.open(io.BytesIO(response.content))
                     image.save(image_path, "PNG")
