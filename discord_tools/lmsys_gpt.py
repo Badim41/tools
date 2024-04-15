@@ -239,8 +239,7 @@ class Lmsys_API:
         webbrowser.open(url)
 
         library_path = os.path.dirname(__file__)
-        file_path = f"{library_path}\examples\cookie.png"
-        print("Library path?", file_path)
+        file_path = f"{library_path}\\examples\\cookie.png"
         subprocess.run(f'start {file_path}', shell=True)
         self.cookie = input()
         set_database("default", "cloudflare_token", self.cookie)
