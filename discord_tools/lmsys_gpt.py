@@ -55,6 +55,7 @@ class Lmsys_API:
             self.get_cloudflare_token()
         else:
             self.cookie = cookie
+            set_database("default", "cloudflare_token", self.cookie)
 
         random.seed(history_id)
         self.session_hash = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))

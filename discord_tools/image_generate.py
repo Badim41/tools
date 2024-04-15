@@ -371,6 +371,12 @@ class Bing_API:
                 logger.logging("Недостаточно описан")
                 time.sleep(delay)
                 prompt += ", " + adding_details[i % len(adding_details)] + ", " + prompt
+            elif "Вы больше не можете отправлять запросы" in response.text:
+                raise Exception("Слишком много изображений за раз.")
+            elif "Эта запрос проверяется" in response.text:
+                raise Exception("Содержимое запроса не может пройти модерацию, поэтому запрос на проверке. Скорее всего это займёт ОЧЕНЬ много времени")
+            elif "Возникла проблема." in response.text:
+                raise Exception("IP заблокирован, используйте прокси")
             else:
                 logger.logging("Generate text:", element.text)
                 pattern = r'"([^"]*bing\.com[^"]*)"'
