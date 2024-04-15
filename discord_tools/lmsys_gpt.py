@@ -238,14 +238,16 @@ class Lmsys_API:
         if not str(db_cookie) == "None":
             self.cookie = db_cookie
             return
-        print("Введите cookie со страницы. Не используйте VPN:")
-        url = 'https://chat.lmsys.org'
-        webbrowser.open(url)
 
-        library_path = os.path.dirname(__file__)
-        file_path = f"{library_path}\\examples\\cookie.png"
-        subprocess.run(f'start {file_path}', shell=True)
-        self.cookie = input()
+        try:
+            url = 'https://chat.lmsys.org'
+            webbrowser.open(url)
+        except:
+            pass
+        # library_path = os.path.dirname(__file__)
+        # file_path = f"{library_path}\\examples\\cookie.png"
+        # subprocess.run(f'start {file_path}', shell=True)
+        self.cookie = input("Введите cookie со страницы. Не используйте VPN:")
         set_database("default", "cloudflare_token", self.cookie)
         print("Cookie получены!")
         # print("Нажмите галочку в открывшемся окне")
