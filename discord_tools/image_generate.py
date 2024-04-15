@@ -84,7 +84,7 @@ class GenerateImages:
         try:
             model_instance = model_class(self)
 
-            if model_instance.suffix not in ["r2", "r3"]:
+            if model_instance.support_russian:
                 prompt = row_prompt
                 print(f"Changed prompt for {model_instance.__class__.__name__}: {row_prompt}")
 
@@ -197,6 +197,7 @@ class Polinations_API:
         self.queue = generator.queue
         self.suffix = "r3"
         self.return_images = 1
+        self.support_russian = False
 
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
         response = requests.get(image_url, timeout=timeout)
@@ -243,9 +244,10 @@ class CharacterAI_API:
         self.generator = generator
         queue = generator.queue % len(generator.char_tokens)
         self.char_token = generator.char_tokens[queue]
-        self.character = Character_AI(char_id=char_id_images, char_token=self.char_token, testing=True)
+        self.character = Character_AI(char_id=char_id_images, char_token=self.char_token, testing=False)
         self.suffix = "r2"
         self.return_images = 1
+        self.support_russian = False
 
     def save_image(self, image_url, image_path):
         headers = {
@@ -277,7 +279,7 @@ class CharacterAI_API:
 
         _, image_url = await self.character.get_answer(message=prompt, return_image=True)
 
-        await self.save_image(image_url, image_path)
+        self.save_image(image_url, image_path)
 
         return image_path
 
@@ -288,6 +290,7 @@ class Astica_Desinger_API:
         self.api = Astica_API(proxies=generator.proxies)
         self.suffix = "r5"
         self.return_images = 1
+        self.support_russian = False
 
     def generate(self, prompt, image_path, quality=GenerateQuality.high):
         try:
@@ -303,15 +306,28 @@ class Waifus_API:
         self.api = Astica_API(proxies=generator.proxies)
         self.suffix = "r6"
         self.return_images = 1
+        self.support_russian = False
 
-    def check_generation(self, request_id, model):
+    def check_generation(self, request_id, model, delay=0.5):
+        for i in range(int(GLOBAL_IMAGE_TIMEOUT // delay)):
+            url = f"https://waifus-api.nemusona.com/job/status/{model}/{request_id}"
+
+            payload = ""
+            headers = {}
+
+            response = requests.request("GET", url, data=payload, headers=headers)
+            print("Waifu status:", response.text)
+            if response.text == "completed":
+                return True
+            time.sleep(delay)
+
+    def get_result(self, request_id, model):
         url = f"https://waifus-api.nemusona.com/job/result/{model}/{request_id}"
 
         payload = ""
         headers = {}
 
         response = requests.request("GET", url, data=payload, headers=headers)
-
         return response.json()['base64']
 
     def save_image(self, base64_image, image_path):
@@ -345,7 +361,9 @@ class Waifus_API:
                                                     cfg_scale=cfg_scale,
                                                     denoising_strength=denoising_strength,
                                                     seed=seed, model=model)
-            base64_image = self.check_generation(request_id, model)
+            generated = self.check_generation(request_id, model)
+            if not generated:
+                raise Exception("Not generated!")
             image_path = self.save_image(base64_image, image_path)
 
             logger.logging(f"{self.__class__.__name__} done: {image_path}")
@@ -364,6 +382,7 @@ class Bing_API:
         self.suffix = "r4"
         self.return_images = 4
         self.user_agent = user_agent
+        self.support_russian = True
 
     def get_request_id(self, prompt_row, rt, attempts=5, adding_details=None, delay=0.5):
         if not adding_details:
@@ -567,6 +586,7 @@ class Kandinsky_API:
 
         self.suffix = "r1"
         self.return_images = 1
+        self.support_russian = True
 
     def get_model(self):
         response = requests.get(self.URL + 'key/api/v1/models', headers=self.AUTH_HEADERS)
