@@ -253,7 +253,7 @@ class Polinations_API:
         self.support_async = True
 
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
-        while True:
+        for i in range(2):
             try:
                 response = requests.get(image_url, timeout=timeout)
                 if response.status_code == 200:
