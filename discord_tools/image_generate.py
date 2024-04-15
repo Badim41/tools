@@ -160,7 +160,7 @@ class GenerateImages:
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
                        bing_image_generator=True, zip_name=None, delete_temp=True, bing_fast=False, astica=True,
-                       waufu=True, hugging_face = True,
+                       waufu=True, hugging_face=True,
                        row_prompt=None):
         self.queue += 1
 
@@ -203,6 +203,7 @@ class GenerateImages:
 
         return results
 
+
 class Huggingface_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
@@ -211,6 +212,7 @@ class Huggingface_API:
         self.return_images = 1
         self.support_russian = False
         self.support_async = True
+
     def generate(self, prompt, image_path, quality=GenerateQuality.high):
         if quality == GenerateQuality.faster:
             quality = "1-Step"
@@ -236,8 +238,11 @@ class Huggingface_API:
             os.rename(result, image_path)
 
             logger.logging(f"{self.__class__.__name__} done: {image_path}")
+            return image_path
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+
+
 class Polinations_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
