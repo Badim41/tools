@@ -11,9 +11,10 @@ import zipfile
 import urllib
 import re
 import shutil
-from bs4 import BeautifulSoup
 
+from bs4 import BeautifulSoup
 from PIL import Image
+from gradio_client import Client
 
 from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
@@ -75,6 +76,7 @@ class GenerateImages:
         self.blocked_requests = []
         self.proxies = proxies
         self.queue = 0
+        self.hg_client = None
 
     # [Kandinsky_API, Polinations_API, CharacterAI_API, Bing_API]
     async def generate_image_grid(self, model_class, image_name, prompt, row_prompt, delete_temp=True, zip_name=None):
@@ -158,7 +160,7 @@ class GenerateImages:
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
                        bing_image_generator=True, zip_name=None, delete_temp=True, bing_fast=False, astica=True,
-                       waufu=True,
+                       waufu=True, hugging_face = True,
                        row_prompt=None):
         self.queue += 1
 
@@ -186,6 +188,8 @@ class GenerateImages:
             models.append(Astica_Desinger_API)
         if waufu:
             models.append(Waifus_API)
+        if hugging_face:
+            models.append(Huggingface_API)
 
         functions = [self.generate_image_grid(model_class=model, image_name=user_id, prompt=prompt, zip_name=zip_name,
                                               delete_temp=delete_temp, row_prompt=row_prompt) for model in models]
@@ -199,7 +203,41 @@ class GenerateImages:
 
         return results
 
+class Huggingface_API:
+    def __init__(self, generator: GenerateImages):
+        self.generator = generator
+        self.queue = generator.queue
+        self.suffix = "r7"
+        self.return_images = 1
+        self.support_russian = False
+        self.support_async = True
+    def generate(self, prompt, image_path, quality=GenerateQuality.high):
+        if quality == GenerateQuality.faster:
+            quality = "1-Step"
+        elif quality == GenerateQuality.fast:
+            quality = "2-Step"
+        elif quality == GenerateQuality.standard:
+            quality = "4-Step"
+        elif quality == GenerateQuality.high:
+            quality = "8-Step"
+        else:
+            raise Exception("Неверное качество изображения. используйте faster, fast, standard, high")
 
+        try:
+            if not self.generator.hg_client:
+                self.generator.hg_client = Client("AP123/SDXL-Lightning")
+
+            result = self.generator.hg_client.predict(
+                prompt,  # str  in 'Enter your prompt (English)' Textbox component
+                quality,
+                # Literal['1-Step', '2-Step', '4-Step', '8-Step']  in 'Select inference steps' Dropdown component
+                api_name="/generate_image_1"
+            )
+            os.rename(result, image_path)
+
+            logger.logging(f"{self.__class__.__name__} done: {image_path}")
+        except:
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 class Polinations_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
