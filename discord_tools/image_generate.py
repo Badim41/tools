@@ -304,8 +304,8 @@ class Waifus_API:
         self.suffix = "r6"
         self.return_images = 1
 
-    def check_generation(self, request_id):
-        url = f"https://waifus-api.nemusona.com/job/result/anything/{request_id}"
+    def check_generation(self, request_id, model):
+        url = f"https://waifus-api.nemusona.com/job/result/{model}/{request_id}"
 
         payload = ""
         headers = {}
@@ -317,6 +317,8 @@ class Waifus_API:
     def save_image(self, base64_image, image_path):
         with open(image_path, "wb") as file:
             file.write(base64.b64decode(base64_image))
+
+        return image_path
 
     def send_generate_request(self, prompt, negative_prompt='', cfg_scale=10, denoising_strength=0.5, seed=None,
                               model="anything"):
@@ -331,6 +333,7 @@ class Waifus_API:
         }
 
         response = requests.request("POST", url, json=payload)
+
         return response.text
 
     def generate(self, prompt, image_path, negative_prompt='', cfg_scale=10, denoising_strength=0.5, seed=None,
@@ -342,8 +345,12 @@ class Waifus_API:
                                                     cfg_scale=cfg_scale,
                                                     denoising_strength=denoising_strength,
                                                     seed=seed, model=model)
-            base64_image = self.check_generation(request_id)
-            self.save_image(base64_image, image_path)
+            base64_image = self.check_generation(request_id, model)
+            image_path = self.save_image(base64_image, image_path)
+
+            logger.logging(f"{self.__class__.__name__} done: {image_path}")
+
+            return image_path
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
