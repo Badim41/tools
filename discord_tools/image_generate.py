@@ -149,6 +149,7 @@ class GenerateImages:
 
     async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
                        bing_image_generator=True, zip_name=None, delete_temp=True, bing_fast=False, astica=True,
+                       waufu=True,
                        row_prompt=None):
         self.queue += 1
 
@@ -174,6 +175,8 @@ class GenerateImages:
             models.append(Bing_API)
         if astica:
             models.append(Astica_Desinger_API)
+        if waufu:
+            models.append(Waifus_API)
 
         functions = [self.generate_image_grid(model_class=model, image_name=user_id, prompt=prompt, zip_name=zip_name,
                                               delete_temp=delete_temp, row_prompt=row_prompt) for model in models]
@@ -348,7 +351,7 @@ class Waifus_API:
 class Bing_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
-        self.app_version = '"10.0.0"'
+        self.app_version = '"10.0.0"'  # MAKE UPDATE AUTOMATIC ?
         queue = generator.queue % len(generator.bing_cookies)
         self.bing_cookie = generator.bing_cookies[queue]
         self.suffix = "r4"
