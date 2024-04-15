@@ -286,7 +286,7 @@ class Astica_Desinger_API:
         self.suffix = "r5"
         self.return_images = 1
 
-    def generate(self, prompt, image_path, quality=GenerateQuality.faster):
+    def generate(self, prompt, image_path, quality=GenerateQuality.high):
         try:
             result_path = self.api.generate_image(prompt, generate_quality=quality, image_path=image_path)
             return result_path
@@ -294,10 +294,61 @@ class Astica_Desinger_API:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
 
+class Waifus_API:
+    def __init__(self, generator: GenerateImages):
+        self.generator = generator
+        self.api = Astica_API(proxies=generator.proxies)
+        self.suffix = "r6"
+        self.return_images = 1
+
+    def check_generation(self, request_id):
+        url = f"https://waifus-api.nemusona.com/job/result/anything/{request_id}"
+
+        payload = ""
+        headers = {}
+
+        response = requests.request("GET", url, data=payload, headers=headers)
+
+        return response.json()['base64']
+
+    def save_image(self, base64_image, image_path):
+        with open(image_path, "wb") as file:
+            file.write(base64.b64decode(base64_image))
+
+    def send_generate_request(self, prompt, negative_prompt='', cfg_scale=10, denoising_strength=0.5, seed=None,
+                              model="anything"):
+        url = f"https://waifus-api.nemusona.com/job/submit/{model}"
+
+        payload = {
+            "prompt": prompt,
+            "negative_prompt": negative_prompt,
+            "cfg_scale": cfg_scale,
+            "denoising_strength": denoising_strength,
+            "seed": seed
+        }
+
+        response = requests.request("POST", url, json=payload)
+        return response.text
+
+    def generate(self, prompt, image_path, negative_prompt='', cfg_scale=10, denoising_strength=0.5, seed=None,
+                 model="anything"):
+        if seed is None:
+            seed = random.randint(1, 9999999)
+        try:
+            request_id = self.send_generate_request(prompt, negative_prompt=negative_prompt,
+                                                    cfg_scale=cfg_scale,
+                                                    denoising_strength=denoising_strength,
+                                                    seed=seed, model=model)
+            base64_image = self.check_generation(request_id)
+            self.save_image(base64_image, image_path)
+        except:
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+
+
 class Bing_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
-        self.app_version = '"10.0.0"' # TODO UPDATE AUTOMATIC
+        self.app_version = '"10.0.0"'
         queue = generator.queue % len(generator.bing_cookies)
         self.bing_cookie = generator.bing_cookies[queue]
         self.suffix = "r4"
@@ -374,7 +425,8 @@ class Bing_API:
             elif "Вы больше не можете отправлять запросы" in response.text:
                 raise Exception("Слишком много изображений за раз.")
             elif "Эта запрос проверяется" in response.text:
-                raise Exception("Содержимое запроса не может пройти модерацию, поэтому запрос на проверке. Скорее всего это займёт ОЧЕНЬ много времени")
+                raise Exception(
+                    "Содержимое запроса не может пройти модерацию, поэтому запрос на проверке. Скорее всего это займёт ОЧЕНЬ много времени")
             elif "Возникла проблема." in response.text:
                 raise Exception("IP заблокирован, используйте прокси")
             else:
