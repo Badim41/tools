@@ -297,7 +297,7 @@ class Astica_Desinger_API:
 class Bing_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
-        self.app_version = '"6.5.0"'
+        self.app_version = '"10.0.0"' # TODO UPDATE AUTOMATIC
         queue = generator.queue % len(generator.bing_cookies)
         self.bing_cookie = generator.bing_cookies[queue]
         self.suffix = "r4"
