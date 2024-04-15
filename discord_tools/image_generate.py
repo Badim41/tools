@@ -364,6 +364,7 @@ class Waifus_API:
             generated = self.check_generation(request_id, model)
             if not generated:
                 raise Exception("Not generated!")
+            base64_image = self.get_result(request_id, model)
             image_path = self.save_image(base64_image, image_path)
 
             logger.logging(f"{self.__class__.__name__} done: {image_path}")
