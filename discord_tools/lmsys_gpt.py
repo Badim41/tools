@@ -3,7 +3,6 @@ import random
 import requests
 import string
 import subprocess
-import threading
 import time
 import webbrowser
 from aiogram.utils.json import json
@@ -51,7 +50,7 @@ class Lmsys_Text_Models:
 
 
 class Lmsys_API:
-    def __init__(self, history_id=101, text_model=None, cookie=None):
+    def __init__(self, history_id=101, text_model=None, cookie=None, proxies=None):
         if cookie is None:
             self.get_cloudflare_token()
         else:
@@ -63,6 +62,7 @@ class Lmsys_API:
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
         self.text_model = text_model
         self.selected_chat_num = None
+        self.proxies = proxies
 
     def r_join(self, payload):
         url = "https://chat.lmsys.org/queue/join"
@@ -82,7 +82,7 @@ class Lmsys_API:
             "user-agent": self.user_agent
         }
 
-        response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
 
         if "Just a moment..." in response.text:
             print("Токен для cloudflare устарел")
@@ -101,7 +101,7 @@ class Lmsys_API:
             "user-agent": self.user_agent
         }
 
-        response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
+        response = requests.request("GET", url, data=payload, headers=headers, params=querystring, proxies=self.proxies)
 
         if "RATE LIMIT OF THIS MODEL IS REACHED" in response.text:
             raise Exception("Лимит запросов. Используйте 'text_model=None', чтобы обойти ограничение!")
@@ -234,27 +234,18 @@ class Lmsys_API:
             return []
 
     def get_cloudflare_token(self):
-        def open_browser():
-            try:
-                url = 'https://chat.lmsys.org'
-                webbrowser.open(url)
-
-                library_path = os.path.dirname(__file__)
-                file_path = f"{library_path}\\examples\\cookie.png"
-                subprocess.run(f'start {file_path}', shell=True)
-            except Exception as e:
-                pass
-
         db_cookie = get_database("default", "cloudflare_token")
-
         if not str(db_cookie) == "None":
             self.cookie = db_cookie
             return
+        print("Введите cookie со страницы. Не используйте VPN:")
+        url = 'https://chat.lmsys.org'
+        webbrowser.open(url)
 
-        print("Введите cookie со страницы. Не используйте VPN!")
-        thread = threading.Thread(target=open_browser)
-        thread.start()
-        self.cookie = input("cookie:")
+        library_path = os.path.dirname(__file__)
+        file_path = f"{library_path}\\examples\\cookie.png"
+        subprocess.run(f'start {file_path}', shell=True)
+        self.cookie = input()
         set_database("default", "cloudflare_token", self.cookie)
         print("Cookie получены!")
         # print("Нажмите галочку в открывшемся окне")
