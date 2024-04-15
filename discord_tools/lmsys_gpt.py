@@ -3,6 +3,7 @@ import random
 import requests
 import string
 import subprocess
+import threading
 import time
 import webbrowser
 from aiogram.utils.json import json
@@ -166,7 +167,7 @@ class Lmsys_API:
             if self.selected_chat_num is None:
                 return [answer[2][-1][1], answer[3][-1][1]]
             else:
-                return [answer[2+self.selected_chat_num][-1][1]]
+                return [answer[2 + self.selected_chat_num][-1][1]]
         else:
             payload = {
                 "data": [None, self.text_model, prompt, None],
@@ -211,8 +212,10 @@ class Lmsys_API:
 
         print(f"За {attempts} попыток модель не найдена")
         return None, None
+
     def choose_chat(self, num):
         self.selected_chat_num = num
+
     def get_models(self):
         payload = {
             "data": [None, None, "", ""],
@@ -229,19 +232,29 @@ class Lmsys_API:
             return [answer[0][13:], answer[1][13:]]
         else:
             return []
+
     def get_cloudflare_token(self):
+        def open_browser():
+            try:
+                url = 'https://chat.lmsys.org'
+                webbrowser.open(url)
+
+                library_path = os.path.dirname(__file__)
+                file_path = f"{library_path}\\examples\\cookie.png"
+                subprocess.run(f'start {file_path}', shell=True)
+            except Exception as e:
+                pass
+
         db_cookie = get_database("default", "cloudflare_token")
+
         if not str(db_cookie) == "None":
             self.cookie = db_cookie
             return
-        print("Введите cookie со страницы. Не используйте VPN:")
-        url = 'https://chat.lmsys.org'
-        webbrowser.open(url)
 
-        library_path = os.path.dirname(__file__)
-        file_path = f"{library_path}\\examples\\cookie.png"
-        subprocess.run(f'start {file_path}', shell=True)
-        self.cookie = input()
+        print("Введите cookie со страницы. Не используйте VPN!")
+        thread = threading.Thread(target=open_browser)
+        thread.start()
+        self.cookie = input("cookie:")
         set_database("default", "cloudflare_token", self.cookie)
         print("Cookie получены!")
         # print("Нажмите галочку в открывшемся окне")
