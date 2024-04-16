@@ -44,9 +44,10 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             text = ""
             if 'caption' in result and 'text' in result['caption']:
                 text = "### caption:\n" + result['caption']['text'] + "\n\n"
-
-            caption = text + "### objects:\n" + get_object_info(data=result['objects'])
-
+            if 'objects' in result:
+                caption = text + "### objects:\n" + get_object_info(data=result['objects'])
+            else:
+                caption = text
         return (result['moderate']['isAdultContent'] and isAdultContent) or \
                (result['moderate']['isRacyContent'] and isRacyContent) or \
                (result['moderate']['isGoryContent'] and isGoryContent), caption
