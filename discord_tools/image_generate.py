@@ -158,9 +158,11 @@ class GenerateImages:
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
-    async def generate(self, prompt, user_id=0, kandinsky=True, polinations=True, character_ai=True,
-                       bing_image_generator=True, zip_name=None, delete_temp=True, bing_fast=False, astica=True,
-                       waufu=True, hugging_face=True,
+    async def generate(self, prompt, user_id=0,
+                       kandinsky=True, polinations=True, character_ai=True,
+                       bing_image_generator=True, astica=True, waufu=True,
+                       hugging_face=True,
+                       zip_name=None, delete_temp=True, bing_fast=False,
                        row_prompt=None):
         self.queue += 1
 
@@ -363,7 +365,6 @@ class Astica_Desinger_API:
 class Waifus_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
-        self.api = Astica_API(proxies=generator.proxies)
         self.suffix = "r6"
         self.return_images = 1
         self.support_russian = False
@@ -488,7 +489,7 @@ class Bing_API:
             }
 
             response = requests.post('https://www.bing.com/images/create', params=params, headers=headers,
-                                     data=data)
+                                     data=data, proxies=self.generator.proxies)
 
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
@@ -565,7 +566,7 @@ class Bing_API:
             'nfy': '1'
         }
 
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, headers=headers, params=params, proxies=self.generator.proxies)
 
         pattern = r'IG:"([^"]+)"'
         match = re.search(pattern, response.text)
@@ -599,7 +600,7 @@ class Bing_API:
                 'user-agent': self.user_agent
             }
 
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, proxies=self.generator.proxies)
 
             pattern = r'thId=([^&]+)&quot;'
             matches = re.findall(pattern, response.text)

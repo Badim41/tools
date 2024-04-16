@@ -1,15 +1,19 @@
 import base64
-import hashlib
+import secrets
+from datetime import datetime
+import json
 import os
-import random
-import re
 import requests
 import time
-import uuid
-from requests.utils import dict_from_cookiejar
+from Crypto.Cipher import AES
+import requests
+import secrets
+import hashlib
+from base64 import b64encode, b64decode
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
 from discord_tools.logs import Logs
-from discord_tools.chat_gpt import convert_answer_to_json
 
 logger = Logs(warnings=True)
 
@@ -72,34 +76,57 @@ class AiDescribePictureAPI():
         self.file_name_gemini = response.json()['fileName']
 
     def get_answer(self, prompt):
-        url = "https://us-central1-describepicture.cloudfunctions.net/ask_gemini_pro_vision_model_new_public"
 
-        payload = {
+        # if response.status_code == 500:
+        #     return False, "-"
+
+        # if self.testing:
+        #     logger.logging("ANSWER:", response, response.text)
+        # result = response.json()['answer']
+        # if not result:
+        #     logger.logging("RESULT IS EMPTY:", result)
+        #     time.sleep(0.5)
+        #     return self.get_answer(prompt)
+        # else:
+        #     return False, result
+
+        def encrypt_data(data, key):
+            cipher = AES.new(key, AES.MODE_CBC)
+            iv = cipher.iv
+            padded_data = data + (16 - len(data) % 16) * chr(16 - len(data) % 16)
+            encrypted_data = cipher.encrypt(padded_data.encode('utf-8'))
+            return b64encode(encrypted_data).decode('utf-8'), b64encode(iv).decode('utf-8')
+
+        def send_encrypted_request(url, data, key):
+            # Шифруем данные
+            encrypted_data, iv = encrypt_data(data, key)
+
+            # Формируем тело запроса
+            print(encrypted_data, iv)
+            payload = {
+                "encryptedData": encrypted_data,
+                "iv": iv
+            }
+
+            # Отправляем POST-запрос на указанный URL
+            response = requests.post(url, json=payload)
+
+            return response.text
+
+        # Пример использования
+        url = "https://us-central1-describepicture.cloudfunctions.net/ask_gemini_pro_vision_model_new_public"
+        data = json.dumps({
             "imageUrl": f"https://storage.googleapis.com/describe-picture-image/{self.file_name_gemini}",
             "prompt": f"{prompt} with markdown",
-            "mimeType": "image/png"
-        }
+            "mimeType": "image/jpeg",
+            "userId": "sess_2f8R11T6oKwTJl52N973YRwpUks",
+            "date": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        })
+        key = bytes.fromhex("8fb207b01e2e45d36cb26a1ae0a3b850ab1b86181110e7ddd5c27e54465c8dfd")
 
-        headers = {
-            "authority": "us-central1-describepicture.cloudfunctions.net",
-            "accept": "*/*",
-            "content-type": "application/json"
-        }
-
-        response = requests.request("POST", url, json=payload, headers=headers)
-
-        if response.status_code == 500:
-            return False, "-"
-
-        if self.testing:
-            logger.logging("ANSWER:", response, response.text)
-        result = response.json()['answer']
-        if not result:
-            logger.logging("RESULT IS EMPTY:", result)
-            time.sleep(0.5)
-            return self.get_answer(prompt)
-        else:
-            return False, result
+        result = send_encrypted_request(url, data, key)
+        print(result)
+        return None, None
 
 
 def detect_bad_image(image_path, testing=False):
@@ -136,3 +163,5 @@ def describe_image_multy_prompt(image_path, prompts: list, testing=False):
             nswf_all = True
 
     return nswf_all, answers
+
+describe_image(r"C:\Users\as280\Downloads\temp.png", "что это?")
