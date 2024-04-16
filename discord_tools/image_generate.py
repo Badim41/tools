@@ -215,7 +215,7 @@ class Huggingface_API:
         self.support_russian = False
         self.support_async = True
 
-    def generate(self, prompt, image_path, quality=GenerateQuality.high):
+    def generate(self, prompt, image_path, quality=GenerateQuality.fast):
         if quality == GenerateQuality.faster:
             quality = "1-Step"
         elif quality == GenerateQuality.fast:
