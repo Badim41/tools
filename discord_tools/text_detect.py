@@ -10,13 +10,6 @@ def get_image_base64_encoding(file_path) -> str:
     base64_encoded = base64.b64encode(image_data).decode('utf-8')
     return f"data:image/{image_extension[1:]};base64,{base64_encoded}"
 
-proxy = "socks5://localhost:5051"  # Здесь указываем порт 5051, как в вашей команде SSH
-
-proxies = {
-    'http': proxy,
-    'https': proxy
-}
-
 def text_detect(image_path, proxies=None, timeout=60):
     """
     return: caption, text
