@@ -600,7 +600,9 @@ class ChatGPT:
 
         if not self.openAI_moderation:
             request_message = (
-                "Тебе нужно модерировать запросы на создание изображений. "
+                "Тебе нужно модерировать запросы на создание изображений."
+                "Вот категории, которые тебе нужно модерировать:"
+                "'sexual', 'hate', 'harassment', 'self-harm', 'sexual/minors', 'hate/threatening', 'violence/graphic', 'self-harm/intent', 'self-harm/instructions', 'harassment/threatening', 'violence'"
                 "Выведи ответ в json формате, например:\n"
                 "# Примеры ответа"
                 "## Запрос 1: женщина без одежды.\n"
