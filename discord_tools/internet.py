@@ -138,6 +138,17 @@ class Internet:
                 traceback_str = traceback.format_exc()
                 print("error in search.py:", str(traceback_str))
 
+        if self.chat_gpt.coral_API:
+            chat_history = [{"role": "user", "content": text_request}]
+            answer = await asyncio.to_thread(self.chat_gpt.coral_API.generate, chat_history,
+                                             gpt_role="Ты полезный ассистент и даёшь только полезную информацию",
+                                             delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=True)
+            if answer:
+                if full_answer:
+                    return answer
+                else:
+                    return '', '', answer
+
         return await asyncio.to_thread(search_wrapped, text_request, full_answer, limited)
 
 

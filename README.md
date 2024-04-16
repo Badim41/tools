@@ -73,6 +73,19 @@ chat_gpt = ChatGPT(deep_seek_auth_keys=DEEP_SEEK_AUTH_KEYS: [str, list])
 chat_gpt = ChatGPT(deep_seek_keys=DEEP_SEEK_API_KEYS: [str, list])
 ```
 
+### С логином и паролем https://coral.cohere.com
+```python
+import asyncio
+from discord_tools.chat_gpt import ChatGPT
+from discord_tools.coral_API import Coral_API
+coral_api = Coral_API(email="EMAIL", password="PASSWORD")
+
+chat_gpt = ChatGPT(coral_api=coral_api)
+
+result = asyncio.run(chat_gpt.run_all_gpt("Что ты умеешь?"))
+print(result)
+```
+
 ### Все сразу
 ```python
 chat_gpt = ChatGPT(OPEN_AI_KEY: [str, list],

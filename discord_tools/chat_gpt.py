@@ -82,6 +82,13 @@ _providers = [
     g4f.Provider.Llama2,
 ]
 
+def get_cookie_value(cookie_string, key):
+    cookies = cookie_string.split(';')
+    for cookie in cookies:
+        cookie_parts = cookie.strip().split('=')
+        if cookie_parts[0] == key:
+            return cookie_parts[1]
+    return None
 
 async def make_async_post_request(url, json, headers, timeout=120):
     async with aiohttp.ClientSession() as session:
@@ -177,7 +184,7 @@ class ChatGPT:
                  warnings=True,
                  errors=True, testing=False, char_tokens=None, char_ids=None,
                  deep_seek_keys=None,
-                 deep_seek_auth_keys=None):
+                 deep_seek_auth_keys=None, coral_api=None):
         if isinstance(openAI_moderation, list):
             self.openAI_keys = openAI_keys
         elif isinstance(openAI_moderation, str):
@@ -239,6 +246,7 @@ class ChatGPT:
         self.logger = Logs(warnings=warnings, errors=errors)
         self.testing = testing
         self.blocked_chatgpt_location = False
+        self.coral_API = coral_api
 
     async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
                           translate_lang=None):
@@ -265,6 +273,18 @@ class ChatGPT:
 
         if prompt == "" or prompt is None:
             return "Пустой запрос"
+
+        # CORAL API (BEST PROVIDER)
+        if self.coral_API and mode == ChatGPT_Mode.fast:
+            chat_history = await load_history_from_json(user_id)
+            chat_history.append({"role": "user", "content": prompt})
+            chat_history = await trim_history(chat_history, max_length=13500)
+            answer = await asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=False)
+            if answer:
+                chat_history.append({"role": "assistant", "content": answer})
+                await save_history(chat_history, user_id)
+                return answer
+
 
         # Ограничение
         values = [False, True]
@@ -318,6 +338,7 @@ class ChatGPT:
         elif mode == ChatGPT_Mode.all:
             functions = [self.run_official_gpt(messages, 1, value, user_id, gpt_role) for value in values]
             functions += [self.run_deep_seek(messages, 1, value, user_id, gpt_role) for value in values]
+            functions += [asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=False)]
 
             functions += get_fake_gpt_functions(1)
 
@@ -649,6 +670,7 @@ class ChatGPT:
             return result1, result2
 
     async def summarise(self, prompt, full_text, limit=10, limited=False):
+        simbol_limit = 3950
         # Разделение текста на куски по 3950 символов
         text_chunks = [full_text[i:i + 3950] for i in range(0, len(full_text), 3950)]
 
@@ -693,3 +715,4 @@ def convert_answer_to_json(answer, keys):
     except json.JSONDecodeError as e:
         print("Error", e)
         return False, str(e)
+
