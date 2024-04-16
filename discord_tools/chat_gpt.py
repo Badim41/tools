@@ -281,6 +281,8 @@ class ChatGPT:
             chat_history = await trim_history(chat_history, max_length=13500)
             answer = await asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=False)
             if answer:
+                if self.testing:
+                    self.logger.logging("Coral_API:", answer, color=Color.GRAY)
                 chat_history.append({"role": "assistant", "content": answer})
                 await save_history(chat_history, user_id)
                 return answer
