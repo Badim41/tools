@@ -912,8 +912,12 @@ class Astica_API:
     def get_image_description(self, image_path: str, prompt="", length=90,
                               vision_params=Astica_Describe_Params.gpt, timeout=25, error=False) -> dict:
         try:
-
-            input_image = get_image_base64_encoding(image_path)
+            if image_path.startswith("http"):
+                input_image = image_path # URL
+            elif not os.path.exists(image_path):
+                raise Exception(f"Файла не существует: {image_path}")
+            else:
+                input_image = get_image_base64_encoding(image_path)
 
             if len(prompt) < 8:
                 prompt = "Что на изображение? " + prompt

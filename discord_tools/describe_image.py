@@ -116,8 +116,8 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
                 result = get_object_info([item['parent']], result=result, indent=indent + 1)
         return result
 
-    astica_api = Astica_API(proxies=proxies)
-    result = astica_api.get_image_description(
+    api = Astica_API(proxies=proxies)
+    result = api.get_image_description(
         image_path,
         prompt=prompt,
         vision_params=Astica_Describe_Params.gpt_detailed)
