@@ -209,5 +209,5 @@ def lower_image_resolution(image_path, max_pixels=1000000//2):
     if current_pixels > max_pixels:
         new_width = int((max_pixels / current_pixels) ** 0.5 * width)
         new_height = int((max_pixels / current_pixels) ** 0.5 * height)
-        img = img.resize((new_width, new_height), Image.ANTIALIAS)
+        img = img.resize((new_width, new_height))
         img.save(image_path)
