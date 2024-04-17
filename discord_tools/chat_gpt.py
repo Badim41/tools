@@ -82,6 +82,7 @@ _providers = [
     g4f.Provider.Llama2,
 ]
 
+
 def get_cookie_value(cookie_string, key):
     cookies = cookie_string.split(';')
     for cookie in cookies:
@@ -89,6 +90,7 @@ def get_cookie_value(cookie_string, key):
         if cookie_parts[0] == key:
             return cookie_parts[1]
     return None
+
 
 async def make_async_post_request(url, json, headers, timeout=120):
     async with aiohttp.ClientSession() as session:
@@ -250,6 +252,35 @@ class ChatGPT:
 
     async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
                           translate_lang=None):
+        if not os.path.exists('gpt_history'):
+            os.mkdir('gpt_history')
+
+        self.gpt_queue += 1
+        if self.testing:
+            self.logger.logging("run GPT", prompt, color=Color.GRAY)
+        else:
+            self.logger.logging("run GPT", prompt[:25], color=Color.GRAY)
+
+        if prompt == "" or prompt is None:
+            return "Пустой запрос"
+
+        chat_history = await load_history_from_json(user_id)
+
+        provider, answer = await self.wrapped_run_all_gpt(prompt=prompt, mode=mode, user_id=user_id, gpt_role=gpt_role,
+                                                          limited=limited,
+                                                          translate_lang=translate_lang, chat_history=chat_history)
+        if not provider == "all":
+            chat_history.append({"role": "assistant", "content": answer})
+            await save_history(chat_history, user_id)
+
+        if self.testing:
+            self.logger.logging(f"GPT done {provider}:", answer, color=Color.GRAY)
+        else:
+            self.logger.logging(f"GPT done {provider}:", answer[:25], color=Color.GREEN)
+
+        return answer
+
+    async def wrapped_run_all_gpt(self, prompt, mode, user_id, gpt_role, limited, translate_lang, chat_history):
         def get_fake_gpt_functions(delay):
             functions_add = \
                 [self.one_gpt_run(provider=provider, messages=messages, delay_for_gpt=delay,
@@ -259,38 +290,19 @@ class ChatGPT:
                 char = self.chars[self.character_queue % len(self.chars)]
                 functions_add += \
                     [char.get_answer(message=prompt, moderate_answer=ModerateParams.replace_mat, return_image=False)]
+                self.character_queue += 1
 
             return functions_add
-
-        if not os.path.exists('gpt_history'):
-            os.mkdir('gpt_history')
-
-        self.gpt_queue += 1
-        if self.testing:
-            self.logger.logging("run GPT", prompt, color=Color.GRAY)
-        else:
-            self.logger.logging("run GPT", color=Color.GRAY)
-
-        if prompt == "" or prompt is None:
-            return "Пустой запрос"
-
-        chat_history = await load_history_from_json(user_id)
 
         # CORAL API (BEST PROVIDER)
         if self.coral_API and mode == ChatGPT_Mode.fast:
             chat_history_temp = chat_history
             chat_history_temp.append({"role": "user", "content": prompt})
             messages = await trim_history(chat_history_temp, max_length=13500)
-            answer = await asyncio.to_thread(self.coral_API.generate, messages, gpt_role=gpt_role, delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=False)
+            answer = await asyncio.to_thread(self.coral_API.generate, messages, gpt_role=gpt_role, delay_for_gpt=1,
+                                             temperature=0.3, model="command-r-plus", web_access=False)
             if answer:
-                if self.testing:
-                    self.logger.logging("Coral_API:", answer, color=Color.GRAY)
-
-                chat_history.append({"role": "user", "content": prompt})
-                chat_history.append({"role": "assistant", "content": answer})
-                await save_history(chat_history, user_id)
-                return answer
-
+                return "Coral_API", answer
 
         # Ограничение
         values = [False, True]
@@ -303,9 +315,8 @@ class ChatGPT:
             self.logger.logging(f"Cut prompt: ...{prompt[3950:4000]}...", color=Color.YELLOW)
 
         chat_history.append({"role": "user", "content": prompt})
-        messages = await trim_history(chat_history, max_length=4000)
+        messages = await get_sys_prompt(user_id, gpt_role) + await trim_history(chat_history, max_length=4000)
 
-        messages = await get_sys_prompt(user_id, gpt_role) + messages
         if self.testing:
             self.logger.logging("messages", messages, Color.GRAY)
 
@@ -314,15 +325,11 @@ class ChatGPT:
             for value in values:
                 answer = await self.run_official_gpt(messages, 1, value, user_id, gpt_role)
                 if answer and prompt not in answer:
-                    chat_history.append({"role": "assistant", "content": answer})
-                    await save_history(chat_history, user_id)
-                    return answer
+                    return "Official ChatGPT", answer
 
                 answer = await self.run_deep_seek(messages, 1, value, user_id, gpt_role)
                 if answer:
-                    chat_history.append({"role": "assistant", "content": answer})
-                    await save_history(chat_history, user_id)
-                    return answer
+                    return "DeepSeek", answer
 
             functions = get_fake_gpt_functions(30)
 
@@ -335,14 +342,13 @@ class ChatGPT:
             # Получение результата выполненной функции
             for task in done:
                 result = await task
-                chat_history.append({"role": "assistant", "content": result})
-                await save_history(chat_history, user_id)
-                return result
+                return "fake_GPT", result
 
         elif mode == ChatGPT_Mode.all:
             functions = [self.run_official_gpt(messages, 1, value, user_id, gpt_role) for value in values]
             functions += [self.run_deep_seek(messages, 1, value, user_id, gpt_role) for value in values]
-            functions += [asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=False)]
+            functions += [asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1,
+                                            temperature=0.3, model="command-r-plus", web_access=False)]
 
             functions += get_fake_gpt_functions(1)
 
@@ -356,9 +362,8 @@ class ChatGPT:
             result = '\n\n==Другой ответ==\n\n'.join(new_results)
             chat_history.append({"role": "assistant", "content": new_results[0]})
             await save_history(chat_history, user_id)
-            return result
+            return "all", result
 
-        self.logger.logging("error: no GPT mode", Color.RED)
         raise Exception("Не выбран режим GPT")
 
     async def one_gpt_run(self, provider, messages, delay_for_gpt, translate_lang):
@@ -396,7 +401,7 @@ class ChatGPT:
             return result
         except Exception as e:
             if self.testing:
-                self.logger.logging(f"Error in {str(provider)}", str(e), color=Color.GRAY)
+                self.logger.logging(f"Error in {str(provider)}", str(e)[:50], color=Color.GRAY)
             await asyncio.sleep(delay_for_gpt)
 
     async def run_no_auth_official_gpt(self, messages, delay_for_gpt, user_id):
@@ -440,14 +445,11 @@ class ChatGPT:
 
             response_parts = response.split("data: ")
 
-            if self.testing:
-                self.logger.logging("ChatGPT_OFFICIAL_3 ",
-                                    json.loads(response_parts[-2])['message']['content']['parts'][0], color=Color.GRAY)
-
             return json.loads(response_parts[-2])['message']['content']['parts'][0]
         except KeyError:
             self.blocked_chatgpt_location = True
-            self.logger.logging("Неправильная локация для gpt-off3", color=Color.PURPLE)
+            if self.testing:
+                self.logger.logging("Неправильная локация для gpt-off3", color=Color.PURPLE)
         except Exception as e:
             self.logger.logging("error gpt-off3", str(traceback.format_exc()))
 
@@ -466,11 +468,11 @@ class ChatGPT:
                     model="gpt-3.5-turbo-1106",
                     messages=messages
                 )
-                if self.testing:
-                    self.logger.logging("ChatGPT_OFFICIAL_1", completion.choices[0].message.content, color=Color.GRAY)
+
                 return completion.choices[0].message.content
             except Exception as e:
-                self.logger.logging("error (id gpt-off1)", e)
+                if self.testing:
+                    self.logger.logging("error (id gpt-off1)", str(e)[:50])
 
                 if "Incorrect API key provided" in str(
                         e) or "You exceeded your current quota, please check your plan and billing details." in str(e):
@@ -496,8 +498,7 @@ class ChatGPT:
                     auth=auth_key,
                     timeout=30
                 )
-                if self.testing:
-                    self.logger.logging("ChatGPT_OFFICIAL_2:", response, color=Color.GRAY)
+
                 lines = response.split("\n")
                 if len(lines) > 2:
                     if lines[1].startswith(lines[0]) or len(response) > 4100:
@@ -510,7 +511,8 @@ class ChatGPT:
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
                 if self.openAI_auth_keys and not error and 'Unable to load site' not in str(traceback.format_exc()):
-                    self.logger.logging("error gpt-off2", str(traceback.format_exc()))
+                    if self.testing:
+                        self.logger.logging("error gpt-off2", str(e)[:50])
                     return await self.run_official_gpt(messages, delay_for_gpt, key_gpt, user_id, gpt_role, error=True)
                 else:
                     await asyncio.sleep(delay_for_gpt)
@@ -532,13 +534,10 @@ class ChatGPT:
                     messages=messages
                 )
 
-                if self.testing:
-                    self.logger.logging("DeepSeek_1:", response.choices[0].message.content, color=Color.GRAY)
-
                 return response.choices[0].message.content
             except Exception as e:
                 if self.testing:
-                    self.logger.logging("Error in DeepSeek_1:", e, color=Color.GRAY)
+                    self.logger.logging("Error in DeepSeek_1:", str(e)[:50], color=Color.GRAY)
 
                 await asyncio.sleep(delay_for_gpt)
         else:
@@ -576,13 +575,10 @@ class ChatGPT:
                     url = 'https://chat.deepseek.com/api/v0/chat/clear_context'
                     response = await make_async_post_request(url, headers=headers, json={})
 
-                if self.testing:
-                    self.logger.logging("DeepSeek_2:", full_answer, color=Color.GRAY)
-
                 return full_answer
             except Exception as e:
                 if self.testing:
-                    self.logger.logging("Error in DeepSeek_2:", str(e), color=Color.GRAY)
+                    self.logger.logging("Error in DeepSeek_2:", str(e)[:50], color=Color.GRAY)
 
                 await asyncio.sleep(delay_for_gpt)
 
@@ -721,4 +717,3 @@ def convert_answer_to_json(answer, keys):
     except json.JSONDecodeError as e:
         print("Error", e)
         return False, str(e)
-
