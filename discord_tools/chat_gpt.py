@@ -274,15 +274,19 @@ class ChatGPT:
         if prompt == "" or prompt is None:
             return "Пустой запрос"
 
+        chat_history = await load_history_from_json(user_id)
+
         # CORAL API (BEST PROVIDER)
         if self.coral_API and mode == ChatGPT_Mode.fast:
-            chat_history = await load_history_from_json(user_id)
-            chat_history.append({"role": "user", "content": prompt})
-            chat_history = await trim_history(chat_history, max_length=13500)
-            answer = await asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=False)
+            chat_history_temp = chat_history
+            chat_history_temp.append({"role": "user", "content": prompt})
+            messages = await trim_history(chat_history_temp, max_length=13500)
+            answer = await asyncio.to_thread(self.coral_API.generate, messages, gpt_role=gpt_role, delay_for_gpt=1, temperature=0.3, model="command-r-plus", web_access=False)
             if answer:
                 if self.testing:
                     self.logger.logging("Coral_API:", answer, color=Color.GRAY)
+
+                chat_history.append({"role": "user", "content": prompt})
                 chat_history.append({"role": "assistant", "content": answer})
                 await save_history(chat_history, user_id)
                 return answer
@@ -298,12 +302,10 @@ class ChatGPT:
             prompt = prompt[:4000]
             self.logger.logging(f"Cut prompt: ...{prompt[3950:4000]}...", color=Color.YELLOW)
 
-        # загрузка истории
-        chat_history = await load_history_from_json(user_id)
         chat_history.append({"role": "user", "content": prompt})
-        chat_history = await trim_history(chat_history, max_length=4000)
+        messages = await trim_history(chat_history, max_length=4000)
 
-        messages = await get_sys_prompt(user_id, gpt_role) + chat_history
+        messages = await get_sys_prompt(user_id, gpt_role) + messages
         if self.testing:
             self.logger.logging("messages", messages, Color.GRAY)
 

@@ -96,7 +96,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=6
         else:
             return False, answer
     except Exception as e:
-        print("Error in iodraw_API", e)
+        logger.logging("Error in iodraw_API", e)
         return None, '-'
 
 
@@ -158,7 +158,7 @@ def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGory
             # print("Detect bad image:", nsfw, _, str(describer_method), timer.count_time(ignore_error=True))
             return nsfw
         except Exception as e:
-            print("wanr in detect bad image:", e)
+            logger.logging("wanr in detect bad image:", e, color=Color.GRAY)
     return None
 
 
@@ -176,7 +176,7 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
     """
     if not os.path.isfile(image_path):
         raise Exception("Файл с изображением не найден.")
-
+    logger.logging("describe image:", image_path, prompt, color=Color.GRAY)
     if describers is None:
         describers = [Describers_API.Iodraw, Describers_API.Verstel, Describers_API.Astica]
 
@@ -188,6 +188,6 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             # print("Describe image:", nsfw, answer, str(describer_method), timer.count_time(ignore_error=True))
             return nsfw, answer
         except Exception as e:
-            print("wand in detect bad image:", e)
+            logger.logging("wand in detect bad image:", e, color=Color.GRAY)
     return None, "-"
 
