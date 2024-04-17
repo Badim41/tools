@@ -60,45 +60,46 @@ def vercel_API(image_path, proxies=None, timeout=60, *args, **kwargs):
     return None, text
 
 
-def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=60, *args, **kwargs):
+def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=180, attempts=3, *args, **kwargs):
     """
     speed: slow
     Moderate = 13s-22s
     Describe = 9-16s
     comment: хорошо воспринимает запрос, хорошо находит даже рукописный текст
     """
-    response_text = "not inited response"
-    try:
-        url = "https://www.iodraw.com/ai/getChatText.json"
+    for i in range(attempts):
+        response_text = "not inited response"
+        try:
+            url = "https://www.iodraw.com/ai/getChatText.json"
 
-        payload = {
-            "type": "image",
-            "contents": [{"parts": [{"text": prompt}, {"inline_data": {
-                "mime_type": "image/png",
-                "data": get_image_base64_encoding(image_path)
-            }}]}]
-        }
-        headers = {
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Accept-Language": "ru,en;q=0.9",
-            "Connection": "keep-alive",
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
-            "X-Requested-With": "XMLHttpRequest"
-        }
+            payload = {
+                "type": "image",
+                "contents": [{"parts": [{"text": prompt}, {"inline_data": {
+                    "mime_type": "image/png",
+                    "data": get_image_base64_encoding(image_path)
+                }}]}]
+            }
+            headers = {
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Accept-Language": "ru,en;q=0.9",
+                "Connection": "keep-alive",
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
+                "X-Requested-With": "XMLHttpRequest"
+            }
 
-        response = requests.request("POST", url, json=payload, headers=headers, proxies=proxies, timeout=timeout)
-        #
-        response_text = response.text
-        response_json = response.json()
-        answer = response_json.get('content', None)
-        if answer is None:
-            return True, 'NSFW detected'
-        else:
-            return False, answer
-    except Exception as e:
-        logger.logging("Error in iodraw_API", e, response_text)
-        return None, '-'
+            response = requests.request("POST", url, json=payload, headers=headers, proxies=proxies, timeout=timeout)
+            #
+            response_text = response.text
+            response_json = response.json()
+            answer = response_json.get('content', None)
+            if answer is None:
+                return True, 'NSFW detected'
+            else:
+                return False, answer
+        except Exception as e:
+            logger.logging("Error in iodraw_API", e, response_text)
+    return None, '-'
 
 
 def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None, *args,
