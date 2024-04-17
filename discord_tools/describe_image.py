@@ -2,6 +2,7 @@ import base64
 import os
 import requests
 import traceback
+from PIL import Image
 
 from discord_tools.logs import Logs, Color
 from discord_tools.astica_API import Astica_Describe_Params, Astica_API
@@ -148,6 +149,10 @@ class Describers_API:
 
 def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None,
                      describers=None):
+    if not os.path.isfile(image_path):
+        raise Exception("Файл с изображением не найден.")
+
+    reduce_image_resolution(image_path)
 
     if describers is None:
         describers = [Describers_API.Iodraw, Describers_API.Astica, Describers_API.Verstel]
@@ -178,7 +183,11 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
     """
     if not os.path.isfile(image_path):
         raise Exception("Файл с изображением не найден.")
+
     logger.logging("describe image:", image_path, prompt, color=Color.GRAY)
+
+    reduce_image_resolution(image_path)
+
     if describers is None:
         describers = [Describers_API.Iodraw, Describers_API.Verstel, Describers_API.Astica]
 
@@ -193,3 +202,10 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             logger.logging("wand in detect bad image:", e, color=Color.GRAY)
     return None, "-"
 
+def reduce_image_resolution(image_path, target_size_mb=1):
+    img = Image.open(image_path)
+    while os.path.getsize(image_path) > target_size_mb * 1024 * 1024:
+        new_width = int(img.width * 0.90)
+        new_height = int(img.height * 0.90)
+        img = img.resize((new_width, new_height))
+        img.save(image_path)
