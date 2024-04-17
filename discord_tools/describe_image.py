@@ -152,7 +152,7 @@ def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGory
     if not os.path.isfile(image_path):
         raise Exception("Файл с изображением не найден.")
 
-    reduce_image_resolution(image_path)
+    lower_image_resolution(image_path)
 
     if describers is None:
         describers = [Describers_API.Iodraw, Describers_API.Astica, Describers_API.Verstel]
@@ -186,7 +186,7 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
 
     logger.logging("describe image:", image_path, prompt, color=Color.GRAY)
 
-    reduce_image_resolution(image_path)
+    lower_image_resolution(image_path)
 
     if describers is None:
         describers = [Describers_API.Iodraw, Describers_API.Verstel, Describers_API.Astica]
@@ -202,7 +202,7 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             logger.logging("wand in detect bad image:", e, color=Color.GRAY)
     return None, "-"
 
-def reduce_image_resolution(image_path, max_pixels=1000000//2):
+def lower_image_resolution(image_path, max_pixels=1000000//2):
     img = Image.open(image_path)
     width, height = img.size
     current_pixels = width * height
