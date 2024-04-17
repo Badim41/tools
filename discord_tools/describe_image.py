@@ -183,7 +183,7 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
     for describer_method in describers:
         try:
             # timer = Time_Count()
-            nsfw, answer = describer_method(image_path, prompt='', isAdultContent=isAdultContent,
+            nsfw, answer = describer_method(image_path, prompt=prompt, isAdultContent=isAdultContent,
                                        isRacyContent=isRacyContent, isGoryContent=isGoryContent, proxies=proxies)
             # print("Describe image:", nsfw, answer, str(describer_method), timer.count_time(ignore_error=True))
             return nsfw, answer
