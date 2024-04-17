@@ -161,10 +161,11 @@ def transform_messages(messages):
 
 
 async def clear_history(user_id):
+    file = f'gpt_history/{user_id}_history.json'
     try:
-        os.remove(f'gpt_history/{user_id}_history.json')
+        os.remove(file)
     except FileNotFoundError:
-        pass
+        print(file)
 
 
 async def trim_history(history, max_length=4000):

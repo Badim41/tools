@@ -1,6 +1,7 @@
 import base64
 import os
 import requests
+import time
 import traceback
 from PIL import Image
 
@@ -61,7 +62,7 @@ def vercel_API(image_path, proxies=None, timeout=60, *args, **kwargs):
     return None, text
 
 
-def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=180, attempts=3, *args, **kwargs):
+def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=120, attempts=3, *args, **kwargs):
     """
     speed: slow
     Moderate = 13s-22s
@@ -100,6 +101,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
                 return False, answer
         except Exception as e:
             logger.logging("Error in iodraw_API", e, response_text)
+            time.sleep(30)
     return None, '-'
 
 
@@ -202,7 +204,7 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             logger.logging("wand in detect bad image:", e, color=Color.GRAY)
     return None, "-"
 
-def lower_image_resolution(image_path, max_pixels=1000000//2):
+def lower_image_resolution(image_path, max_pixels=1000000):
     img = Image.open(image_path)
     width, height = img.size
     current_pixels = width * height
