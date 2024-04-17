@@ -67,6 +67,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=6
     Describe = 9-16s
     comment: хорошо воспринимает запрос, хорошо находит даже рукописный текст
     """
+    response_text = "not inited response"
     try:
         url = "https://www.iodraw.com/ai/getChatText.json"
 
@@ -87,8 +88,8 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=6
         }
 
         response = requests.request("POST", url, json=payload, headers=headers, proxies=proxies, timeout=timeout)
-        # print(response.text)
-
+        #
+        response_text = response.text
         response_json = response.json()
         answer = response_json.get('content', None)
         if answer is None:
@@ -96,7 +97,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=6
         else:
             return False, answer
     except Exception as e:
-        logger.logging("Error in iodraw_API", e)
+        logger.logging("Error in iodraw_API", e, response_text)
         return None, '-'
 
 
