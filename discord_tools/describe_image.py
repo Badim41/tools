@@ -202,10 +202,12 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
             logger.logging("wand in detect bad image:", e, color=Color.GRAY)
     return None, "-"
 
-def reduce_image_resolution(image_path, target_size_mb=1):
-    while os.path.getsize(image_path) > target_size_mb * 1024 * 1024:
-        img = Image.open(image_path)
-        new_width = int(img.width * 0.90)
-        new_height = int(img.height * 0.90)
-        img = img.resize((new_width, new_height))
+def reduce_image_resolution(image_path, max_pixels=1000000//2):
+    img = Image.open(image_path)
+    width, height = img.size
+    current_pixels = width * height
+    if current_pixels > max_pixels:
+        new_width = int((max_pixels / current_pixels) ** 0.5 * width)
+        new_height = int((max_pixels / current_pixels) ** 0.5 * height)
+        img = img.resize((new_width, new_height), Image.ANTIALIAS)
         img.save(image_path)
