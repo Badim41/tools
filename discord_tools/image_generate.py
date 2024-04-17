@@ -160,7 +160,7 @@ class GenerateImages:
 
     async def generate(self, prompt, user_id=0,
                        kandinsky=True, polinations=True, character_ai=True,
-                       bing_image_generator=True, astica=True, waufu=True,
+                       bing_image_generator=True, astica=False, waufu=True,
                        hugging_face=True,
                        zip_name=None, delete_temp=True, bing_fast=False,
                        row_prompt=None):
@@ -187,7 +187,8 @@ class GenerateImages:
         if bing_image_generator and self.bing_cookies:
             models.append(Bing_API)
         if astica:
-            models.append(Astica_Desinger_API)
+            logger.logging("Ascite API Design-AI больше не работает!")
+            # models.append(Astica_Desinger_API)
         if waufu:
             models.append(Waifus_API)
         if hugging_face:

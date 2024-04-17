@@ -34,6 +34,11 @@ async def moderate_mat_in_sentence(sentence, bad_word=True):
     else:
         return found_mats, sentence
 
+ban_words = ["секс", "sex", "nude", "голая", "член", "dick", "bdsm", "эротичес", "трусах", "топлесс ", "pussy",
+                 "ass ",
+                 "грудь", "дилдо", "nippl", "nake", "fuck", "сосков", "penis", "ебу", "пизд", "голый",
+                 "пенис", "cock ", "cocks ", "hentai", "cum", "шлюх", "femboy", "breasts"]
+
 bad_words = """заебитесьвывротивжопу
 заебисьонвротивжопу
 заебисьтывротивжопу
@@ -1980,7 +1985,6 @@ xyйня
 pizdec
 pizdа
 йух
-нах
 оеб
 пнх
 уеб

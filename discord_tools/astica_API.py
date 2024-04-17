@@ -13,6 +13,7 @@ from discord_tools.logs import Logs, Color
 
 logger = Logs(warnings=True)
 
+# logger.logging("Astica API больше не работает!", color=Color.RED)
 
 class Astica_Describe_Params:
     describe = "describe"
@@ -918,7 +919,7 @@ class Astica_API:
                 prompt = "Что на изображение? " + prompt
             payload = {
                 'tkn': self.api_key,
-                'modelVersion': '2.1_full',
+                'modelVersion': '2.5_full',
                 'visionParams': vision_params,
                 'input': input_image,
                 'gpt_prompt': prompt,
