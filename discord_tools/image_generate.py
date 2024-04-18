@@ -526,8 +526,8 @@ class Bing_API:
             elif "Эта запрос проверяется" in response.text:
                 raise Exception(
                     "Содержимое запроса не может пройти модерацию, поэтому запрос на проверке. Скорее всего это займёт ОЧЕНЬ много времени")
-            elif "Возникла проблема." in response.text:
-                raise Exception("IP заблокирован, используйте прокси")
+            # elif "Возникла проблема." in response.text:
+            #     raise Exception("IP заблокирован, используйте прокси")
             else:
                 logger.logging("Generate text:", element.text)
                 pattern = r'"([^"]*bing\.com[^"]*)"'
