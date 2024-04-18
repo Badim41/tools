@@ -471,8 +471,8 @@ class Bing_API:
                 raise Exception("Запрос уже был запрешён")
 
             data = {
-                "q": "Mesmerizing rendering of a computer-generated character named Greymon, yellow and blue digimon, fierce appearance, muscular, quadrupedal creature, large head, long tail, three horns, sharp teeth, large mouth, yellow and blue fur, large fin on back, short and powerful arms and legs, sharp claws, 3D render, high detail, Octane render, 8K, HD",
-                "rt": "4", "FORM": "GENCRE"}
+                "q": prompt,
+                "rt": "3", "FORM": "GENCRE"}
 
             headers = {
                 "cookie": self.bing_cookie,
@@ -488,8 +488,7 @@ class Bing_API:
                 "user-agent": self.user_agent
             }
 
-            response = requests.post('https://www.bing.com/images/create', headers=headers,
-                                     data=data, proxies=self.generator.proxies)
+            response = requests.post('https://www.bing.com/images/create', data="", headers=headers, params=data, proxies=self.generator.proxies)
 
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
