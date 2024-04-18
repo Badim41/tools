@@ -470,26 +470,25 @@ class Bing_API:
             if prompt.lower() in self.generator.blocked_requests:
                 raise Exception("Запрос уже был запрешён")
 
-            headers = {
-                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'accept-language': 'ru,en-US;q=0.9,en;q=0.8',
-                'cookie': self.bing_cookie,
-                'sec-ch-ua-platform-version': self.app_version,
-                'user-agent': self.user_agent
-            }
-
-            params = {
-                'q': prompt,
-                'rt': rt,
-                'FORM': 'GENCRE',
-            }
-
             data = {
-                'q': prompt,
-                'qs': 'ds',
+                "q": "Mesmerizing rendering of a computer-generated character named Greymon, yellow and blue digimon, fierce appearance, muscular, quadrupedal creature, large head, long tail, three horns, sharp teeth, large mouth, yellow and blue fur, large fin on back, short and powerful arms and legs, sharp claws, 3D render, high detail, Octane render, 8K, HD",
+                "rt": "4", "FORM": "GENCRE"}
+
+            headers = {
+                "cookie": self.bing_cookie,
+                "authority": "www.bing.com",
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "accept-language": "ru,en;q=0.9",
+                "cache-control": "max-age=0",
+                "content-type": "application/x-www-form-urlencoded",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "same-origin",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1",
+                "user-agent": self.user_agent
             }
 
-            response = requests.post('https://www.bing.com/images/create', params=params, headers=headers,
+            response = requests.post('https://www.bing.com/images/create', headers=headers,
                                      data=data, proxies=self.generator.proxies)
 
             if not response.status_code == 200:
