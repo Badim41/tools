@@ -1,6 +1,7 @@
 import asyncio
 import g4f
 import json
+import logging
 import os
 import requests
 import traceback
@@ -14,12 +15,14 @@ from discord_tools.logs import Logs, Color
 from discord_tools.character_ai_chat import Character_AI, ModerateParams
 from discord_tools.translate import translate_text
 
+logger = Logs(warnings=True)
+
 _providers = [
     # AUTH
     # g4f.Provider.Raycast,
     # g4f.Provider.Phind,
     g4f.Provider.Liaobots,  # - Doker output & Unauth
-    # g4f.Provider.Bing,
+    g4f.Provider.Bing,
     # g4f.Provider.Bard,
     # g4f.Provider.OpenaiChat,
     # g4f.Provider.Theb,
@@ -30,19 +33,19 @@ _providers = [
     # g4f.Provider.AItianhuSpace,
 
     # g4f.Provider.GPTalk, # error 'data'
-    # g4f.Provider.GeminiProChat, # Server Error
+    g4f.Provider.GeminiProChat, # Server Error
     # g4f.Provider.Gpt6, # ?
     # g4f.Provider.AiChatOnline, # ?
     # g4f.Provider.GptGo, # error
     # g4f.Provider.Chatxyz, # error
 
     # not exists
-    # g4f.Provider.ChatgptAi,
+    g4f.Provider.ChatgptAi,
     # g4f.Provider.OnlineGpt,
-    # g4f.Provider.ChatgptNext,
+    g4f.Provider.ChatgptNext,
 
-    # g4f.Provider.Vercel,  # cut answer
-    # g4f.Provider.ChatgptDemo,  # ?
+    g4f.Provider.Vercel,  # cut answer
+    g4f.Provider.ChatgptDemo,  # ?
 
     # g4f.Provider.ChatgptLogin,  # error 403
     # g4f.Provider.ChatgptX,  # error
@@ -50,8 +53,8 @@ _providers = [
 
     # Short answer
     # g4f.Provider.Aura,
-    # g4f.Provider.ChatBase,
-    g4f.Provider.Koala,
+    g4f.Provider.ChatBase,
+    # g4f.Provider.Koala,
     g4f.Provider.ChatForAi,  # too many req
     g4f.Provider.FreeChatgpt,
 
@@ -106,7 +109,25 @@ async def remove_last_format_simbols(text, format="```"):
     return text
 
 
-async def load_history_from_json(user_id):
+def fix_message_history(messages):
+    converted_messages = []
+    user_message_added = False
+    assistant_message_added = False
+
+    for message in messages:
+        if message["role"] == "user" and not user_message_added:
+            converted_messages.append(message)
+            user_message_added = True
+            assistant_message_added = False
+        elif message["role"] == "assistant" and not assistant_message_added:
+            converted_messages.append(message)
+            assistant_message_added = True
+            user_message_added = False
+
+    return converted_messages
+
+
+def load_history_from_json(user_id):
     if not user_id:
         return []
 
@@ -116,6 +137,9 @@ async def load_history_from_json(user_id):
     except FileNotFoundError:
         chat_history = []
 
+    fixed_chat_history = fix_message_history(chat_history)
+    if not fixed_chat_history == chat_history:
+        logger.logging("Fixed chat history", user_id, color=Color.PURPLE)
     # print("load_history:", chat_history)
     return chat_history
 
@@ -130,7 +154,7 @@ def serialize_chat_message(obj):
     raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
 
 
-async def save_history(history, user_id):
+def save_history(history, user_id):
     if not user_id:
         return
 
@@ -139,7 +163,7 @@ async def save_history(history, user_id):
         json.dump(history, file, indent=4, default=serialize_chat_message)
 
 
-async def get_sys_prompt(user_id, gpt_role):
+def get_sys_prompt(user_id, gpt_role):
     if gpt_role == "GPT" or not gpt_role or not user_id:
         sys_prompt = [{"role": "system", "content": "Ты полезный ассистент и даёшь только полезную информацию"}]
     else:
@@ -168,7 +192,7 @@ async def clear_history(user_id):
         print(file)
 
 
-async def trim_history(history, max_length=4000):
+def trim_history(history, max_length=4000):
     current_length = sum(len(message["content"]) for message in history)
     while history and current_length > max_length:
         removed_message = history.pop(0)
@@ -265,14 +289,14 @@ class ChatGPT:
         if prompt == "" or prompt is None:
             return "Пустой запрос"
 
-        chat_history = await load_history_from_json(user_id)
+        chat_history = load_history_from_json(user_id)
 
         provider, answer = await self.wrapped_run_all_gpt(prompt=prompt, mode=mode, user_id=user_id, gpt_role=gpt_role,
                                                           limited=limited,
                                                           translate_lang=translate_lang, chat_history=chat_history)
         if not provider == "all":
             chat_history.append({"role": "assistant", "content": answer})
-            await save_history(chat_history, user_id)
+            save_history(chat_history, user_id)
 
         if self.testing:
             self.logger.logging(f"GPT done {provider}:", answer, color=Color.GRAY)
@@ -299,7 +323,7 @@ class ChatGPT:
         if self.coral_API and mode == ChatGPT_Mode.fast:
             chat_history_temp = chat_history
             chat_history_temp.append({"role": "user", "content": prompt})
-            messages = await trim_history(chat_history_temp, max_length=13500)
+            messages = trim_history(chat_history_temp, max_length=13500)
             answer = await asyncio.to_thread(self.coral_API.generate, messages, gpt_role=gpt_role, delay_for_gpt=1,
                                              temperature=0.3, model="command-r-plus", web_access=False)
             if answer:
@@ -316,7 +340,7 @@ class ChatGPT:
             self.logger.logging(f"Cut prompt: ...{prompt[3950:4000]}...", color=Color.YELLOW)
 
         chat_history.append({"role": "user", "content": prompt})
-        messages = await get_sys_prompt(user_id, gpt_role) + await trim_history(chat_history, max_length=4000)
+        messages = get_sys_prompt(user_id, gpt_role) + trim_history(chat_history, max_length=4000)
 
         if self.testing:
             self.logger.logging("messages", messages, Color.GRAY)
@@ -362,7 +386,7 @@ class ChatGPT:
 
             result = '\n\n==Другой ответ==\n\n'.join(new_results)
             chat_history.append({"role": "assistant", "content": new_results[0]})
-            await save_history(chat_history, user_id)
+            save_history(chat_history, user_id)
             return "all", result
 
         raise Exception("Не выбран режим GPT")
