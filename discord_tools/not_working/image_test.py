@@ -6,8 +6,7 @@ data = {
     "q": "cats HD",
     "rt": "3", "FORM": "GENCRE"}
 
-headers = {
-    "cookie": "",    "authority": "www.bing.com",
+headers = {"authority": "www.bing.com",
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "accept-language": "ru,en;q=0.9",
     "cache-control": "max-age=0",

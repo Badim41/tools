@@ -469,10 +469,11 @@ class Bing_API:
 
             if prompt.lower() in self.generator.blocked_requests:
                 raise Exception("Запрос уже был запрешён")
+            url = "https://www.bing.com/images/create"
 
             data = {
                 "q": prompt,
-                "rt": rt, "FORM": "GENCRE"}
+                "rt": "3", "FORM": "GENCRE"}
 
             headers = {
                 "cookie": self.bing_cookie,
@@ -485,13 +486,12 @@ class Bing_API:
                 "sec-fetch-site": "same-origin",
                 "sec-fetch-user": "?1",
                 "upgrade-insecure-requests": "1",
-                "user-agent": self.user_agent
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
             }
 
-            print("HEADERS AND DATA", headers, data)
-
-            response = requests.post("https://www.bing.com/images/create", data="", headers=headers, params=data,
-                                     proxies=self.generator.proxies)
+            response = requests.request("POST", url, data="", headers=headers, params=data, proxies=self.generator.proxies)
+            print(headers, data)
+            print(response.text)
 
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
