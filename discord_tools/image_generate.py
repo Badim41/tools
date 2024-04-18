@@ -258,7 +258,7 @@ class Polinations_API:
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
         for i in range(2):
             try:
-                response = requests.get(image_url, timeout=timeout-5)
+                response = requests.get(image_url, timeout=timeout - 5)
                 if response.status_code == 200:
                     image = Image.open(io.BytesIO(response.content))
                     image.save(image_path, "PNG")
@@ -488,7 +488,7 @@ class Bing_API:
                 "user-agent": self.user_agent
             }
 
-            response = requests.post('https://www.bing.com/images/create', data="", headers=headers, params=data, proxies=self.generator.proxies)
+            response = requests.post("https://www.bing.com/images/create", data="", headers=headers, params=data)
 
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
