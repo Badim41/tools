@@ -630,10 +630,8 @@ class ChatGPT:
                 "'sexual', 'hate', 'harassment', 'self-harm', 'sexual/minors', 'hate/threatening', 'violence/graphic', 'self-harm/intent', 'self-harm/instructions', 'harassment/threatening', 'violence'"
                 "Выведи ответ в json формате, например:\n"
                 "# Примеры ответа"
-                "## Запрос 1: женщина без одежды.\n"
-                '## Ответ 1: {"blocked": true, "category": "sexual"}.\n'
-                "## Запрос 2: Невежливый человек.\n"
-                '## Ответ 2: {"blocked": false, "category": "None"}.\n'
+                "## Запрос 1: Невежливый человек.\n"
+                '## Ответ 1: {"blocked": false, "category": "None"}.\n'
                 f"Вот запрос для генерации изображений, на который тебе нужно будет ответить: {text}"
             )
 
