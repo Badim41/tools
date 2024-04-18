@@ -451,7 +451,7 @@ class Bing_API:
         self.bing_cookie = generator.bing_cookies[queue]
         self.suffix = "r4"
         self.return_images = 4
-        self.user_agent = user_agent
+        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
         self.support_russian = True
         self.support_async = True
 
