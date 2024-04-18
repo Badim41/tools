@@ -599,6 +599,8 @@ class ChatGPT:
                 if clear_context:
                     url = 'https://chat.deepseek.com/api/v0/chat/clear_context'
                     response = await make_async_post_request(url, headers=headers, json={})
+                    if self.testing:
+                        self.logger.logging("Cleared context:", response)
 
                 return full_answer
             except Exception as e:
