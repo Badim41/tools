@@ -7,13 +7,20 @@ from discord_tools.sql_db import get_database, set_database_not_async as set_dat
 logger = Logs(warnings=True)
 
 class Coral_API:
-    def __init__(self, email=None, password=None, proxies=None):
+    def __init__(self, api_key=None, email=None, password=None, proxies=None):
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
+        # self.api_key = self.get_api_key()
+        self.proxies = proxies
         self.email = email
         self.password = password
-        self.proxies = proxies
-        self.access_token, self.user_id = self.get_access_token_on_start()
-        # self.api_key = self.get_api_key()
+        # self.access_token, self.user_id = self.get_access_token_on_start()
+        if not api_key and (email and password):
+            self.access_token, self.user_id = self.get_access_token_on_start()
+            self.api_key = self.get_api_key()
+        elif api_key:
+            self.api_key = api_key
+        else:
+            raise Exception("Нет способа получения ключа")
 
     def login(self):
         import requests
@@ -92,7 +99,6 @@ class Coral_API:
         response_text = "[not got response]"
         response_json = "[no json]"
         try:
-            api_key = self.get_api_key()
 
             transformed_messages = []
             prompt = None
@@ -132,7 +138,7 @@ class Coral_API:
                 "authority": "api.cohere.ai",
                 "accept": "*/*",
                 "accept-language": "ru,en;q=0.9",
-                "authorization": f"Bearer {api_key}",
+                "authorization": f"Bearer {self.api_key}",
                 "content-type": "application/json; charset=utf-8",
                 "user-agent": self.user_agent
             }
