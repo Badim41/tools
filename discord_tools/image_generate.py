@@ -490,8 +490,6 @@ class Bing_API:
             }
 
             response = requests.request("POST", url, data="", headers=headers, params=data, proxies=self.generator.proxies)
-            print(headers, data)
-            print(response.text)
 
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
