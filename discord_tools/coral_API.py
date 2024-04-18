@@ -88,6 +88,9 @@ class Coral_API:
     def generate(self, messages, gpt_role="Ты полезный ассистент и даёшь только полезную информацию", delay_for_gpt=1,
                  temperature=0.3,
                  model="command-r-plus", web_access=False):
+
+        response_text = "[not got response]"
+        response_json = "[no json]"
         try:
             api_key = self.get_api_key()
 
@@ -135,10 +138,11 @@ class Coral_API:
             }
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
-            
-            return response.json()['text']
+            response_text = response.text
+            response_json = response.json()
+            return response_json['text']
         except Exception as e:
-            logger.logging("Error in coral_API:", e, color=Color.RED)
+            logger.logging("Error in coral_API:", e, response_json, response_text, color=Color.RED)
             time.sleep(delay_for_gpt)
 
 

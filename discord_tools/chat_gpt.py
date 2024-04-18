@@ -40,12 +40,12 @@ _providers = [
     # g4f.Provider.Chatxyz, # error
 
     # not exists
-    g4f.Provider.ChatgptAi,
+    # g4f.Provider.ChatgptAi,
     # g4f.Provider.OnlineGpt,
-    g4f.Provider.ChatgptNext,
+    # g4f.Provider.ChatgptNext,
 
-    g4f.Provider.Vercel,  # cut answer
-    g4f.Provider.ChatgptDemo,  # ?
+    # g4f.Provider.Vercel,  # cut answer
+    # g4f.Provider.ChatgptDemo,  # ?
 
     # g4f.Provider.ChatgptLogin,  # error 403
     # g4f.Provider.ChatgptX,  # error
@@ -53,7 +53,7 @@ _providers = [
 
     # Short answer
     # g4f.Provider.Aura,
-    g4f.Provider.ChatBase,
+    # g4f.Provider.ChatBase,
     # g4f.Provider.Koala,
     g4f.Provider.ChatForAi,  # too many req
     g4f.Provider.FreeChatgpt,
@@ -97,7 +97,7 @@ def get_cookie_value(cookie_string, key):
 
 async def make_async_post_request(url, json, headers, timeout=120):
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=json, headers=headers) as response:
+        async with session.post(url, json=json, headers=headers, timeout=timeout) as response:
             return await response.text()
 
 
