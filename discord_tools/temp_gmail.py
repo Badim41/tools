@@ -34,8 +34,9 @@ class GPT_Models:
 
 
 class Temp_Email_API:
-    def __init__(self):
-        response = requests.request("GET", "https://www.emailnator.com/", data="", headers={})
+    def __init__(self, proxies=None):
+        self.proxies = proxies
+        response = requests.request("GET", "https://www.emailnator.com/", data="", headers={}, proxies=self.proxies)
         self.xsrf_token, self.session_id = self.get_tokens(response)
 
     def get_tokens(self, response):
@@ -58,13 +59,13 @@ class Temp_Email_API:
             "x-xsrf-token": self.xsrf_token.replace("%3D", "=")
         }
 
-        response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
         self.xsrf_token, self.session_id = self.get_tokens(response)
 
         return response.json()['email'][0]
 
     @staticmethod
-    def get_message(email, sender, xsrf_token, session_id, message_id=None, attempts=50):
+    def get_message(email, sender, xsrf_token, session_id, message_id=None, attempts=10, proxies=None):
         for i in range(attempts):
             try:
                 # print("get messages")
@@ -87,7 +88,7 @@ class Temp_Email_API:
                     "x-xsrf-token": xsrf_token.replace("%3D", "=")
                 }
 
-                response = requests.request("POST", url, json=payload, headers=headers)
+                response = requests.request("POST", url, json=payload, headers=headers, proxies=proxies)
 
                 print(response.text)
 
@@ -106,7 +107,7 @@ class Temp_Email_API:
                     return response.text
             except Exception as e:
                 print("Warn", e)
-                time.sleep(10)
+                time.sleep(3)
         raise Exception(f"Не получено сообщение от отправителя {sender}!")
 
 
@@ -120,7 +121,8 @@ def correct_link(text):
 
 class ChatGPT_4_Account:
     def __init__(self, email=None, cookies=None, kind=None, id_token=None, refresh_token=None, local_id=None,
-                 last_used=None, create_new=True):
+                 last_used=None, create_new=True, proxies=None):
+        self.proxies = proxies
         self.sender = "noreply@auth.chatgate.ai"
         self.api_chatgpt = None
         self.api_gmail = None
@@ -142,7 +144,16 @@ class ChatGPT_4_Account:
         if account:
             self.__dict__.update(account.__dict__)
         else:
-            self.create_account()
+            created = False
+            for i in range(3):
+                try:
+                    self.create_account()
+                    created = True
+                except Exception as e:
+                    print("Error in create account:", e)
+
+            if not created:
+                raise Exception("Timeout in login account")
 
     def print_instance_vars(self):
         print("Значения переменных экземпляра:")
@@ -169,11 +180,11 @@ class ChatGPT_4_Account:
         self.save_to_json(last_used=1)
         self.bot_info = None
 
-    def ask_gpt(self, prompt, model=GPT_Models.gpt_4):
-        if not self.api_chatgpt:
-            self.api_chatgpt = ChatGPT_4_Site()
+    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3):
+        for i in range(attempts):
 
-        for i in range(3):
+            if not self.api_chatgpt:
+                self.api_chatgpt = ChatGPT_4_Site()
             if not self.bot_info:
                 self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
 
@@ -246,7 +257,8 @@ class ChatGPT_4_Account:
 
 
 class ChatGPT_4_Site:
-    def __init__(self):
+    def __init__(self, proxies=None):
+        self.proxies = proxies
         self.apiKey = self.get_api_key()
         self.firebase_key = self.get_firebase_login_key()
 
@@ -285,7 +297,7 @@ class ChatGPT_4_Site:
         }
 
         response = requests.request("GET", "https://chatgate.ai/login", data=payload, headers=headers,
-                                    params=querystring)
+                                    params=querystring, proxies=self.proxies)
         theme_json = ChatGPT_4_Site.get_json_from_response(response.text, "firebaseOptions")
         print("API key", theme_json['apiKey'])
         return theme_json['apiKey']
@@ -304,7 +316,8 @@ class ChatGPT_4_Site:
 
         headers = {"origin": "https://chatgate.ai"}
 
-        response = requests.request("POST", url, json=payload, headers=headers, params=querystring)
+        response = requests.request("POST", url, json=payload, headers=headers, params=querystring,
+                                    proxies=self.proxies)
 
     def sign_in_with_email_link(self, email, oob_code):
         url = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithEmailLink"
@@ -327,7 +340,8 @@ class ChatGPT_4_Site:
             "x-firebase-locale": "en"
         }
 
-        response = requests.request("POST", url, json=payload, headers=headers, params=querystring)
+        response = requests.request("POST", url, json=payload, headers=headers, params=querystring,
+                                    proxies=self.proxies)
         response_json = response.json()
         kind = response_json['kind']
         idToken = response_json['idToken']
@@ -382,7 +396,7 @@ class ChatGPT_4_Site:
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
         }
 
-        response = requests.request("GET", url, data=payload, headers=headers)
+        response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
 
         result = re.search(r"data-system='(.*?)'", response.text)
 
@@ -403,10 +417,11 @@ class ChatGPT_4_Site:
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
         }
 
-        response = requests.request("GET", "https://chatgate.ai/login", data="", headers=headers, params="")
+        response = requests.request("GET", "https://chatgate.ai/login", data="", headers=headers, params="",
+                                    proxies=self.proxies)
 
         firebase_json = ChatGPT_4_Site.get_json_from_response(response.text, "firebaseWordpress")
-        # print("firebaseLoginKey", firebase_json, firebase_json['firebaseLoginKey'])
+        print("firebaseLoginKey", firebase_json, firebase_json['firebaseLoginKey'])
         return firebase_json['firebaseLoginKey']
 
     def auto_register(self, local_id, email):
@@ -436,7 +451,7 @@ class ChatGPT_4_Site:
             "x-requested-with": "XMLHttpRequest"
         }
 
-        response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
 
         print(response.text)
         self.print_cookie(response, "LOGGED")
@@ -481,7 +496,7 @@ class ChatGPT_4_Site:
 
         print("REST:", bot_info["restNonce"], bot_info)
 
-        response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
         last_line = response.text.split("data: ")[-1]
         print(last_line)
 
@@ -491,10 +506,3 @@ class ChatGPT_4_Site:
         answer = json.loads(json.loads(last_line)['data'])['reply']
 
         return answer
-
-
-# account = ChatGPT_4_Account.load_from_json()
-account = ChatGPT_4_Account()
-
-for i in range(500):
-    account.create_account()
