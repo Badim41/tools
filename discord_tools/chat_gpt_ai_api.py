@@ -1,3 +1,4 @@
+import os.path
 import re
 import requests
 import json
@@ -153,6 +154,9 @@ class ChatGPT_4_Account:
 
     @classmethod
     def load(cls):
+        if not os.path.exists(JSON_ACCOUNT_SAVE):
+            return
+
         instances = []
         with open(JSON_ACCOUNT_SAVE, 'r', encoding='utf-8') as f:
             data = json.load(f)
