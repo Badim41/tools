@@ -470,7 +470,7 @@ if __name__ == "__main__":
     else:
         JSON_ACCOUNT_SAVE = "accounts.json"
 
-    # clear_email_list(JSON_ACCOUNT_SAVE)
+    # clear_email_list("not_safe.json")
 
     account = ChatGPT_4_Account()
     for i in range(50):
