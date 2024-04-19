@@ -11,6 +11,28 @@ from datetime import date
 
 JSON_ACCOUNT_SAVE = "accounts.json"
 
+
+class GPT_Models:
+    gpt_4 = "gpt4"  # tydbjd
+    gpt_4_vision = "vision"  # kvic0w
+    dalle_e_3 = "dalle-e-3"  # 5rwkvr
+    claude_opus = "chat-claude-opus"  # zdmvyq
+    claude_vision = "chat-claude-vision"  # 12oenm
+
+    @staticmethod
+    def get_id(model_name):
+        secret_ids = {
+            GPT_Models.gpt_4: "chatbot-tydbjd",
+            GPT_Models.gpt_4_vision: "chatbot-kvic0w",
+            GPT_Models.dalle_e_3: "chatbot-5rwkvr",
+            GPT_Models.claude_opus: "chatbot-zdmvyq",
+            GPT_Models.claude_vision: "chatbot-12oenm"
+        }
+        if model_name not in secret_ids:
+            raise Exception("Не найден ID для модели", model_name)
+        return secret_ids.get(model_name)
+
+
 class Temp_Email_API:
     def __init__(self):
         response = requests.request("GET", "https://www.emailnator.com/", data="", headers={})
@@ -89,35 +111,51 @@ class Temp_Email_API:
 
 
 def correct_link(text):
-    # Находим индекс начала ссылки
     start_index = text.find("https://")
-
-    # Находим индекс конца ссылки
     end_index = text.find("'", start_index)
-
-    # Получаем исходную ссылку
     original_link = text[start_index:end_index]
-
-    # Заменяем &amp; на &
     corrected_link = original_link.replace("&amp;", "&")
-
     return corrected_link
 
 
 class ChatGPT_4_Account:
-    def __init__(self, email=None, cookies=None, kind=None, id_token=None, refresh_token=None, local_id=None, last_used=None):
-        self.email = email
-        self.cookies = cookies
-        self.kind = kind
-        self.idToken = id_token
-        self.refreshToken = refresh_token
-        self.localId = local_id
-        self.last_used = last_used
+    def __init__(self, email=None, cookies=None, kind=None, id_token=None, refresh_token=None, local_id=None,
+                 last_used=None, create_new=True):
+        self.sender = "noreply@auth.chatgate.ai"
+        self.api_chatgpt = None
+        self.api_gmail = None
+        self.bot_info = None
+
+        if create_new:
+            self.update_class()
+        else:
+            self.email = email
+            self.cookies = cookies
+            self.kind = kind
+            self.idToken = id_token
+            self.refreshToken = refresh_token
+            self.localId = local_id
+            self.last_used = last_used
+
+    def update_class(self):
+        account = ChatGPT_4_Account.load()
+        if account:
+            self.__dict__.update(account.__dict__)
+        else:
+            self.create_account()
+
+    def print_instance_vars(self):
+        print("Значения переменных экземпляра:")
+        for attr, value in self.__dict__.items():
+            print(f"{attr}: {value}")
+
+    def init_api(self):
+        return ChatGPT_4_Site(), Temp_Email_API()
 
     def create_account(self):
-        self.sender = "noreply@auth.chatgate.ai"
-        self.api_chatgpt = ChatGPT_4_Site()
-        self.api_gmail = Temp_Email_API()
+        if not self.api_chatgpt or not self.api_gmail:
+            self.api_chatgpt, self.api_gmail = self.init_api()
+
         self.email = self.api_gmail.get_email()
         self.api_chatgpt.email_send_code(self.email)
         result = Temp_Email_API.get_message(email=self.email, sender=self.sender,
@@ -128,10 +166,26 @@ class ChatGPT_4_Account:
             oob_code=query_dict['oobCode'])
         self.cookies = self.api_chatgpt.auto_register(local_id=self.localId, email=self.email)
         self.cookies = "; ".join([f"{key}={value}" for key, value in self.cookies.items()])
-        self.save_to_json(last_used="JUST CREATED")
+        self.save_to_json(last_used=1)
+        self.bot_info = None
 
-    def ask_gpt(self, prompt):
-        return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies)
+    def ask_gpt(self, prompt, model=GPT_Models.gpt_4):
+        if not self.api_chatgpt:
+            self.api_chatgpt = ChatGPT_4_Site()
+
+        for i in range(3):
+            if not self.bot_info:
+                self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
+
+            try:
+                return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
+                                                 bot_id=GPT_Models.get_id(model))
+            except Exception as e:
+                if "Reached your daily limit" in str(e):
+                    self.save_to_json()
+                    self.update_class()
+                else:
+                    raise e
 
     def to_dict(self, last_used):
         return {
@@ -146,17 +200,28 @@ class ChatGPT_4_Account:
 
     def save_to_json(self, last_used=None):
         if last_used is None:
-            last_used = date.today()
+            last_used = int(date.today().strftime("%Y%m%d"))
 
-        instances = []
+        try:
+            with open(JSON_ACCOUNT_SAVE, 'r', encoding='utf-8') as f:
+                instances = json.load(f)
+        except FileNotFoundError:
+            instances = []
 
-        instances.append(self.to_dict(last_used=last_used))
+        found_instance = False
+        for instance in instances:
+            if instance['email'] == self.email:
+                found_instance = True
+                instance['last_used'] = last_used
+
+        if not found_instance:
+            instances.append(self.to_dict(last_used=last_used))
 
         with open(JSON_ACCOUNT_SAVE, 'w', encoding='utf-8') as f:
             json.dump(instances, f, ensure_ascii=False, indent=4)
 
     @classmethod
-    def load_from_json(cls):
+    def load(cls):
         instances = []
         with open(JSON_ACCOUNT_SAVE, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -169,23 +234,21 @@ class ChatGPT_4_Account:
                 id_token=instance_data.get("idToken"),
                 refresh_token=instance_data.get("refreshToken"),
                 local_id=instance_data.get("localId"),
-                last_used=date.fromisoformat(instance_data.get("last_used"))  # Преобразуем строку обратно в дату
+                last_used=instance_data.get("last_used"),
+                create_new=False
             )
             instances.append(instance)
 
-        today = date.today()
+        today = int(date.today().strftime("%Y%m%d"))
         for instance in instances:
             if instance.last_used != today:
                 return instance
-
-        return None
 
 
 class ChatGPT_4_Site:
     def __init__(self):
         self.apiKey = self.get_api_key()
         self.firebase_key = self.get_firebase_login_key()
-        self.bot_info = self.get_bot_info_json()
 
     @staticmethod
     def get_json_from_response(text, key):
@@ -236,10 +299,6 @@ class ChatGPT_4_Site:
             "requestType": "EMAIL_SIGNIN",
             "email": email,
             "continueUrl": "https://chatgate.ai/login?redirect_tohttps%3A%2F%2Fchatgate.ai%2F&ui_sidVipRNOEgz6nEZne9Z6skpwBzcoiQfXhN&ui_sd0",
-            #              "https://chatgate.ai/login?redirect_to=https%3A%2F%2Fchatgate.ai%2F&ui_sid=hlaHgIwNEtBns6JAxpc9vnd879JbNezh&ui_sd=0"
-            #           GOT:https://chatgate.ai/login?redirect_to%3Dhttps%253A%252F%252Fchatgate.ai%252F%26ui_sid%3DhlaHgIwNEtBns6JAxpc9vnd879JbNezh%26ui_sd%3D0
-            #              "identitytoolkit#CreateAuthUriResponse"
-            #              "LDBP4nAaSZHx09gWLnZFGHhR6SQ"
             "canHandleCodeInApp": True
         }
 
@@ -305,11 +364,12 @@ class ChatGPT_4_Site:
     # print(response.text)
     # self.print_cookie(response, "Register")
 
-    def get_bot_info_json(self):
-        url = "https://chatgate.ai/gpt4"
+    def get_bot_info_json(self, cookies):
+        url = f"https://chatgate.ai/gpt4"
 
         payload = ""
         headers = {
+            "cookie": cookies,
             "authority": "chatgate.ai",
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "accept-language": "ru,en;q=0.9",
@@ -382,7 +442,7 @@ class ChatGPT_4_Site:
         self.print_cookie(response, "LOGGED")
         return response.cookies.get_dict()
 
-    def generate(self, prompt, cookies, chat_id="eev1322xkeg", bot_id="chatbot-tydbjd"):
+    def generate(self, prompt, cookies, bot_info, bot_id, chat_id="eev1322xkeg", ):
         url = "https://chatgate.ai/wp-json/mwai-ui/v1/chats/submit"
 
         payload = {
@@ -416,72 +476,26 @@ class ChatGPT_4_Site:
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
-            "x-wp-nonce": self.bot_info["restNonce"]
+            "x-wp-nonce": bot_info["restNonce"]
         }
 
+        print("REST:", bot_info["restNonce"], bot_info)
+
         response = requests.request("POST", url, json=payload, headers=headers)
+        last_line = response.text.split("data: ")[-1]
+        print(last_line)
 
-        print(response.text)
+        if "Reached your daily limit" in response.text:
+            raise Exception("Reached your daily limit")
 
+        answer = json.loads(json.loads(last_line)['data'])['reply']
 
-api = ChatGPT_4_Site()
-print(api.bot_info)
-# chat_gpt4 = ChatGPT_4_Account()
-# print()
-
-# input("press enter")
-# result = Temp_Email_API.get_message(email=gmail_adress, sender="noreply@auth.chatgate.ai",
-#                                     xsrf_token=email_api.xsrf_token, session_id=email_api.session_id)
-# print(result)
-# chat_gpt_4.get_account_info(id_token=idToken)
-
-# # eneter
-# eyJpdiI6IlY5blBCRWdncXpoOG9HTnlRRHlNcEE9PSIsInZhbHVlIjoiTVdJQko4dXlMNXpzbDNFYmpNQU5qMGZuRFk5T3hZaGk3M0szN0RJbXh5V1BwL0ZPeGs0RStNQXB3NEYxMi9aUjdMZ2FwcTd2d3A1MTdqMjIwbFVDdlVvRURkQmxINDZwRVpPemZ4TjZCYkxwRmVxeE0wSGw0cmwwaTVjRHZabEwiLCJtYWMiOiJkYjdkODQyMzc4MTgwNTBkNWM0ZDI3NTZkMWJlNmU4ZGM1YjllM2I0M2FiNDM5MGI5NDk4NDBlYTdmZjE3M2YyIiwidGFnIjoiIn0
-# eyJpdiI6InZ2UktTblBnTWs3Yk45dDJLYWtuZEE9PSIsInZhbHVlIjoicndlWjA1TGF0a2RnZ2E2WGF4Ujl0QjVBMU90V3llSllReFlLZk1BY05BaUVvNHR4eWRPY1N4UkhiMGtLendWWEY0Nm1ndStsaTdUOGYwWnQ1VHNFYVkwZEFPK1hxWGV4K1BnZWJ2MHBRbjFYOGwrNzhMU0E5Z0JuWERiOGVqbjUiLCJtYWMiOiI4ZTMwMzg2NWU2MjQ5MjQ0MTViZmE5MjdiNWZjMzFiZDk5YjlkZGVlYzc5M2I4M2JkMDgyMjI3OWU4MjZkZWUyIiwidGFnIjoiIn0
-
-# # generate
-# eyJpdiI6ImNOZlcwMlk4WHREUjRsU2o2T21VS3c9PSIsInZhbHVlIjoidVppUnBPd1o3RXg0T0JxUjZwbnlpaWpzUFBIc09XVENadUNWa2tzUzdMN3c4RmNCU3NZUFJSaURKc3p0UE1EWDUvM2x3MjJkeDdpUjc4MEw3OVRwcTNxNEpXQk1HQU43Y2UxNGpQY01DTmswbXluSURyVkk5dlNORTR1aERTVzkiLCJtYWMiOiI4ZjI0MGQxMmZmNjVhZTkyMjU2MzQyMmJhYTdiMzkyNDY1OWViOTI2YzVkODdjOGFkOGFjZjEwNmJmMjFjYjYxIiwidGFnIjoiIn0
-# eyJpdiI6IlMyeUxnUUZ1T1JrWTdvWDFaUzZTY0E9PSIsInZhbHVlIjoiZ3RHWnFJclk2L2Z5WWNwME9tWGJYQWtzbFpJZ1ZjYURzRElyTWNFVGdCc3NRLzBTNjllbXk0OXdOWE0yQ3dwS3RHd0hYbU1jdG5XQlRuU3Z1anpETzhRVkpVZmZNaGlqRTlnNXozN3JBVDBLOEgrUFBoemxEUGdYK2hIQzRlc28iLCJtYWMiOiI0N2IzMzcwZDg4ZGRiZThlMjU5NzFkZGM0YzNjOTk4OWI1OGU2MmNlOGQ4YmQ5MjRiYzE3MmQ2NjJjMWFkM2QxIiwidGFnIjoiIn0
-
-# # message list
-# eyJpdiI6IjlPTkRrY0o2bkJCYXhIRVZEUWJlMmc9PSIsInZhbHVlIjoiQmhxNkpaT1djVVJpQis5UmtXaWtoSStQSTNzdnJ2dFpveDJLM21lYUhYV2RiS295RlBJUGlQSTVoUThwTXpRZUl3bS83Nm9DRHlTWDNwQ0d3azlYaFhRL2Y4NVcwdVJFZStpMFBkRFJUMjVxTVAzRXducWhIc1MrQ1dpZWxMaUEiLCJtYWMiOiJmMTVkNmY2YmQ3ODEzNGU0NTcxNzhmYzM5YzBlOTEzYzVmMmFkMmQxODA0NTcwZmRkNDlhNjZjYmFkZTAxZjI4IiwidGFnIjoiIn0
-# eyJpdiI6ImRNZFE1enp1U3dKbUlpZ2RwaFhrWmc9PSIsInZhbHVlIjoienh2SE9KVGR5d3MvNVZqaVBtV1l2TGY4OGNHV1JCeW8vZzJzRTlEY3U0bkFNQXd5K0FpNjF6MWs3b29PWnFNMytBdU0xT3JONlFVQ2lVZnliYTF3Q2Z6OTY2VWlPc0NyM3pRSEd5REdWL2JBWUNnU0R0UGxwZzdiZzdZMjJPRnQiLCJtYWMiOiIxZWUzOGZjZjZhYmViY2ZhMjBkNWI5ODU0ZGU4MjA3NmMwMTUyNmEwZTVlOTI1NjU3NTU3MzVhMjYwOGYzOGFjIiwidGFnIjoiIn0
-
-# # list 2
-# eyJpdiI6IjVjVlNoSWF6b1Axa2dqdHc3SjF1QlE9PSIsInZhbHVlIjoiZGJQRHkwTUlGSTY1Q1I5SDU2NVA5YzUvZ3hFYWUxODBSR0ErNHc3djdFZkluRUtpS1hta1FINVNPTEVWUXd1bExFRXo5N2J1RUZjc0JaQk1KS1ZweGszT0VIVW5LQjlDVTZpV3RpU3VuN21wUEFFNkZ6aVpySWNQVTV0d1FWRDciLCJtYWMiOiJmNDAwNzMyM2FhYWQ1OTA0MTk2MzkxNWVmZjFkNGEwZDUxMjVhZDc1MzZhN2UyNjFiOWMwNTJjNDE4YzE3YjNiIiwidGFnIjoiIn0
-# eyJpdiI6IldBK2ZBSDNBa2dOL3Q5MUsrTVRUcFE9PSIsInZhbHVlIjoiTzNUWVdBNDlZZFd5RlNmcEFEM1RUN0h4eVZIaDNia0tkem14SFpqTW9nY2tTUEozbVJUUmQ2SFZFL3Rlak5wcS9SajFEalJqQStOSkNZTEdGUEEzWFdYV0JKYVB4cEpET1Z1dnliaC9lSjk3U1AzSG85Y3NuVE5IMzhvamo1ekciLCJtYWMiOiJiOWFjMzVlYjA1NThlYWYwMTQ2MDk3ZGIwYWZmMDFlYjk5MWMyNjM2ODQ5ZjE4NmU3NmJmZjg3NzkyOTc0ZjdlIiwidGFnIjoiIn0
+        return answer
 
 
-# https://auth.chatgate.ai/__/auth/action?apiKey=AIzaSyB8QIdDarSEZTwPWF-dauPL6-RHAMYmy20&mode=signIn&oobCode=RVQNjsMpPHiZs6hcOExIVosOJfBvoH4EE23MFBC6l-4AAAGO8FO94Q&continueUrl=https://chatgate.ai/login?redirect_to%3Dhttps%253A%252F%252Fchatgate.ai%252F%26ui_sid%3DikJUJfS96kDI9IkZgNBJnDBwFpKnTy3n%26ui_sd%3D0&lang=en
-# https://auth.chatgate.ai/__/auth/action?apiKey=AIzaSyB8QIdDarSEZTwPWF-dauPL6-RHAMYmy20&amp;mode=signIn&amp;oobCode=RVQNjsMpPHiZs6hcOExIVosOJfBvoH4EE23MFBC6l-4AAAGO8FO94Q&amp;continueUrl=https://chatgate.ai/login?redirect_to%3Dhttps%253A%252F%252Fchatgate.ai%252F%26ui_sid%3DikJUJfS96kDI9IkZgNBJnDBwFpKnTy3n%26ui_sd%3D0&amp;lang=en
+# account = ChatGPT_4_Account.load_from_json()
+account = ChatGPT_4_Account()
 
-# site
-# mwai_session_id=6621f804ceac4
-# mwai_session_id=6621f9e02e07a
-
-# all
-# mwai_session_id=6621f804ceac4; sbjs_migrations=1418474375998%3D1; sbjs_current_add=fd%3D2024-04-19%2004%3A50%3A13%7C%7C%7Cep%3Dhttps%3A%2F%2Fchatgate.ai%2F%7C%7C%7Crf%3D%28none%29; sbjs_first_add=fd%3D2024-04-19%2004%3A50%3A13%7C%7C%7Cep%3Dhttps%3A%2F%2Fchatgate.ai%2F%7C%7C%7Crf%3D%28none%29; sbjs_current=typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29; sbjs_first=typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29; sbjs_udata=vst%3D1%7C%7C%7Cuip%3D%28none%29%7C%7C%7Cuag%3DMozilla%2F5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F120.0.0.0%20YaBrowser%2F24.1.0.0%20Safari%2F537.36; sbjs_session=pgs%3D1%7C%7C%7Ccpg%3Dhttps%3A%2F%2Fchatgate.ai%2F; _gid=GA1.2.1912586035.1713502214; _gcl_au=1.1.497207883.1713502214; _ga_TTDKRN293K=GS1.1.1713500610.1.1.1713502213.0.0.0; _ga=GA1.1.164357830.1713502214; _ga_EBNTF2FDZV=GS1.1.1713500610.1.1.1713502214.0.0.0; tk_ai=EGA%2FTATSayo8sHMyn5BSeQPd
-# mwai_session_id=6621f804ceac4; sbjs_migrations=1418474375998%3D1; sbjs_session=pgs%3D1%7C%7C%7Ccpg%3Dhttps%3A%2F%2Fchatgate.ai%2F; tk_ai=EGA%2FTATSayo8sHMyn5BSeQPd
-
-# login
-# {
-#   "kind": "identitytoolkit#CreateAuthUriResponse",
-#   "sessionId": "NHxl0YS3MMWvcCJQqSLWOeSVxvI"
-# }
-
-
-# confirm
-# {
-#   "kind": "identitytoolkit#GetOobConfirmationCodeResponse",
-#   "email": "e.ma.y.aanand.2.64@gmail.com"
-# }
-
-# wordpress_logged_in_9a8088c047aa8a4d022063748baad4c8=e.ma.y.aanand.2.64%7C1714713210%7C0U94JnaTWMDEmqNPKbar0SyHKCQguznbY5R5thZNWhY%7C5f083a095176ef4179a5c4596bc1ed7a1c659d118e3e352b6797f0283fc5e2b8
-# wordpress_logged_in_9a8088c047aa8a4d022063748baad4c8=k.en.sal.es.te%7C1714713536%7CQPVxBYm04y0rAilptjkiL83Ssy1140b14lYbVXOzgel%7Cec4e2e163600af71a67039c74d65c4dd9371bd85ffbbf0e43a2d259773b5da5a
-
-# sbjs_migrations=1418474375998%3D1; sbjs_current_add=fd%3D2024-04-19%2005%3A17%3A43%7C%7C%7Cep%3Dhttps%3A%2F%2Fchatgate.ai%2Flogin%3Fredirect_tohttps%253A%252F%252Fchatgate.ai%252F%26ui_sidVipRNOEgz6nEZne9Z6skpwBzcoiQfXhN%26ui_sd0%26apiKey%3DAIzaSyB8QIdDarSEZTwPWF-dauPL6-RHAMYmy20%26oobCode%3DUGAnCGZ8XAkKmK0jULZhEU14lMNfmvsmTxtrm1eojjkAAAGO9Mf3eQ%26mode%3DsignIn%26lang%3Den%7C%7C%7Crf%3Dhttps%3A%2F%2Fauth.chatgate.ai%2F; sbjs_first_add=fd%3D2024-04-19%2005%3A17%3A43%7C%7C%7Cep%3Dhttps%3A%2F%2Fchatgate.ai%2Flogin%3Fredirect_tohttps%253A%252F%252Fchatgate.ai%252F%26ui_sidVipRNOEgz6nEZne9Z6skpwBzcoiQfXhN%26ui_sd0%26apiKey%3DAIzaSyB8QIdDarSEZTwPWF-dauPL6-RHAMYmy20%26oobCode%3DUGAnCGZ8XAkKmK0jULZhEU14lMNfmvsmTxtrm1eojjkAAAGO9Mf3eQ%26mode%3DsignIn%26lang%3Den%7C%7C%7Crf%3Dhttps%3A%2F%2Fauth.chatgate.ai%2F; sbjs_current=typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29; sbjs_first=typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29; _gcl_au=1.1.683717577.1713503865; _ga=GA1.2.1647161728.1713503865; _gid=GA1.2.947416281.1713503865; _ga_TTDKRN293K=GS1.1.1713503864.1.0.1713503937.0.0.0; _ga_EBNTF2FDZV=GS1.1.1713503865.1.0.1713503937.0.0.0; sbjs_udata=vst%3D2%7C%7C%7Cuip%3D%28none%29%7C%7C%7Cuag%3DMozilla%2F5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F120.0.0.0%20YaBrowser%2F24.1.0.0%20Safari%2F537.36; sbjs_session=pgs%3D9%7C%7C%7Ccpg%3Dhttps%3A%2F%2Fchatgate.ai%2F; tk_ai=8EA7Ed4U5v0mlCnbc%2FNNsmVL
-
-# tk_ai = HmVD8Y5qhJGe816MPd046%2FCV
-# session = 662215b2b4219
-
-# sbjs_migrations=1418474375998%3D1; sbjs_current_add=fd%3D2024-04-19%2007%3A19%3A55%7C%7C%7Cep%3Dhttps%3A%2F%2Fchatgate.ai%2Flogin%3Fredirect_tohttps%253A%252F%252Fchatgate.ai%252F%26ui_sidVipRNOEgz6nEZne9Z6skpwBzcoiQfXhN%26ui_sd0%26apiKey%3DAIzaSyB8QIdDarSEZTwPWF-dauPL6-RHAMYmy20%26oobCode%3Dyfekwcpd95vXjxZi_2SUsziWYLFWZRgfzWqRNBftDfwAAAGO9TjGJA%26mode%3DsignIn%26lang%3Den%7C%7C%7Crf%3Dhttps%3A%2F%2Fauth.chatgate.ai%2F; sbjs_first_add=fd%3D2024-04-19%2007%3A19%3A55%7C%7C%7Cep%3Dhttps%3A%2F%2Fchatgate.ai%2Flogin%3Fredirect_tohttps%253A%252F%252Fchatgate.ai%252F%26ui_sidVipRNOEgz6nEZne9Z6skpwBzcoiQfXhN%26ui_sd0%26apiKey%3DAIzaSyB8QIdDarSEZTwPWF-dauPL6-RHAMYmy20%26oobCode%3Dyfekwcpd95vXjxZi_2SUsziWYLFWZRgfzWqRNBftDfwAAAGO9TjGJA%26mode%3DsignIn%26lang%3Den%7C%7C%7Crf%3Dhttps%3A%2F%2Fauth.chatgate.ai%2F; sbjs_current=typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29; sbjs_first=typ%3Dtypein%7C%7C%7Csrc%3D%28direct%29%7C%7C%7Cmdm%3D%28none%29%7C%7C%7Ccmp%3D%28none%29%7C%7C%7Ccnt%3D%28none%29%7C%7C%7Ctrm%3D%28none%29%7C%7C%7Cid%3D%28none%29; sbjs_udata=vst%3D1%7C%7C%7Cuip%3D%28none%29%7C%7C%7Cuag%3DMozilla%2F5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F120.0.0.0%20YaBrowser%2F24.1.0.0%20Safari%2F537.36; _gid=GA1.2.1820683679.1713511196; _gcl_au=1.1.804137524.1713511196; mwai_session_id=66221c744caad; sbjs_session=pgs%3D4%7C%7C%7Ccpg%3Dhttps%3A%2F%2Fchatgate.ai%2Flogin%3Fredirect_tohttps%253A%252F%252Fchatgate.ai%252F%26ui_sidVipRNOEgz6nEZne9Z6skpwBzcoiQfXhN%26ui_sd0%26apiKey%3DAIzaSyB8QIdDarSEZTwPWF-dauPL6-RHAMYmy20%26oobCode%3Dzl3ZCrvvQx-1r8HFjdx1v6_jYtZ1cnvq8gnjFqPXOBMAAAGO9T8zrw%26mode%3DsignIn%26lang%3Den; _gat_gtag_UA_268460175_1=1; _ga_TTDKRN293K=GS1.1.1713509813.1.1.1713511570.0.0.0; _ga=GA1.1.323329798.1713511196; _ga_EBNTF2FDZV=GS1.1.1713509813.1.1.1713511571.0.0.0; tk_ai=OvLlDKP1FFgtW12nTyDkg4SA
+for i in range(200):
+    answer = account.ask_gpt("В комнате было 10 книг, 2 я прочитал. Сколько книг осталось в комнате?")
+    print(answer)
