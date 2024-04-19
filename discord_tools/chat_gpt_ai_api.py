@@ -82,7 +82,7 @@ class ChatGPT_4_Account:
             print(f"{attr}: {value}")
 
     def init_api(self):
-        return ChatGPT_4_Site(), Temp_Email_API()
+        return ChatGPT_4_Site(proxies=self.proxies), Temp_Email_API(proxies=self.proxies)
 
     def create_account(self):
         if not self.api_chatgpt or not self.api_gmail:
@@ -448,6 +448,19 @@ def clear_email_list(filename):
     with open(JSON_ACCOUNT_SAVE, 'w', encoding='utf-8') as f:
         json.dump(filtered_data, f, ensure_ascii=False, indent=4)
 
+def merge_json_files(directory):
+    merged_data = []
+    for filename in os.listdir(directory):
+        if filename.endswith('.json'):
+            file_path = os.path.join(directory, filename)
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                merged_data.extend(data)
+    return merged_data
+# # Пример использования
+# directory_path = '/path/to/directory'
+# merged_json = merge_json_files(directory_path)
+# print(json.dumps(merged_json, indent=4))
 
 if __name__ == "__main__":
     arguments = sys.argv
@@ -457,9 +470,12 @@ if __name__ == "__main__":
     else:
         JSON_ACCOUNT_SAVE = "accounts.json"
 
+    # clear_email_list(JSON_ACCOUNT_SAVE)
+
     account = ChatGPT_4_Account()
     for i in range(50):
         try:
             account.create_account()
+            time.sleep(20)
         except Exception as e:
             print(e)
