@@ -496,6 +496,5 @@ class ChatGPT_4_Site:
 # account = ChatGPT_4_Account.load_from_json()
 account = ChatGPT_4_Account()
 
-for i in range(200):
-    answer = account.ask_gpt("В комнате было 10 книг, 2 я прочитал. Сколько книг осталось в комнате?")
-    print(answer)
+for i in range(500):
+    account.create_account()
