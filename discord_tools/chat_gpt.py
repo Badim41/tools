@@ -11,7 +11,7 @@ import aiohttp
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessage
 
-from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account
+from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account, GPT_Models
 from discord_tools.logs import Logs, Color
 from discord_tools.character_ai_chat import Character_AI, ModerateParams
 from discord_tools.translate import translate_text
@@ -339,11 +339,13 @@ class ChatGPT:
 
         # CHAT GPT 4 (BEST OF THE BEST)
         if self.chat_gpt_4:
+            if len(prompt) > 2000:
+                prompt = prompt[:2000]
+                self.logger.logging(f"Cut prompt: ...{prompt[1950:2000]}...", color=Color.YELLOW)
+
             chat_history_temp = chat_history
-            chat_history_temp.append({"role": "user", "content": prompt})
-            messages = trim_history(chat_history_temp, max_length=4000)
-            answer = await asyncio.to_thread(self.coral_API.generate, messages, gpt_role=gpt_role, delay_for_gpt=1,
-                                             temperature=0.3, model="command-r-plus", web_access=False)
+            messages = trim_history(chat_history_temp, max_length=2100)
+            answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=chat_history)
             if answer:
                 return ChatGPT_Responses.gpt4, answer
 
