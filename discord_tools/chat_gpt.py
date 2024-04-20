@@ -349,7 +349,7 @@ class ChatGPT:
                 return ChatGPT_Responses.gpt4, answer
 
         # CORAL API (BEST PROVIDER)
-        if self.coral_API and mode == ChatGPT_Mode.fast:
+        if self.coral_API and mode == ChatGPT_Mode.fast and not limited:
             chat_history_temp = chat_history
             chat_history_temp.append({"role": "user", "content": prompt})
             messages = trim_history(chat_history_temp, max_length=13500)

@@ -116,6 +116,7 @@ class ChatGPT_4_Account:
                     self.api_chatgpt = ChatGPT_4_Site()
                 if not self.bot_info:
                     self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
+                    logger.logging("rest", self.bot_info["restNonce"])
 
                 try:
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
@@ -338,6 +339,8 @@ class ChatGPT_4_Site:
 
         if result:
             return json.loads(html.unescape(result.group(1)))
+        else:
+            raise Exception("NO NONCE")
 
     def get_firebase_login_key(self):
         headers = {
@@ -407,7 +410,7 @@ class ChatGPT_4_Site:
             'authority': 'chatgate.ai',
             'cookie': cookies,
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36',
-            'x-wp-nonce': bot_info["restNonce"]
+            'x-wp-nonce': str(bot_info["restNonce"])
         }
 
         files = {
@@ -472,7 +475,7 @@ class ChatGPT_4_Site:
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
-            "x-wp-nonce": bot_info["restNonce"]
+            "x-wp-nonce": str(bot_info["restNonce"])
         }
 
         # logger.logging("REST:", bot_info["restNonce"], bot_info)
