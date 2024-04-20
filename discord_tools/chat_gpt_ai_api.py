@@ -7,7 +7,7 @@ import sys
 import urllib
 from datetime import date
 
-from discord_tools.logs import Logs
+from discord_tools.logs import Logs, Color
 from discord_tools.temp_gmail import Temp_Email_API
 
 logger = Logs(warnings=True)
@@ -79,9 +79,9 @@ class ChatGPT_4_Account:
             raise Exception("Timeout in login account")
 
     def print_instance_vars(self):
-        logger.logging("Значения переменных экземпляра:")
+        logger.logging("Значения переменных экземпляра:", color=Color.GRAY)
         for attr, value in self.__dict__.items():
-            logger.logging(f"{attr}: {value}")
+            logger.logging(f"{attr}: {value}", color=Color.GRAY)
 
     def init_api(self):
         return ChatGPT_4_Site(proxies=self.proxies), Temp_Email_API(proxies=self.proxies)
@@ -214,7 +214,7 @@ class ChatGPT_4_Site:
     @staticmethod
     def print_cookie(response, type=""):
         cookies_dict = response.cookies.get_dict()
-        logger.logging("cookies", type, cookies_dict)
+        logger.logging("cookies", type, cookies_dict, color=Color.GRAY)
 
     def get_api_key(self):
         querystring = {"redirect_to": "https://chatgate.ai/"}
@@ -231,7 +231,7 @@ class ChatGPT_4_Site:
         response = requests.request("GET", "https://chatgate.ai/login", data=payload, headers=headers,
                                     params=querystring, proxies=self.proxies)
         theme_json = ChatGPT_4_Site.get_json_from_response(response.text, "firebaseOptions")
-        logger.logging("API key", theme_json['apiKey'])
+        logger.logging("API key", theme_json['apiKey'], color=Color.GRAY)
         return theme_json['apiKey']
 
     def email_send_code(self, email):
@@ -353,7 +353,7 @@ class ChatGPT_4_Site:
                                     proxies=self.proxies)
 
         firebase_json = ChatGPT_4_Site.get_json_from_response(response.text, "firebaseWordpress")
-        logger.logging("firebaseLoginKey", firebase_json, firebase_json['firebaseLoginKey'])
+        logger.logging("firebaseLoginKey", firebase_json, firebase_json['firebaseLoginKey'], color=Color.GRAY)
         return firebase_json['firebaseLoginKey']
 
     def auto_register(self, local_id, email):
@@ -416,7 +416,7 @@ class ChatGPT_4_Site:
 
         response = requests.post(url, headers=headers, files=files, data=data)
 
-        logger.logging(response.text)
+        logger.logging(response.text, color=Color.GRAY)
         response_json = response.json()
         if response_json['success']:
             return response_json['data']['id']
@@ -428,7 +428,7 @@ class ChatGPT_4_Site:
         if image_path:
             image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
             if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
-                logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision")
+                logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision", color=Color.GRAY)
             model = GPT_Models.gpt_4_vision
         else:
             image_id = None
@@ -475,7 +475,7 @@ class ChatGPT_4_Site:
 
         response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
         last_line = response.text.split("data: ")[-1]
-        logger.logging(last_line)
+        logger.logging(last_line, color=Color.GRAY)
 
         if "Reached your daily limit" in response.text:
             raise Exception("Reached your daily limit")
@@ -489,7 +489,7 @@ def clear_email_list(filename):
     with open(filename, "r", encoding="utf-8") as reader:
         json_data = json.load(reader)
 
-    logger.logging("ACCOUNTS:", len(json_data))
+    logger.logging("ACCOUNTS:", len(json_data), color=Color.GREEN)
 
     filtered_data = [item for item in json_data if
                      "wordpress_logged_in_9a8088c047aa8a4d022063748baad4c8" in item["cookies"]]

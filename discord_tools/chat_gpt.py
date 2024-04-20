@@ -196,6 +196,8 @@ async def clear_history(user_id):
 def trim_history(history, max_length=4000):
     try:
         current_length = sum(len(message["content"]) for message in history)
+        logger.logging("History length:", current_length, color=Color.GRAY)
+
         while history and current_length > max_length:
             removed_message = history.pop(0)
             current_length -= len(removed_message["content"])
@@ -723,7 +725,7 @@ class ChatGPT:
             result1, result2 = await self.moderation_request(text, error=error + 1)
             return result1, result2
 
-    async def summarise(self, prompt, full_text, limit=10, limited=False):
+    async def summarise(self, prompt, full_text, limit=10, limited=False, chat_gpt_4=True):
         simbol_limit = 3950
         # Разделение текста на куски по 3950 символов
         text_chunks = [full_text[i:i + 3950] for i in range(0, len(full_text), 3950)]
@@ -735,7 +737,7 @@ class ChatGPT:
             if i > limit:
                 break
             i += 1
-            response = await self.run_all_gpt(prompt + chunk, mode=ChatGPT_Mode.fast, user_id=0, limited=limited)
+            response = await self.run_all_gpt(prompt + chunk, mode=ChatGPT_Mode.fast, user_id=0, limited=limited, chat_gpt_4=chat_gpt_4)
             if (response.startswith("I'm sorry") or
                     response.startswith("Извините") or
                     response.startswith("I cannot provide") or
