@@ -14,6 +14,7 @@ logger = Logs(warnings=True)
 
 JSON_ACCOUNT_SAVE = "accounts.json"
 
+
 class GPT_Models:
     gpt_4 = "gpt4"  # tydbjd
     gpt_4_vision = "vision"  # kvic0w
@@ -102,7 +103,8 @@ class ChatGPT_4_Account:
         self.save_to_json(last_used=1)
         self.bot_info = None
 
-    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=None):
+    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=None,
+                replace_prompt="??? ^"):
         if not chat_history:
             chat_history = []
 
@@ -115,7 +117,8 @@ class ChatGPT_4_Account:
 
             try:
                 return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
-                                                 model=model, image_path=image_path, chat_history=chat_history)
+                                                 model=model, image_path=image_path, chat_history=chat_history,
+                                                 replace_prompt=replace_prompt)
             except Exception as e:
                 if "Reached your daily limit" in str(e):
                     self.save_to_json()
@@ -207,6 +210,7 @@ class ChatGPT_4_Site:
             query_dict[param] = value[0]
 
         return query_dict
+
     @staticmethod
     def print_cookie(response, type=""):
         cookies_dict = response.cookies.get_dict()
@@ -419,7 +423,8 @@ class ChatGPT_4_Site:
         else:
             raise Exception("No success")
 
-    def generate(self, prompt, cookies, bot_info, model, image_path=None, chat_id="eev1322xkeg", chat_history=None):
+    def generate(self, prompt, cookies, bot_info, model, image_path=None, chat_id="eev1322xkeg", chat_history=None,
+                 replace_prompt="??? ^"):
         if image_path:
             image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
             if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
@@ -430,6 +435,12 @@ class ChatGPT_4_Site:
 
         if not chat_history:
             chat_history = []
+
+        # абуз бага. Сайт не принимает более 1000 символов, но запрос загружается в историю
+        if len(prompt) > 800:
+            chat_history.append({"role": "user", "content": prompt})
+            chat_history.append({"role": "assistant", "content": "."})
+            prompt = replace_prompt
 
         bot_id = GPT_Models.get_id(model_name=model)
         url = "https://chatgate.ai/wp-json/mwai-ui/v1/chats/submit"
