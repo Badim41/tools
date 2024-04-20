@@ -339,13 +339,14 @@ class ChatGPT:
 
         # CHAT GPT 4 (BEST OF THE BEST)
         if self.chat_gpt_4:
-            if len(prompt) > 2000:
-                prompt = prompt[:2000]
-                self.logger.logging(f"Cut prompt: ...{prompt[1950:2000]}...", color=Color.YELLOW)
+            if len(prompt) > 1100:
+                prompt = prompt[:1100]
+                self.logger.logging(f"Cut prompt: ...{prompt[1050:1100]}...", color=Color.YELLOW)
 
             chat_history_temp = chat_history
-            messages = trim_history(chat_history_temp, max_length=2100)
+            messages = trim_history(chat_history_temp, max_length=5000)
             answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=messages)
+
             if answer:
                 return ChatGPT_Responses.gpt4, answer
 
