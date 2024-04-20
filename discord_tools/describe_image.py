@@ -125,6 +125,8 @@ def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, at
 
             return False, result
         except Exception as e:
+            if "Not found account" in str(e):
+                return
             logger.logging("Error in chatGPT-4", e, response_text)
             time.sleep(30)
 
