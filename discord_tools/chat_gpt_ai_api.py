@@ -85,9 +85,11 @@ class ChatGPT_4_Account:
             logger.logging(f"{attr}: {value}", color=Color.GRAY)
 
     def init_api(self):
-        return ChatGPT_4_Site(proxies=self.proxies), Temp_Email_API(proxies=self.proxies)
+        return ChatGPT_4_Site(proxies=self.proxies), None # Не рабоает
 
     def create_account(self):
+        raise Exception("Больше не работает")
+
         if not self.api_chatgpt or not self.api_gmail:
             self.api_chatgpt, self.api_gmail = self.init_api()
 
@@ -116,14 +118,16 @@ class ChatGPT_4_Account:
                     self.api_chatgpt = ChatGPT_4_Site()
                 if not self.bot_info:
                     self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
-                    logger.logging("rest", self.bot_info["restNonce"], self.bot_info)
 
                 try:
+                    if not self.bot_info["restNonce"]:
+                        raise Exception("No restNonce")
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
                                                      model=model, image_path=image_path, chat_history=chat_history,
                                                      replace_prompt=replace_prompt)
                 except Exception as e:
-                    if "Reached your daily limit" in str(e):
+                    if "Reached your daily limit" in str(e) or \
+                            "No restNonce" in str(e):
                         self.save_to_json()
                         self.update_class()
                     else:
@@ -189,6 +193,7 @@ class ChatGPT_4_Account:
         today = int(date.today().strftime("%Y%m%d"))
         for instance in instances:
             if instance.last_used != today:
+                print("select:", instance.email)
                 return instance
 
 
@@ -410,7 +415,7 @@ class ChatGPT_4_Site:
             'authority': 'chatgate.ai',
             'cookie': cookies,
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36',
-            'x-wp-nonce': str(bot_info["restNonce"])
+            'x-wp-nonce': bot_info["restNonce"]
         }
 
         files = {
@@ -435,7 +440,8 @@ class ChatGPT_4_Site:
         if image_path:
             image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
             if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
-                logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision", color=Color.GRAY)
+                logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision",
+                               color=Color.GRAY)
             model = GPT_Models.gpt_4_vision
         else:
             image_id = None
@@ -475,7 +481,7 @@ class ChatGPT_4_Site:
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
-            "x-wp-nonce": str(bot_info["restNonce"])
+            "x-wp-nonce": bot_info["restNonce"]
         }
 
         # logger.logging("REST:", bot_info["restNonce"], bot_info)
@@ -529,7 +535,18 @@ if __name__ == "__main__":
 
     # clear_email_list(JSON_ACCOUNT_SAVE)
 
-    account = ChatGPT_4_Account()
+    proxy = "socks5://localhost:5051"  # Здесь указываем порт 5051, как в вашей команде SSH
+
+    proxies = {
+        'http': proxy,
+        'https': proxy
+    }
+    account = ChatGPT_4_Account(proxies=proxies)
+    # account.api_chatgpt, account.api_gmail = account.init_api()
+    # print(account.api_chatgpt.auto_register(local_id=account.localId, email=account.email))
+
+
+    #
     print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
     # for i in range(50):
     #     try:

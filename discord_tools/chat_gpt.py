@@ -665,7 +665,7 @@ class ChatGPT:
             )
 
             # Выполняем модерацию запроса
-            result = await self.run_all_gpt(request_message)
+            result = await self.run_all_gpt(request_message, chat_gpt_4=False)
             if '{' in result and '}' in result:
                 result = result[result.find("{"):]
                 result = result[:result.rfind("}") + 1]
@@ -725,7 +725,7 @@ class ChatGPT:
             result1, result2 = await self.moderation_request(text, error=error + 1)
             return result1, result2
 
-    async def summarise(self, prompt, full_text, limit=10, limited=False, chat_gpt_4=True):
+    async def summarise(self, prompt, full_text, limit=10, limited=False):
         simbol_limit = 3950
         # Разделение текста на куски по 3950 символов
         text_chunks = [full_text[i:i + 3950] for i in range(0, len(full_text), 3950)]
@@ -737,7 +737,7 @@ class ChatGPT:
             if i > limit:
                 break
             i += 1
-            response = await self.run_all_gpt(prompt + chunk, mode=ChatGPT_Mode.fast, user_id=0, limited=limited, chat_gpt_4=chat_gpt_4)
+            response = await self.run_all_gpt(prompt + chunk, mode=ChatGPT_Mode.fast, user_id=0, limited=limited, chat_gpt_4=False)
             if (response.startswith("I'm sorry") or
                     response.startswith("Извините") or
                     response.startswith("I cannot provide") or
