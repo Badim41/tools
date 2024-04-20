@@ -11,6 +11,7 @@ import aiohttp
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessage
 
+from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account
 from discord_tools.logs import Logs, Color
 from discord_tools.character_ai_chat import Character_AI, ModerateParams
 from discord_tools.translate import translate_text
@@ -208,6 +209,14 @@ class ChatGPT_Mode:
     fast = "Fast"
     all = "All"
 
+class ChatGPT_Responses:
+    gpt4 = "ChatGPT-4"
+    coral = "Coral API"
+    all = "all"
+    gpt_official = "gpt_official"
+    fake_gpt = "fake_gpt"
+    deepseek = "deepseek"
+
 
 class ChatGPT:
     def __init__(self, openAI_keys=None, openAI_moderation=None,
@@ -215,7 +224,7 @@ class ChatGPT:
                  warnings=True,
                  errors=True, testing=False, char_tokens=None, char_ids=None,
                  deep_seek_keys=None,
-                 deep_seek_auth_keys=None, coral_api=None):
+                 deep_seek_auth_keys=None, coral_api=None, chat_gpt_4=None):
         if isinstance(openAI_moderation, list):
             self.openAI_keys = openAI_keys
         elif isinstance(openAI_moderation, str):
@@ -279,8 +288,13 @@ class ChatGPT:
         self.blocked_chatgpt_location = False
         self.coral_API = coral_api
 
+        if chat_gpt_4:
+            self.chat_gpt_4 = chat_gpt_4
+        else:
+            self.chat_gpt_4 = ChatGPT_4_Account()
+
     async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
-                          translate_lang=None):
+                          translate_lang=None, chat_gpt_4=True):
         if not os.path.exists('gpt_history'):
             os.mkdir('gpt_history')
 
@@ -297,8 +311,8 @@ class ChatGPT:
 
         provider, answer = await self.wrapped_run_all_gpt(prompt=prompt, mode=mode, user_id=user_id, gpt_role=gpt_role,
                                                           limited=limited,
-                                                          translate_lang=translate_lang, chat_history=chat_history)
-        if not provider == "all":
+                                                          translate_lang=translate_lang, chat_history=chat_history, chat_gpt_4=True)
+        if not provider == ChatGPT_Responses.all:
             chat_history.append({"role": "assistant", "content": answer})
             save_history(chat_history, user_id)
 
@@ -309,7 +323,7 @@ class ChatGPT:
 
         return answer
 
-    async def wrapped_run_all_gpt(self, prompt, mode, user_id, gpt_role, limited, translate_lang, chat_history):
+    async def wrapped_run_all_gpt(self, prompt, mode, user_id, gpt_role, limited, translate_lang, chat_history, chat_gpt_4):
         def get_fake_gpt_functions(delay):
             functions_add = \
                 [self.one_gpt_run(provider=provider, messages=messages, delay_for_gpt=delay,
@@ -323,6 +337,16 @@ class ChatGPT:
 
             return functions_add
 
+        # CHAT GPT 4 (BEST OF THE BEST)
+        if self.chat_gpt_4:
+            chat_history_temp = chat_history
+            chat_history_temp.append({"role": "user", "content": prompt})
+            messages = trim_history(chat_history_temp, max_length=4000)
+            answer = await asyncio.to_thread(self.coral_API.generate, messages, gpt_role=gpt_role, delay_for_gpt=1,
+                                             temperature=0.3, model="command-r-plus", web_access=False)
+            if answer:
+                return ChatGPT_Responses.gpt4, answer
+
         # CORAL API (BEST PROVIDER)
         if self.coral_API and mode == ChatGPT_Mode.fast:
             chat_history_temp = chat_history
@@ -331,7 +355,7 @@ class ChatGPT:
             answer = await asyncio.to_thread(self.coral_API.generate, messages, gpt_role=gpt_role, delay_for_gpt=1,
                                              temperature=0.3, model="command-r-plus", web_access=False)
             if answer:
-                return "Coral_API", answer
+                return ChatGPT_Responses.coral, answer
 
         # Ограничение
         values = [False, True]
@@ -354,11 +378,11 @@ class ChatGPT:
             for value in values:
                 answer = await self.run_official_gpt(messages, 1, value, user_id, gpt_role)
                 if answer and prompt not in answer:
-                    return "Official ChatGPT", answer
+                    return ChatGPT_Responses.gpt_official, answer
 
                 answer = await self.run_deep_seek(messages, 1, value, user_id, gpt_role)
                 if answer:
-                    return "DeepSeek", answer
+                    return ChatGPT_Responses.deepseek, answer
 
             functions = get_fake_gpt_functions(30)
 
@@ -371,7 +395,7 @@ class ChatGPT:
             # Получение результата выполненной функции
             for task in done:
                 result = await task
-                return "fake_GPT", result
+                return ChatGPT_Responses.fake_gpt, result
 
         elif mode == ChatGPT_Mode.all:
             functions = [self.run_official_gpt(messages, 1, value, user_id, gpt_role) for value in values]
@@ -391,7 +415,7 @@ class ChatGPT:
             result = '\n\n==Другой ответ==\n\n'.join(new_results)
             chat_history.append({"role": "assistant", "content": new_results[0]})
             save_history(chat_history, user_id)
-            return "all", result
+            return ChatGPT_Responses.all, result
 
         raise Exception("Не выбран режим GPT")
 

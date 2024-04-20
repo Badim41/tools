@@ -102,7 +102,10 @@ class ChatGPT_4_Account:
         self.save_to_json(last_used=1)
         self.bot_info = None
 
-    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None):
+    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=None):
+        if not chat_history:
+            chat_history = []
+
         for i in range(attempts):
 
             if not self.api_chatgpt:
@@ -112,7 +115,7 @@ class ChatGPT_4_Account:
 
             try:
                 return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
-                                                 model=model, image_path=image_path)
+                                                 model=model, image_path=image_path, chat_history=chat_history)
             except Exception as e:
                 if "Reached your daily limit" in str(e):
                     self.save_to_json()
@@ -416,7 +419,7 @@ class ChatGPT_4_Site:
         else:
             raise Exception("No success")
 
-    def generate(self, prompt, cookies, bot_info, model, image_path=None, chat_id="eev1322xkeg"):
+    def generate(self, prompt, cookies, bot_info, model, image_path=None, chat_id="eev1322xkeg", chat_history=None):
         if image_path:
             image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
             if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
@@ -424,6 +427,9 @@ class ChatGPT_4_Site:
             model = GPT_Models.gpt_4_vision
         else:
             image_id = None
+
+        if not chat_history:
+            chat_history = []
 
         bot_id = GPT_Models.get_id(model_name=model)
         url = "https://chatgate.ai/wp-json/mwai-ui/v1/chats/submit"
@@ -433,19 +439,11 @@ class ChatGPT_4_Site:
             "customId": None,
             "session": "N/A",
             "chatId": chat_id,
-            "contextId": 1048,
-            "messages": [
-                {
-                    "id": "1t2bie5i7fy",
-                    "role": "assistant",
-                    "content": "Hi! How can I assist you today?",
-                    "who": "AI: ",
-                    "timestamp": 1713505272724
-                }
-            ],
+            "contextId": 4048,
+            "messages": chat_history,
             "newMessage": prompt,
             "newFileId": image_id,
-            "stream": True
+            "stream": False
         }
         headers = {
             'cookie': cookies,
@@ -471,7 +469,7 @@ class ChatGPT_4_Site:
         if "Reached your daily limit" in response.text:
             raise Exception("Reached your daily limit")
 
-        answer = json.loads(json.loads(last_line)['data'])['reply']
+        answer = json.loads(last_line)['reply']
 
         return answer
 
@@ -511,10 +509,10 @@ if __name__ == "__main__":
         JSON_ACCOUNT_SAVE = arguments[1]
         logger.logging("name:", JSON_ACCOUNT_SAVE)
 
-    clear_email_list(JSON_ACCOUNT_SAVE)
+    # clear_email_list(JSON_ACCOUNT_SAVE)
 
     account = ChatGPT_4_Account()
-    print(account.ask_gpt(prompt="Что это?", image_path=r"lolo_telegram_2.png"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
+    print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
     # for i in range(50):
     #     try:
     #         account.create_account()
