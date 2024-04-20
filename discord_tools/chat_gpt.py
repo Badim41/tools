@@ -345,7 +345,7 @@ class ChatGPT:
 
             chat_history_temp = chat_history
             messages = trim_history(chat_history_temp, max_length=2100)
-            answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=chat_history)
+            answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=messages)
             if answer:
                 return ChatGPT_Responses.gpt4, answer
 
