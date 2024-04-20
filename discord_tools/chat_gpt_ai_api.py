@@ -1,15 +1,18 @@
+import html
+import json
 import os.path
 import re
 import requests
-import json
-import html
 import sys
 import urllib
 from datetime import date
-import time
 
+from discord_tools.logs import Logs
 from discord_tools.temp_gmail import Temp_Email_API
 
+logger = Logs(warnings=True)
+
+JSON_ACCOUNT_SAVE = "accounts.json"
 
 class GPT_Models:
     gpt_4 = "gpt4"  # tydbjd
@@ -65,21 +68,19 @@ class ChatGPT_4_Account:
         if account:
             self.__dict__.update(account.__dict__)
         else:
-            created = False
             for i in range(3):
                 try:
                     self.create_account()
-                    created = True
+                    return
                 except Exception as e:
-                    print("Error in create account:", e)
+                    logger.logging("Error in create account:", e)
 
-            if not created:
-                raise Exception("Timeout in login account")
+            raise Exception("Timeout in login account")
 
     def print_instance_vars(self):
-        print("Значения переменных экземпляра:")
+        logger.logging("Значения переменных экземпляра:")
         for attr, value in self.__dict__.items():
-            print(f"{attr}: {value}")
+            logger.logging(f"{attr}: {value}")
 
     def init_api(self):
         return ChatGPT_4_Site(proxies=self.proxies), Temp_Email_API(proxies=self.proxies)
@@ -101,7 +102,7 @@ class ChatGPT_4_Account:
         self.save_to_json(last_used=1)
         self.bot_info = None
 
-    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3):
+    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None):
         for i in range(attempts):
 
             if not self.api_chatgpt:
@@ -111,7 +112,7 @@ class ChatGPT_4_Account:
 
             try:
                 return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
-                                                 bot_id=GPT_Models.get_id(model))
+                                                 model=model, image_path=image_path)
             except Exception as e:
                 if "Reached your daily limit" in str(e):
                     self.save_to_json()
@@ -203,10 +204,10 @@ class ChatGPT_4_Site:
             query_dict[param] = value[0]
 
         return query_dict
-
-    def print_cookie(self, response, type=""):
+    @staticmethod
+    def print_cookie(response, type=""):
         cookies_dict = response.cookies.get_dict()
-        print("cookies", type, cookies_dict)
+        logger.logging("cookies", type, cookies_dict)
 
     def get_api_key(self):
         querystring = {"redirect_to": "https://chatgate.ai/"}
@@ -223,7 +224,7 @@ class ChatGPT_4_Site:
         response = requests.request("GET", "https://chatgate.ai/login", data=payload, headers=headers,
                                     params=querystring, proxies=self.proxies)
         theme_json = ChatGPT_4_Site.get_json_from_response(response.text, "firebaseOptions")
-        print("API key", theme_json['apiKey'])
+        logger.logging("API key", theme_json['apiKey'])
         return theme_json['apiKey']
 
     def email_send_code(self, email):
@@ -299,7 +300,7 @@ class ChatGPT_4_Site:
     #
     #     response = requests.request("POST", url, json=payload, headers=headers, params=querystring)
 
-    # print(response.text)
+    # logger.logging(response.text)
     # self.print_cookie(response, "Register")
 
     def get_bot_info_json(self, cookies):
@@ -345,7 +346,7 @@ class ChatGPT_4_Site:
                                     proxies=self.proxies)
 
         firebase_json = ChatGPT_4_Site.get_json_from_response(response.text, "firebaseWordpress")
-        print("firebaseLoginKey", firebase_json, firebase_json['firebaseLoginKey'])
+        logger.logging("firebaseLoginKey", firebase_json, firebase_json['firebaseLoginKey'])
         return firebase_json['firebaseLoginKey']
 
     def auto_register(self, local_id, email):
@@ -377,15 +378,54 @@ class ChatGPT_4_Site:
 
         response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
 
-        print(response.text)
-        self.print_cookie(response, "LOGGED")
+        # logger.logging(response.text)
+        # ChatGPT_4_Site.print_cookie(response, "LOGGED")
 
         if "wordpress_logged_in_9a8088c047aa8a4d022063748baad4c8" not in response.cookies:
             raise Exception("С данного IP временно невозможно регистрировать аккаунты, используйте прокси")
 
         return response.cookies.get_dict()
 
-    def generate(self, prompt, cookies, bot_info, bot_id, chat_id="eev1322xkeg", ):
+    def upload_file(self, image_path, cookies, bot_info, model):
+        if not os.path.exists(image_path):
+            raise Exception("File not exists")
+
+        url = 'https://chatgate.ai/wp-json/mwai-ui/v1/files/upload'
+
+        headers = {
+            'authority': 'chatgate.ai',
+            'cookie': cookies,
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36',
+            'x-wp-nonce': bot_info["restNonce"]
+        }
+
+        files = {
+            'file': (image_path, open(image_path, 'rb'), 'image/png'),
+        }
+        data = {
+            'type': 'image',
+            'purpose': model,
+        }
+
+        response = requests.post(url, headers=headers, files=files, data=data)
+
+        logger.logging(response.text)
+        response_json = response.json()
+        if response_json['success']:
+            return response_json['data']['id']
+        else:
+            raise Exception("No success")
+
+    def generate(self, prompt, cookies, bot_info, model, image_path=None, chat_id="eev1322xkeg"):
+        if image_path:
+            image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
+            if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
+                logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision")
+            model = GPT_Models.gpt_4_vision
+        else:
+            image_id = None
+
+        bot_id = GPT_Models.get_id(model_name=model)
         url = "https://chatgate.ai/wp-json/mwai-ui/v1/chats/submit"
 
         payload = {
@@ -404,7 +444,7 @@ class ChatGPT_4_Site:
                 }
             ],
             "newMessage": prompt,
-            "newFileId": None,
+            "newFileId": image_id,
             "stream": True
         }
         headers = {
@@ -422,11 +462,11 @@ class ChatGPT_4_Site:
             "x-wp-nonce": bot_info["restNonce"]
         }
 
-        print("REST:", bot_info["restNonce"], bot_info)
+        # logger.logging("REST:", bot_info["restNonce"], bot_info)
 
         response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
         last_line = response.text.split("data: ")[-1]
-        print(last_line)
+        logger.logging(last_line)
 
         if "Reached your daily limit" in response.text:
             raise Exception("Reached your daily limit")
@@ -440,13 +480,14 @@ def clear_email_list(filename):
     with open(filename, "r", encoding="utf-8") as reader:
         json_data = json.load(reader)
 
-    print("ACCOUNTS:", len(json_data))
+    logger.logging("ACCOUNTS:", len(json_data))
 
     filtered_data = [item for item in json_data if
                      "wordpress_logged_in_9a8088c047aa8a4d022063748baad4c8" in item["cookies"]]
 
     with open(JSON_ACCOUNT_SAVE, 'w', encoding='utf-8') as f:
         json.dump(filtered_data, f, ensure_ascii=False, indent=4)
+
 
 def merge_json_files(directory):
     merged_data = []
@@ -457,25 +498,26 @@ def merge_json_files(directory):
                 data = json.load(file)
                 merged_data.extend(data)
     return merged_data
+
+
 # # Пример использования
 # directory_path = '/path/to/directory'
 # merged_json = merge_json_files(directory_path)
-# print(json.dumps(merged_json, indent=4))
+# logger.logging(json.dumps(merged_json, indent=4))
 
 if __name__ == "__main__":
     arguments = sys.argv
     if len(arguments) > 1:
         JSON_ACCOUNT_SAVE = arguments[1]
-        print("name:", JSON_ACCOUNT_SAVE)
-    else:
-        JSON_ACCOUNT_SAVE = "accounts.json"
+        logger.logging("name:", JSON_ACCOUNT_SAVE)
 
-    # clear_email_list("not_safe.json")
+    clear_email_list(JSON_ACCOUNT_SAVE)
 
     account = ChatGPT_4_Account()
-    for i in range(50):
-        try:
-            account.create_account()
-            time.sleep(20)
-        except Exception as e:
-            print(e)
+    print(account.ask_gpt(prompt="Что это?", image_path=r"lolo_telegram_2.png"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
+    # for i in range(50):
+    #     try:
+    #         account.create_account()
+    #         time.sleep(20)
+    #     except Exception as e:
+    #         logger.logging(e)
