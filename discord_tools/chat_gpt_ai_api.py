@@ -124,7 +124,7 @@ class ChatGPT_4_Account:
                     self.save_to_json()
                     self.update_class()
                 else:
-                    raise e
+                    logger.logging("ERROR IN CHATGPT-4:", str(e))
 
     def to_dict(self, last_used):
         return {

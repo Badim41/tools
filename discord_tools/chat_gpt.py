@@ -311,7 +311,7 @@ class ChatGPT:
 
         provider, answer = await self.wrapped_run_all_gpt(prompt=prompt, mode=mode, user_id=user_id, gpt_role=gpt_role,
                                                           limited=limited,
-                                                          translate_lang=translate_lang, chat_history=chat_history, chat_gpt_4=True)
+                                                          translate_lang=translate_lang, chat_history=chat_history, chat_gpt_4=chat_gpt_4)
         if not provider == ChatGPT_Responses.all:
             chat_history.append({"role": "assistant", "content": answer})
             save_history(chat_history, user_id)
@@ -338,7 +338,7 @@ class ChatGPT:
             return functions_add
 
         # CHAT GPT 4 (BEST OF THE BEST)
-        if self.chat_gpt_4:
+        if self.chat_gpt_4 and chat_gpt_4:
             chat_history_temp = chat_history
             messages = trim_history(chat_history_temp, max_length=15000)
             answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=messages)
