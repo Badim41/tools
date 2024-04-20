@@ -5,6 +5,7 @@ import time
 import traceback
 from PIL import Image
 
+from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account
 from discord_tools.logs import Logs, Color
 from discord_tools.astica_API import Astica_Describe_Params, Astica_API
 from discord_tools.detect_mat import ban_words
@@ -104,11 +105,35 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
             time.sleep(30)
     return None, '-'
 
+def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, attempts=3, *args, **kwargs):
+    """
+    speed: fast
+    Moderate = 11-13s (37s с получением ключа)
+    Describe = 11-13s (37s с получением ключа)
+    comment: Отличный. Не даёт описать плохую картинку
+    """
+    response_text = "not defined"
+    timer = Time_Count()
+    for i in range(attempts):
+        try:
+            account = ChatGPT_4_Account(proxies=proxies)
+            result = account.ask_gpt(prompt=prompt, image_path=image_path)
+            ban_results = ["I'm sorry", "Sorry, I can't", "I can't help", "I can't assist", "I can't provide"]
+            print(timer.count_time(ignore_error=True))
+            for ban_result in ban_results:
+                if ban_result in result:
+                    return True, result
+
+            return False, result
+        except Exception as e:
+            logger.logging("Error in chatGPT-4", e, response_text)
+            time.sleep(30)
+    return None, '-'
 
 def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None, *args,
                **kwargs):
     """
-    speed: fast
+    speed: faster
     Describe / moderate = 5-7s (20s с получением ключа)
     comment: english only, не воспринимает запрос, плохо распознаёт текст
     """
@@ -147,6 +172,7 @@ class Describers_API:
     Verstel = vercel_API
     Astica = astica_API
     Iodraw = iodraw_API
+    ChatGPT4 = chat_gpt_4_vision
 
 
 def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None,
@@ -157,7 +183,7 @@ def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGory
     lower_image_resolution(image_path)
 
     if describers is None:
-        describers = [Describers_API.Iodraw, Describers_API.Astica, Describers_API.Verstel]
+        describers = [Describers_API.Iodraw, Describers_API.Astica, Describers_API.ChatGPT4, Describers_API.Verstel]
 
     for describer_method in describers:
         try:
@@ -191,7 +217,7 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
     lower_image_resolution(image_path)
 
     if describers is None:
-        describers = [Describers_API.Iodraw, Describers_API.Verstel, Describers_API.Astica]
+        describers = [Describers_API.ChatGPT4, Describers_API.Iodraw, Describers_API.Verstel, Describers_API.Astica]
 
     for describer_method in describers:
         try:
@@ -213,3 +239,5 @@ def lower_image_resolution(image_path, max_pixels=1000000):
         new_height = int((max_pixels / current_pixels) ** 0.5 * height)
         img = img.resize((new_width, new_height))
         img.save(image_path)
+
+print(chat_gpt_4_vision(r"C:\Users\as280\Downloads\test.png", prompt="Что на изображение?"))
