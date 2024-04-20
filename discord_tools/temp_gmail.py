@@ -1,16 +1,16 @@
 import requests
 import time
 
-
 class Temp_Email_API:
     def __init__(self, proxies=None):
         self.proxies = proxies
-        response = requests.request("GET", "https://www.emailnator.com/", data="", headers={}, proxies=self.proxies)
+        response = requests.request("GET", "https://www.emailnator.com/", data="", headers={'cookie': cf_clearance}, proxies=self.proxies)
         self.xsrf_token, self.session_id = self.get_tokens(response)
 
     def get_tokens(self, response):
+        print(response.text)
         cookies_dict = response.cookies.get_dict()
-        # print("Updated cookie")
+        print("TOKENS", cookies_dict)
         return cookies_dict['XSRF-TOKEN'], cookies_dict['gmailnator_session']
 
     def get_email(self):

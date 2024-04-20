@@ -69,6 +69,7 @@ class ChatGPT_4_Account:
         if account:
             self.__dict__.update(account.__dict__)
         else:
+            raise Exception("Not found account")
             for i in range(3):
                 try:
                     self.create_account()
@@ -105,26 +106,29 @@ class ChatGPT_4_Account:
 
     def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=None,
                 replace_prompt="??? ^"):
-        if not chat_history:
-            chat_history = []
+        try:
+            if not chat_history:
+                chat_history = []
 
-        for i in range(attempts):
+            for i in range(attempts):
 
-            if not self.api_chatgpt:
-                self.api_chatgpt = ChatGPT_4_Site()
-            if not self.bot_info:
-                self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
+                if not self.api_chatgpt:
+                    self.api_chatgpt = ChatGPT_4_Site()
+                if not self.bot_info:
+                    self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
 
-            try:
-                return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
-                                                 model=model, image_path=image_path, chat_history=chat_history,
-                                                 replace_prompt=replace_prompt)
-            except Exception as e:
-                if "Reached your daily limit" in str(e):
-                    self.save_to_json()
-                    self.update_class()
-                else:
-                    logger.logging("ERROR IN CHATGPT-4:", str(e))
+                try:
+                    return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
+                                                     model=model, image_path=image_path, chat_history=chat_history,
+                                                     replace_prompt=replace_prompt)
+                except Exception as e:
+                    if "Reached your daily limit" in str(e):
+                        self.save_to_json()
+                        self.update_class()
+                    else:
+                        logger.logging("ERROR IN CHATGPT-4:", str(e))
+        except Exception as e:
+            logger.logging("Error in generate GHATGPT-4:", e)
 
     def to_dict(self, last_used):
         return {
