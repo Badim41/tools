@@ -116,7 +116,7 @@ class ChatGPT_4_Account:
                     self.api_chatgpt = ChatGPT_4_Site()
                 if not self.bot_info:
                     self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
-                    logger.logging("rest", self.bot_info["restNonce"])
+                    logger.logging("rest", self.bot_info["restNonce"], self.bot_info)
 
                 try:
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
