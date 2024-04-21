@@ -120,7 +120,7 @@ class ChatGPT_4_Account:
                     self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
 
                 try:
-                    if not self.bot_info["restNonce"]:
+                    if not self.str(bot_info["restNonce"]):
                         raise Exception("No restNonce")
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
                                                      model=model, image_path=image_path, chat_history=chat_history,
@@ -415,7 +415,7 @@ class ChatGPT_4_Site:
             'authority': 'chatgate.ai',
             'cookie': cookies,
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36',
-            'x-wp-nonce': bot_info["restNonce"]
+            'x-wp-nonce': str(bot_info["restNonce"])
         }
 
         files = {
@@ -487,10 +487,10 @@ class ChatGPT_4_Site:
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-origin",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
-            "x-wp-nonce": bot_info["restNonce"]
+            "x-wp-nonce": str(bot_info["restNonce"])
         }
 
-        # logger.logging("REST:", bot_info["restNonce"], bot_info)
+        # logger.logging("REST:", str(bot_info["restNonce"]), bot_info)
 
         response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
         last_line = response.text.split("data: ")[-1]
