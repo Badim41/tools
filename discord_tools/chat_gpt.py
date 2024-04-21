@@ -725,10 +725,10 @@ class ChatGPT:
             result1, result2 = await self.moderation_request(text, error=error + 1)
             return result1, result2
 
-    async def summarise(self, prompt, full_text, limit=10, limited=False):
+    async def summarise(self, prompt, full_text, limit=10, limited=False, chat_gpt_4=False):
         simbol_limit = 3950
         # Разделение текста на куски по 3950 символов
-        text_chunks = [full_text[i:i + 3950] for i in range(0, len(full_text), 3950)]
+        text_chunks = [full_text[i:i + simbol_limit] for i in range(0, len(full_text), simbol_limit)]
 
         gpt_responses = []
 
