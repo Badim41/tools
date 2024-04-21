@@ -127,7 +127,8 @@ class ChatGPT_4_Account:
                                                      replace_prompt=replace_prompt)
                 except Exception as e:
                     if "Reached your daily limit" in str(e) or \
-                            "No restNonce" in str(e):
+                            "No restNonce" in str(e) or\
+                            "Cookie check failed" in str(e):
                         self.save_to_json()
                         self.update_class()
                     else:
