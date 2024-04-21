@@ -135,12 +135,9 @@ class Upscale_Mode:
     quality_HD = "HD"
 
 
-class Upscale_Mode:
-    quality_8K = "8K"
-    quality_4K = "4K"
-    quality_HD = "HD"
-
 MAX_PIXELS = 8000
+
+
 def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False, only_url=False):
     def get_image_dimensions(file_path):
         with Image.open(file_path) as img:
@@ -154,7 +151,8 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
 
     if upscale_factor == Upscale_Mode.quality_8K:
         upscale_factor_val = float(
-            (MAX_PIXELS * MAX_PIXELS / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+            (MAX_PIXELS * MAX_PIXELS / (
+                        get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
     elif upscale_factor == Upscale_Mode.quality_4K:
         upscale_factor_val = float(
             (4000 * 4000 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
@@ -163,7 +161,8 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
             (1024 * 1024 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
     elif upscale_factor is None:
         upscale_factor_val = float(
-            (MAX_PIXELS * MAX_PIXELS / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+            (MAX_PIXELS * MAX_PIXELS / (
+                        get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
     else:
         logger.logging("Invalid upscale factor provided.")
         return None, None
@@ -172,7 +171,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
                              get_image_dimensions(image_path)[0] * upscale_factor_val)
     if max_pixels_in_side > 10000:
         reduce_factor = max_pixels_in_side / 11000
-        upscale_factor_val = float(upscale_factor_val/reduce_factor)
+        upscale_factor_val = float(upscale_factor_val / reduce_factor)
 
     upscale_factor_val = round(upscale_factor_val, 1)
     logger.logging(f"Upscale factor:", upscale_factor_val,
