@@ -129,6 +129,7 @@ class ChatGPT_4_Account:
                     if "Reached your daily limit" in str(e) or \
                             "No restNonce" in str(e) or\
                             "Cookie check failed" in str(e):
+                        print("Reset account")
                         self.save_to_json()
                         self.update_class()
                     else:
@@ -495,6 +496,9 @@ class ChatGPT_4_Site:
 
         if "Reached your daily limit" in response.text:
             raise Exception("Reached your daily limit")
+        if 'Cookie check failed' in response.text:
+            raise Exception("Cookie check failed")
+
 
         answer = json.loads(last_line)['reply']
 
