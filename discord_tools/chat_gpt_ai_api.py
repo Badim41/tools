@@ -85,7 +85,7 @@ class ChatGPT_4_Account:
             logger.logging(f"{attr}: {value}", color=Color.GRAY)
 
     def init_api(self):
-        return ChatGPT_4_Site(proxies=self.proxies), None # Не рабоает
+        return ChatGPT_4_Site(proxies=self.proxies), None  # Не рабоает
 
     def create_account(self):
         raise Exception("Больше не работает")
@@ -448,13 +448,19 @@ class ChatGPT_4_Site:
 
         if not chat_history:
             chat_history = []
+        else:
+            if len(chat_history) >= 1:
+                if chat_history[0]['role'] == "system":
+                    chat_history.pop(0)
 
         # абуз бага. Сайт не принимает более 1000 символов, но запрос загружается в историю
+
         if len(prompt) > 800:
             chat_history.append({"role": "user", "content": prompt})
             chat_history.append({"role": "assistant", "content": "."})
             prompt = replace_prompt
-
+        # print(chat_history)
+        # return
         bot_id = GPT_Models.get_id(model_name=model)
         url = "https://chatgate.ai/wp-json/mwai-ui/v1/chats/submit"
 
@@ -544,7 +550,6 @@ if __name__ == "__main__":
     account = ChatGPT_4_Account(proxies=proxies)
     # account.api_chatgpt, account.api_gmail = account.init_api()
     # print(account.api_chatgpt.auto_register(local_id=account.localId, email=account.email))
-
 
     #
     print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
