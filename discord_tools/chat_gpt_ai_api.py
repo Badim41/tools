@@ -448,10 +448,6 @@ class ChatGPT_4_Site:
 
         if not chat_history:
             chat_history = []
-        else:
-            if len(chat_history) >= 1:
-                if chat_history[0]['role'] == "system":
-                    chat_history.pop(0)
 
         # абуз бага. Сайт не принимает более 1000 символов, но запрос загружается в историю
 
