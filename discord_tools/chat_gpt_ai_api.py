@@ -120,7 +120,7 @@ class ChatGPT_4_Account:
                     self.bot_info = self.api_chatgpt.get_bot_info_json(self.cookies)
 
                 try:
-                    if not self.str(bot_info["restNonce"]):
+                    if not self.bot_info["restNonce"]:
                         raise Exception("No restNonce")
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
                                                      model=model, image_path=image_path, chat_history=chat_history,
@@ -490,7 +490,7 @@ class ChatGPT_4_Site:
             "x-wp-nonce": str(bot_info["restNonce"])
         }
 
-        # logger.logging("REST:", str(bot_info["restNonce"]), bot_info)
+        # logger.logging("REST:", bot_info["restNonce"], bot_info)
 
         response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
         last_line = response.text.split("data: ")[-1]
