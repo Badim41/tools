@@ -25,7 +25,7 @@ class FotorModes:
 
 
 class FotorAPI:
-    def __init__(self, mode, upscale_factor:int, testing=False):
+    def __init__(self, mode, upscale_factor: int, testing=False):
         self.key = None
         self.upload_url = None
         self.mode = mode
@@ -71,7 +71,7 @@ class FotorAPI:
                     logger.logging("get result:", response.text)
                 result_status = response.json()['data']['status']
                 if not result_status:
-                    time.sleep(1 * self.upscale_factor//2)
+                    time.sleep(1 * self.upscale_factor // 2)
                     continue
                 return response.json()['data']['id']
             else:
@@ -129,6 +129,18 @@ def save_image_png(image_url, image_path):
         pass
 
 
+class Upscale_Mode:
+    quality_8K = "8K"
+    quality_4K = "4K"
+    quality_HD = "HD"
+
+
+class Upscale_Mode:
+    quality_8K = "8K"
+    quality_4K = "4K"
+    quality_HD = "HD"
+
+MAX_PIXELS = 8000
 def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False, only_url=False):
     def get_image_dimensions(file_path):
         with Image.open(file_path) as img:
@@ -139,13 +151,35 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
 
     if not random_factor:
         random_factor = os.path.basename(image_path)[:-4] + "_"
-    if not upscale_factor:
-        x, y = get_image_dimensions(image_path)
-        max_size = 8000 * 8000
-        upscale_factor = int((max_size / (x * y)) ** 0.5)
-        logger.logging("Upscale factor:", upscale_factor, x*upscale_factor, y*upscale_factor, color=Color.GREEN)
 
-    fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor, testing=testing)
+    if upscale_factor == Upscale_Mode.quality_8K:
+        upscale_factor_val = float(
+            (MAX_PIXELS * MAX_PIXELS / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+    elif upscale_factor == Upscale_Mode.quality_4K:
+        upscale_factor_val = float(
+            (4000 * 4000 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+    elif upscale_factor == Upscale_Mode.quality_HD:
+        upscale_factor_val = float(
+            (1024 * 1024 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+    elif upscale_factor is None:
+        upscale_factor_val = float(
+            (MAX_PIXELS * MAX_PIXELS / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+    else:
+        logger.logging("Invalid upscale factor provided.")
+        return None, None
+
+    max_pixels_in_side = max(get_image_dimensions(image_path)[1] * upscale_factor_val,
+                             get_image_dimensions(image_path)[0] * upscale_factor_val)
+    if max_pixels_in_side > 10000:
+        reduce_factor = max_pixels_in_side / 11000
+        upscale_factor_val = float(upscale_factor_val/reduce_factor)
+
+    upscale_factor_val = round(upscale_factor_val, 1)
+    logger.logging(f"Upscale factor:", upscale_factor_val,
+                   int(get_image_dimensions(image_path)[0] * upscale_factor_val),
+                   int(get_image_dimensions(image_path)[1] * upscale_factor_val))
+
+    fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor_val, testing=testing)
     fotor.get_upload_url()
     fotor.upload_on_url(image_path)
     fotor.change_mode()
