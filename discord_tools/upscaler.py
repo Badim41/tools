@@ -158,7 +158,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
             (4000 * 4000 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
     elif upscale_factor == Upscale_Mode.quality_HD:
         upscale_factor_val = float(
-            (1024 * 1024 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+            (2048 * 2048 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
     elif upscale_factor is None:
         upscale_factor_val = float(
             (MAX_PIXELS * MAX_PIXELS / (
