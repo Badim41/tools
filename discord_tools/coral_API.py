@@ -6,6 +6,7 @@ from discord_tools.sql_db import get_database, set_database_not_async as set_dat
 
 logger = Logs(warnings=True)
 
+
 class Coral_API:
     def __init__(self, api_key=None, email=None, password=None, proxies=None):
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
@@ -16,9 +17,14 @@ class Coral_API:
         # self.access_token, self.user_id = self.get_access_token_on_start()
         if not api_key and (email and password):
             self.access_token, self.user_id = self.get_access_token_on_start()
-            self.api_key = self.get_api_key()
+            self.api_keys = [self.get_api_key()]
         elif api_key:
-            self.api_key = api_key
+            if isinstance(api_key, list):
+                self.api_keys = api_key
+            elif isinstance(api_key, str):
+                self.api_keys = [api_key]
+            else:
+                raise Exception("API KEY должен быть str или list")
         else:
             raise Exception("Нет способа получения ключа")
 
@@ -94,7 +100,12 @@ class Coral_API:
 
     def generate(self, messages, gpt_role="Ты полезный ассистент и даёшь только полезную информацию", delay_for_gpt=1,
                  temperature=0.3,
-                 model="command-r-plus", web_access=False):
+                 model="command-r-plus", web_access=False, error=True):
+        changed_messages = messages
+        if not self.api_keys:
+            logger.logging("coral_API: No keys")
+            time.sleep(delay_for_gpt)
+            return
 
         response_text = "[not got response]"
         response_json = "[no json]"
@@ -108,12 +119,12 @@ class Coral_API:
             else:
                 connectors = []
 
-            for i, msg in enumerate(messages):
+            for i, msg in enumerate(changed_messages):
                 if 'system' in msg['role']:
                     continue
                 role = "User" if msg['role'] == "user" else "Chatbot"
                 message = msg['content']
-                if i == len(messages) - 1:
+                if i == len(changed_messages) - 1:
                     prompt = message
                 else:
                     transformed_messages.append({"role": role, "message": message})
@@ -122,7 +133,7 @@ class Coral_API:
                 raise Exception("Неправильный формат сообщений!")
 
             url = "https://api.cohere.ai/v1/chat"
-            
+
             payload = {
                 "message": prompt,
                 "temperature": temperature,
@@ -138,17 +149,23 @@ class Coral_API:
                 "authority": "api.cohere.ai",
                 "accept": "*/*",
                 "accept-language": "ru,en;q=0.9",
-                "authorization": f"Bearer {self.api_key}",
+                "authorization": f"Bearer {self.api_keys[0]}",
                 "content-type": "application/json; charset=utf-8",
                 "user-agent": self.user_agent
             }
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
+            if response.status_code == 429:
+                if not error and self.api_keys:
+                    self.api_keys = self.api_keys[1:]
+                    return self.generate(messages=messages, gpt_role=gpt_role, delay_for_gpt=delay_for_gpt,
+                                         temperature=temperature, model=model, web_access=web_access, error=True)
+                else:
+                    raise Exception("Не подошло 2 ключа. Прерван.")
+
             response_text = response.text
             response_json = response.json()
             return response_json['text']
         except Exception as e:
             logger.logging("Error in coral_API:", e, response_json, response_text, color=Color.RED)
             time.sleep(delay_for_gpt)
-
-
