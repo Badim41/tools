@@ -450,12 +450,12 @@ class ChatGPT_4_Site:
 
         if not chat_history:
             chat_history = []
-
+        chat_history_temp = chat_history
         # абуз бага. Сайт не принимает более 1000 символов, но запрос загружается в историю
 
         if len(prompt) > 800:
-            chat_history.append({"role": "user", "content": prompt})
-            chat_history.append({"role": "assistant", "content": "."})
+            chat_history_temp.append({"role": "user", "content": prompt})
+            chat_history_temp.append({"role": "assistant", "content": "."})
             prompt = replace_prompt
         # print(chat_history)
         # return
@@ -468,7 +468,7 @@ class ChatGPT_4_Site:
             "session": "N/A",
             "chatId": chat_id,
             "contextId": 4048,
-            "messages": chat_history,
+            "messages": chat_history_temp,
             "newMessage": prompt,
             "newFileId": image_id,
             "stream": False
