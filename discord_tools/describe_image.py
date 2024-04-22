@@ -63,14 +63,17 @@ def vercel_API(image_path, proxies=None, timeout=60, *args, **kwargs):
     return None, text
 
 
-def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=120, attempts=1, *args, **kwargs):
+def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=120, attempts=2, *args, **kwargs):
     """
     speed: slow
     Moderate = 13s-22s
     Describe = 9-16s
     comment: хорошо воспринимает запрос, хорошо находит даже рукописный текст
     """
+
     for i in range(attempts):
+        if i == 2:
+            proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
         response_text = "not inited response"
         try:
             url = "https://www.iodraw.com/ai/getChatText.json"
@@ -102,7 +105,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
                 return False, answer
         except Exception as e:
             logger.logging("Error in iodraw_API", e, response_text)
-            # time.sleep(3)
+            time.sleep(3)
 
 def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, attempts=3, *args, **kwargs):
     """
