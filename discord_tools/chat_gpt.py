@@ -315,6 +315,7 @@ class ChatGPT:
                                                           limited=limited,
                                                           translate_lang=translate_lang, chat_history=chat_history, chat_gpt_4=chat_gpt_4)
         if not provider == ChatGPT_Responses.all:
+            chat_history.append({"role": "user", "content": prompt})
             chat_history.append({"role": "assistant", "content": answer})
             save_history(chat_history, user_id)
 
