@@ -128,7 +128,7 @@ def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, at
             if "Not found account" in str(e):
                 return
             logger.logging("Error in chatGPT-4", e, response_text)
-            time.sleep(30)
+            time.sleep(3)
 
 def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None, *args,
                **kwargs):
