@@ -102,7 +102,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
                 return False, answer
         except Exception as e:
             logger.logging("Error in iodraw_API", e, response_text)
-            time.sleep(30)
+            time.sleep(3)
 
 def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, attempts=3, *args, **kwargs):
     """
