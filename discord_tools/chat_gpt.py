@@ -83,7 +83,7 @@ _providers = [
 
     # Other
     g4f.Provider.DeepInfra,
-    g4f.Provider.Llama2,
+    # g4f.Provider.Llama2,
 ]
 
 
