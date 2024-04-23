@@ -100,7 +100,7 @@ class Coral_API:
 
     def generate(self, messages, gpt_role="Ты полезный ассистент и даёшь только полезную информацию", delay_for_gpt=1,
                  temperature=0.3,
-                 model="command-r-plus", web_access=False, error=True):
+                 model="command-r-plus", web_access=False, error=0):
         changed_messages = messages
         if not self.api_keys:
             logger.logging("coral_API: No keys")
@@ -156,12 +156,12 @@ class Coral_API:
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
             if response.status_code == 429:
-                if not error and self.api_keys:
+                if not error == 5 and self.api_keys:
                     self.api_keys = self.api_keys[1:]
                     return self.generate(messages=messages, gpt_role=gpt_role, delay_for_gpt=delay_for_gpt,
-                                         temperature=temperature, model=model, web_access=web_access, error=True)
+                                         temperature=temperature, model=model, web_access=web_access, error=error+1)
                 else:
-                    raise Exception("Не подошло 2 ключа. Прерван.")
+                    raise Exception(f"Было опробовано {error} ключей, но ни один не подошёл. Прервано.")
 
             response_text = response.text
             response_json = response.json()
