@@ -20,7 +20,7 @@ def get_image_base64_encoding(file_path) -> str:
     return base64.b64encode(image_data).decode('utf-8')
 
 
-def vercel_API(image_path, proxies=None, timeout=60, *args, **kwargs):
+def vercel_API(image_path, proxies=None, timeout=60, attempts=2, *args, **kwargs):
     """
     return: caption, text
     speed: fast
@@ -28,39 +28,46 @@ def vercel_API(image_path, proxies=None, timeout=60, *args, **kwargs):
     comment: очень хорошо распознаёт текст, не поддерживает запрос. Не подходит для модерации, часто превышается лимит
     proxy: нужен
     """
-    url = "https://2txt.vercel.app/api/completion"
+    for i in range(attempts):
+        try:
+            if i == 2:
+                proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
+            url = "https://2txt.vercel.app/api/completion"
 
-    payload = {"prompt": f"data:image/png;base64,{get_image_base64_encoding(image_path)}"}
-    headers = {
-        "authority": "2txt.vercel.app",
-        "accept": "*/*",
-        "accept-language": "ru,en;q=0.9",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
-    }
+            payload = {"prompt": f"data:image/png;base64,{get_image_base64_encoding(image_path)}"}
+            headers = {
+                "authority": "2txt.vercel.app",
+                "accept": "*/*",
+                "accept-language": "ru,en;q=0.9",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
+            }
 
-    response = requests.request("POST", url, json=payload, headers=headers, proxies=proxies, timeout=timeout)
+            response = requests.request("POST", url, json=payload, headers=headers, proxies=proxies, timeout=timeout)
 
-    if response.text == 'Rate limit exceeded':
-        raise Exception('Превышен лимит')
-    elif not response.text:
-        raise Exception("Нет ответа. Статус:", response.status_code)
-    # print(response.text)
-    response_text = response.text
-    text = ""
-    for item in response_text.split("\n"):
-        text += item.lstrip("0:\"").rstrip("\"")
+            if response.text == 'Rate limit exceeded':
+                raise Exception('Превышен лимит')
+            elif not response.text:
+                raise Exception("Нет ответа. Статус:", response.status_code)
+            # print(response.text)
+            response_text = response.text
+            text = ""
+            for item in response_text.split("\n"):
+                text += item.lstrip("0:\"").rstrip("\"")
 
-    if "▲" in response_text:
-        caption, text = text.split("▲")
-        text = f"Caption: {caption}\nText: {text}"
+            if "▲" in response_text:
+                caption, text = text.split("▲")
+                text = f"Caption: {caption}\nText: {text}"
 
-    # Хотя бы так?
-    for ban_word in ban_words:
-        for word in text.split(" "):
-            if (word.lower() + " ").startswith(ban_word):
-                return True, text
+            # Хотя бы так?
+            for ban_word in ban_words:
+                for word in text.split(" "):
+                    if (word.lower() + " ").startswith(ban_word):
+                        return True, text
+            return None, text
+        except Exception as e:
+            logger.logging("Error in vercel_API", e)
+            time.sleep(3)
 
-    return None, text
 
 
 def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=120, attempts=2, *args, **kwargs):
@@ -73,10 +80,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
 
     for i in range(attempts):
         if i == 2:
-            proxies = {
-                "http": "socks5://127.0.0.1:9050",
-                "https": "socks5://127.0.0.1:9050"
-            }
+            proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
         response_text = "not inited response"
         try:
             url = "https://www.iodraw.com/ai/getChatText.json"
@@ -120,6 +124,8 @@ def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, at
     response_text = "not defined"
     timer = Time_Count()
     for i in range(attempts):
+        if i == 3:
+            proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
         try:
             account = ChatGPT_4_Account(proxies=proxies)
             result = account.ask_gpt(prompt=prompt, image_path=image_path)
@@ -136,7 +142,7 @@ def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, at
             logger.logging("Error in chatGPT-4", e, response_text)
             time.sleep(3)
 
-def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None, *args,
+def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None, attempts=2, *args,
                **kwargs):
     """
     speed: faster
@@ -151,27 +157,33 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
             if 'parent' in item:
                 result = get_object_info([item['parent']], result=result, indent=indent + 1)
         return result
+    for i in range(attempts):
+        if i == 2:
+            proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
+        try:
+            api = Astica_API(proxies=proxies)
+            result = api.get_image_description(
+                image_path,
+                prompt=prompt,
+                vision_params=Astica_Describe_Params.gpt_detailed)
 
-    api = Astica_API(proxies=proxies)
-    result = api.get_image_description(
-        image_path,
-        prompt=prompt,
-        vision_params=Astica_Describe_Params.gpt_detailed)
+            logger.logging("Response from server:", result, color=Color.GRAY)
 
-    logger.logging("Response from server:", result, color=Color.GRAY)
+            if result.get('caption_GPTS'):
+                caption = result['caption_GPTS']
+            else:
+                text = ""
+                if 'caption' in result and 'text' in result['caption']:
+                    text = "### caption:\n" + result['caption']['text'] + "\n\n"
 
-    if result.get('caption_GPTS'):
-        caption = result['caption_GPTS']
-    else:
-        text = ""
-        if 'caption' in result and 'text' in result['caption']:
-            text = "### caption:\n" + result['caption']['text'] + "\n\n"
+                caption = text + "### objects:\n" + get_object_info(data=result['objects'])
 
-        caption = text + "### objects:\n" + get_object_info(data=result['objects'])
-
-    return (result['moderate']['isAdultContent'] and isAdultContent) or \
-           (result['moderate']['isRacyContent'] and isRacyContent) or \
-           (result['moderate']['isGoryContent'] and isGoryContent), caption
+            return (result['moderate']['isAdultContent'] and isAdultContent) or \
+                   (result['moderate']['isRacyContent'] and isRacyContent) or \
+                   (result['moderate']['isGoryContent'] and isGoryContent), caption
+        except Exception as e:
+            logger.logging("Error in astica_API", e)
+            time.sleep(3)
 
 
 class Describers_API:
@@ -245,11 +257,5 @@ def lower_image_resolution(image_path, max_pixels=1000000):
         new_height = int((max_pixels / current_pixels) ** 0.5 * height)
         img = img.resize((new_width, new_height))
         img.save(image_path)
-proxy = "socks5://localhost:5051"  # Здесь указываем порт 5051, как в вашей команде SSH
 
-proxies = {
-    'http': proxy,
-    'https': proxy
-}
 
-print(describe_image(r"C:\Users\as280\Downloads\test.png", describers=[Describers_API.Iodraw], proxies=proxies))
