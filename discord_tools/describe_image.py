@@ -28,6 +28,7 @@ def vercel_API(image_path, proxies=None, timeout=60, attempts=2, *args, **kwargs
     comment: очень хорошо распознаёт текст, не поддерживает запрос. Не подходит для модерации, часто превышается лимит
     proxy: нужен
     """
+    response_text = "not defined"
     for i in range(attempts):
         try:
             if i == 2:
@@ -65,7 +66,7 @@ def vercel_API(image_path, proxies=None, timeout=60, attempts=2, *args, **kwargs
                         return True, text
             return None, text
         except Exception as e:
-            logger.logging("Error in vercel_API", e)
+            logger.logging("Error in vercel_API", e, response_text)
             time.sleep(3)
 
 
@@ -81,7 +82,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
     for i in range(attempts):
         if i == 2:
             proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
-        response_text = "not inited response"
+        response_text = "not defined"
         try:
             url = "https://www.iodraw.com/ai/getChatText.json"
 
