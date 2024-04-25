@@ -8,7 +8,6 @@ import urllib
 from datetime import date
 
 from discord_tools.logs import Logs, Color
-from discord_tools.not_working.temp_gmail_test import Temp_Email_API
 
 logger = Logs(warnings=True)
 
