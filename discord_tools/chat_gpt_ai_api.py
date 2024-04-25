@@ -8,7 +8,7 @@ import urllib
 from datetime import date
 
 from discord_tools.logs import Logs, Color
-from discord_tools.temp_gmail import Temp_Email_API
+from discord_tools.not_working.temp_gmail_test import Temp_Email_API
 
 logger = Logs(warnings=True)
 
@@ -451,12 +451,26 @@ class ChatGPT_4_Site:
         if not chat_history:
             chat_history = []
         chat_history_temp = chat_history
-        # абуз бага. Сайт не принимает более 1000 символов, но запрос загружается в историю
+        role = ""
+        if len(chat_history_temp) > 1:
+            if chat_history_temp[0]['role'] == 'system':
+                role = chat_history_temp[0]['content']
+                role = "" if role == "Ты полезный ассистент и даёшь только полезную информацию" else role
 
+        # абуз бага. Сайт не принимает более 1000 символов, но запрос загружается в историю
         if len(prompt) > 800:
-            chat_history_temp.append({"role": "user", "content": prompt})
+            if role:
+                chat_history_temp.append({"role": "user", "content": f"Role: {role}\n\n\n{prompt}"})
+            else:
+                chat_history_temp.append({"role": "user", "content": prompt})
             chat_history_temp.append({"role": "assistant", "content": "."})
             prompt = replace_prompt
+        elif role:
+            prompt = f"Role: {role}\n\n\n{prompt}"
+
+        print("GPT-4 role:", role)
+
+
         # print(chat_history)
         # return
         bot_id = GPT_Models.get_id(model_name=model)
