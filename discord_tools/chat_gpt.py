@@ -343,7 +343,7 @@ class ChatGPT:
         # CHAT GPT 4 (BEST OF THE BEST)
         if self.chat_gpt_4 and chat_gpt_4:
             chat_history_temp = chat_history
-            messages = trim_history(chat_history_temp, max_length=15000)
+            messages = get_sys_prompt(user_id, gpt_role) + trim_history(chat_history_temp, max_length=15000)
             answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=messages)
 
             if answer:
