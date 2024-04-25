@@ -452,6 +452,7 @@ class ChatGPT_4_Site:
         chat_history_temp = chat_history
         role = ""
         if len(chat_history_temp) > 1:
+            print("first", chat_history_temp[0])
             if chat_history_temp[0]['role'] == 'system':
                 role = chat_history_temp[0]['content']
                 role = "" if role == "Ты полезный ассистент и даёшь только полезную информацию" else role
