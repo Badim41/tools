@@ -14,7 +14,6 @@ setup(
         'beautifulsoup4==4.12.2',
         'characterai==0.8.0',
         'mtranslate==1.8',
-        'websockets',
-        'MailTMAPI'
+        'websockets'
     ],
 )
