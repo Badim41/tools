@@ -53,7 +53,10 @@ class ChatGPT_4_Account:
         self.bot_info = None
 
         if create_new:
-            self.update_class()
+            try:
+                self.update_class()
+            except Exception as e:
+                logger.logging("Cannot create class ChatGPT4-account:", e)
         else:
             self.email = email
             self.cookies = cookies
