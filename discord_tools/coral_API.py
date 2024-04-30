@@ -1,17 +1,60 @@
+import csv
 import json
+import os
 import re
 import requests
 import time
 
-import cohere
-from cohere import ClassifyExample
-
+from discord_tools.str_tools import convert_answer_to_json
 from discord_tools.logs import Logs, Color
 from discord_tools.sql_db import get_database, set_database_not_async as set_database
 from discord_tools.timer import Time_Count
 
 logger = Logs(warnings=True)
 
+class Coral_Account():
+    def create_account(self, email, password, recapcha_token=None):
+        if not recapcha_token:
+            recapcha_token = "AVGAUYxwSbf4l0H6PwM2qjku64V_EulzweLvJFDFxVpQFjaNfXCJN-T1q5D2VC6RVOcrOvJBubFc0XI_yhf9vo79uIvenlRb61AjshySOi1BMo3tcL5QISuF7QwD4M-IXrOweXaI2jX52zLh1etQ-BIxeWQr7E_SBMNv:U=f34be19120000000"
+
+        url = "https://production.api.os.cohere.ai/rpc/BlobheartAPI/RegisterWithEmail"
+
+        payload = {
+            "email": email,
+            "password": password,
+            "freeCreditCode": "SPRING25",
+            "agreements": [
+                {
+                    "data": {"content": 1713421772164},
+                    "type": "CONFIDENTIALITY"
+                },
+                {
+                    "data": {"content": 1713421772164},
+                    "type": "TERMS"
+                }
+            ]
+        }
+        headers = {
+            "authority": "production.api.os.cohere.ai",
+            "accept": "*/*",
+            "accept-language": "ru,en;q=0.9",
+            "authorization": "",
+            "content-type": "application/json",
+            "origin": "https://dashboard.cohere.com",
+            "referer": "https://dashboard.cohere.com/",
+            "request-source": "playground",
+            "sec-ch-ua-mobile": "?0",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
+            "x-email-domain": "gmail.com",
+            "x-recaptcha-token": recapcha_token
+        }
+
+        response = requests.request("POST", url, json=payload, headers=headers)
+
+        print(response.text)
 
 class Response_Example:
     image_recognize = "image_recognize"
@@ -43,8 +86,6 @@ class Coral_API:
             raise Exception("Нет способа получения ключа")
 
     def login(self):
-        import requests
-
         url = "https://production.api.os.cohere.ai/rpc/BlobheartAPI/AuthV2"
 
         payload = {
@@ -185,6 +226,7 @@ class Coral_API:
             time.sleep(delay_for_gpt)
 
     def classify_request(self, inputs, error=0):
+        from cohere import ClassifyExample
         url = "https://api.cohere.ai/v1/classify"
         examples = [
             ClassifyExample(text="Покажи мне погоду в Париже на следующей неделе",
@@ -564,112 +606,248 @@ class Coral_API:
         else:
             print(f"Error: {response.status_code} - {response.text}")
 
-    def safe_summorize(self, text, big_text):
-        def split_text_into_sentences(text):
-            sentence_endings = re.compile(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s')
-            sentences = sentence_endings.split(text)
-            sentences = [s.strip() for s in sentences]
-            return sentences
+    def summarise(self, text, big_text):
+        url = "https://api.cohere.ai/v1/chat"
 
-        def split_into_chunks(text, chunk_size=8000):
-            sentences = split_text_into_sentences(text)
-            chunks_sentences = []
-            current_chunk = ''
-            current_chunk_length = 0
+        payload = {
+            "message": text,
+            "model": "command-r-plus",
+            "connectors": [],
+            "stream": False,
+            "documents": [{"title": "File TXT", "text": big_text}],
+            "prompt_truncation": "AUTO"
+        }
 
-            for sentence in sentences:
-                if len(current_chunk) + len(sentence) + 1 <= chunk_size:  # Add 1 for space
-                    if current_chunk:
-                        current_chunk += ' ' + sentence
-                    else:
-                        current_chunk = sentence
-                    current_chunk_length += len(sentence) + 1
-                else:
-                    chunks_sentences.append(current_chunk)
-                    current_chunk = sentence
-                    current_chunk_length = len(sentence)
+        headers = {
+            "authority": "api.cohere.ai",
+            "accept": "*/*",
+            "accept-language": "ru,en;q=0.9",
+            "authorization": f"Bearer {self.api_keys[0]}",
+            "content-type": "application/json; charset=utf-8",
+            "user-agent": self.user_agent
+        }
 
-            if current_chunk:  # Append remaining sentences if any
-                chunks_sentences.append(current_chunk)
+        response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
+        print(response.status_code)
+        response_json = response.json()
+        print(response_json['text'])
+        return response_json['text']
 
-            return chunks_sentences
+    @staticmethod
+    def convert_json_to_csv(json_path):
+        csv_file_path = json_path.replace(".json", ".csv")
+        print(csv_file_path)
 
-        chunks = split_into_chunks(big_text)
+        with open(json_path, 'r', encoding="utf-8") as json_file:
+            json_data = json.load(json_file)
 
-        url = "https://api.cohere.ai/v1/rerank"
+        with open(csv_file_path, 'w', newline='', encoding="utf-8") as csv_file:
+            writer = csv.writer(csv_file)
+
+            # Запишите заголовок CSV-файла
+            writer.writerow(['prompt', 'completion'])
+
+            for entry in json_data:
+                prompt = entry.get('Q', '')
+                completion = entry.get('A', '')
+                if prompt and completion:
+                    writer.writerow([prompt, completion])
+
+        print(f'Файл датасета создан: {csv_file_path}')
+        return csv_file_path
+
+    @staticmethod
+    def convert_to_jsonl(input_file):
+        output_file = input_file.replace(".json", ".jsonl")
+        with open(input_file, 'r', encoding='utf-8') as f_in:
+            data = json.load(f_in)
+
+        with open(output_file, 'w', encoding='utf-8') as f_out:
+            for item in data:
+                prompt = item.get("Q", "")
+                completion = item.get("A", "")
+                jsonl_data = {"prompt": prompt, "completion": completion}
+                json.dump(jsonl_data, f_out, ensure_ascii=False)
+                f_out.write('\n')
+        print("Файл датасета создан:", output_file)
+        return output_file
+
+    @staticmethod
+    def convert_to_chat_dataset(json_path):
+        output_file_path = json_path.replace(".json", ".jsonl")
+        with open(json_path, 'r', encoding='utf-8') as json_file:
+            data = json.load(json_file)
+
+        with open(output_file_path, 'w', encoding='utf-8') as jsonl_file:
+            for item in data:
+                jsonl_file.write(json.dumps({
+                    "messages": [
+                        {"role": "User", "content": item["Q"]},
+                        {"role": "Chatbot", "content": item["A"]}
+                    ]
+                }) + '\n')
+
+        print("Файл датасета создан:", output_file_path)
+        return output_file_path
+
+    def list_models(self):
+        url = "https://api.cohere.ai/v1/models"
+
         headers = {
             "accept": "application/json",
-            "content-type": "application/json",
             "Authorization": f"Bearer {self.api_keys[0]}"
         }
 
-        for chunk in chunks:
-            url = "https://api.cohere.ai/v1/chat"
+        response = requests.get(url, headers=headers, proxies=self.proxies)
 
-            payload = {
-                "message": text,
-                "model": "command-r-plus",
-                "connectors": [],
-                "stream": False,
-                "documents": [{"title": "Stream TXT record", "text": chunk}],
-                "prompt_truncation": "AUTO"
-            }
+        # Проверяем статус код ответа
+        if response.status_code == 200:
+            # Если запрос успешен, выводим содержимое ответа
+            return json.dumps(response.json(), indent=4)
+        else:
+            # Если запрос неудачен, выводим сообщение об ошибке
+            print(f"Ошибка: {response.status_code} - {response.text}")
 
-            headers = {
-                "authority": "api.cohere.ai",
-                "accept": "*/*",
-                "accept-language": "ru,en;q=0.9",
-                "authorization": f"Bearer {self.api_keys[0]}",
-                "content-type": "application/json; charset=utf-8",
-                "user-agent": self.user_agent
-            }
+    def list_fine_turned_models(self, model_id=""):
+        if model_id:
+            model_id = "/" + model_id
 
-            response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
-            print(response.status_code)
-            response_text = response.text
-            response_json = response.json()
-            print(response_json['text'])
+        url = f"https://api.cohere.ai/v1/finetuning/finetuned-models{model_id}"
+
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {self.api_keys[0]}"  # Замените CO_API_KEY на ваш API ключ
+        }
+
+        response = requests.get(url, headers=headers, proxies=self.proxies)
+
+        # Проверяем статус код ответа
+        if response.status_code == 200:
+            # Если запрос успешен, выводим содержимое ответа
+            return json.dumps(response.json(), indent=4)
+        else:
+            # Если запрос неудачен, выводим сообщение об ошибке
+            print(f"Ошибка: {response.status_code} - {response.text}")
+
+    def check_metrics_train_model(self, model_id):
+        url = f"https://api.cohere.ai/v1/finetuning/finetuned-models/{model_id}/metrics"
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"bearer {self.api_keys[0]}"
+        }
+
+        response = requests.get(url, headers=headers, proxies=self.proxies)
+
+        if response.status_code == 200:
+            data = response.json()
+            print(data)  # or do something else with the data
+            return True
+        else:
+            print("Error:", response.status_code, response.text)
+
+    def check_train_model(self, model_id):
+        url = f"https://api.cohere.ai/v1/finetuning/finetuned-models/{model_id}/events"
+
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {self.api_keys[0]}"  # Замените CO_API_KEY на ваш API ключ
+        }
+
+        response = requests.get(url, headers=headers, proxies=self.proxies)
+
+        # Проверяем статус код ответа
+        if response.status_code == 200:
+            # Если запрос успешен, выводим содержимое ответа
+            return response.json()
+        else:
+            # Если запрос неудачен, выводим сообщение об ошибке
+            print(f"Ошибка: {response.status_code} - {response.text}")
+
+    def train_model(self, model_name, dataset_id):
+        raise Exception("Этот метод не работает. Используйте код ниже")
+        # finetuned_model = co.finetuning.create_finetuned_model(
+        #     request=FinetunedModel(
+        #         name="test-finetuned-model",
+        #         settings=Settings(
+        #             base_model=BaseModel(
+        #                 strategy="STRATEGY_UNSPECIFIED",
+        #                 base_type="BASE_TYPE_CHAT"
+        #             ),
+        #             dataset_id="my-dataset-3-chat-1mzsk1",
+        #             hyperparameters=Hyperparameters(
+        #                 early_stopping_patience=3,
+        #                 early_stopping_threshold=0.01,
+        #                 train_batch_size=7,
+        #                 train_epochs=10,
+        #                 learning_rate=0.005
+        #             )
+        #         ),
+        #     )
+        # )
+        # print(finetuned_model)
+
+    def get_datasets(self):
+        url = "https://api.cohere.ai/v1/datasets"
+
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {self.api_keys[0]}"
+        }
+
+        response = requests.get(url, headers=headers, proxies=self.proxies)
+
+        if response.status_code == 200:
+            return json.dumps(response.json(), indent=4)
+        else:
+            print(f"Ошибка: {response.status_code} - {response.text}")
+
+    def create_dataset(self, file_path, dataset_name, dataset_type):
+        url = "https://api.cohere.ai/v1/datasets"
+        headers = {
+            "Authorization": f"Bearer {self.api_keys[0]}"
+        }
+        params = {
+            "name": dataset_name,
+            "type": dataset_type
+        }
+        files = {
+            "file": open(file_path, "rb")
+        }
+
+        response = requests.post(url, headers=headers, params=params, files=files, proxies=self.proxies)
+
+        if response.status_code == 200:
+            print("Dataset created successfully!")
+        else:
+            print("Failed to create dataset. Error:", response.text)
 
 
-prompt_streamer = """# Введение
-Этот текст - текстовая расшифровка стрима стримера Faradey (Фарадей)
+def split_text_into_sentences(text):
+    sentence_endings = re.compile(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s')
+    sentences = sentence_endings.split(text)
+    sentences = [s.strip() for s in sentences]
+    return sentences
 
 
-# Задача
-Сделай датасет, который будет содержать вопросы и ответы данного стримера с чатом.
-Сделай максимально большое количество вопросов и ответов из файла.
-Выводи в формате JSON:
-[
-{
-"Q":"вопрос",
-"A":"ответ"
-}
-...
-]
+def split_into_chunks(text, chunk_size=8000):
+    sentences = split_text_into_sentences(text)
+    chunks_sentences = []
+    current_chunk = ''
+    current_chunk_length = 0
 
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) + 1 <= chunk_size:  # Add 1 for space
+            if current_chunk:
+                current_chunk += ' ' + sentence
+            else:
+                current_chunk = sentence
+            current_chunk_length += len(sentence) + 1
+        else:
+            chunks_sentences.append(current_chunk)
+            current_chunk = sentence
+            current_chunk_length = len(sentence)
 
-# Примеры
-Q: Как относишься к косплеерам?
-A: Нормально."""
+    if current_chunk:  # Append remaining sentences if any
+        chunks_sentences.append(current_chunk)
 
-if __name__ == "__main__":
-    proxy = "socks5://localhost:5051"  # Здесь указываем порт 5051, как в вашей команде SSH
-
-    proxies = {
-        'http': proxy,
-        'https': proxy
-    }
-
-    timer = Time_Count()
-
-    api = Coral_API(proxies=proxies, api_key="1uiEYiGMMqUcueHDUGw4XWI8kEEtsC5HMTIo5nya")
-
-    file_path = r'C:\Users\as280\Downloads\4Voice.txt'
-    with open(file_path, "r", encoding="utf-8") as reader:
-        content = reader.read()
-
-    api.safe_summorize(prompt_streamer, content)
-    input()
-    test_json = api.classify_request("Измени изображение <image>")
-    print(test_json["classifications"][0]["prediction"], timer.count_time(ignore_error=True))
-    print(test_json)
+    return chunks_sentences

@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import functools
 import io
 import json
 import os
@@ -11,6 +12,12 @@ import zipfile
 import urllib
 import re
 import shutil
+import multiprocessing
+
+import multiprocessing
+
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -37,6 +44,11 @@ async def get_image_size(image_path):
     except Exception as e:
         logger.logging(f"Ошибка при получении размера изображения: {e}")
         return None
+
+
+def execute_function(func, result_queue):
+    result = asyncio.run(func)
+    result_queue.put(result)
 
 
 class GenerateImages:
@@ -79,12 +91,26 @@ class GenerateImages:
         self.hg_client = None
 
     # [Kandinsky_API, Polinations_API, CharacterAI_API, Bing_API]
+    def generate_image_grid_wrapper_sync(self, model_class, image_name, prompt, zip_name=None, delete_temp=True,
+                                         row_prompt=None):
+        return asyncio.run(
+            self.generate_image_grid(
+                model_class=model_class,
+                image_name=image_name,
+                prompt=prompt,
+                zip_name=zip_name,
+                delete_temp=delete_temp,
+                row_prompt=row_prompt
+            )
+        )
+
     async def generate_image_grid(self, model_class, image_name, prompt, row_prompt, delete_temp=True, zip_name=None):
         def create_black_image(width, height):
             return Image.new('RGB', (width, height), (0, 0, 0))
 
         try:
             model_instance = model_class(self)
+            # print(f"async def for {model_instance.__class__.__name__}")
 
             if model_instance.support_russian:
                 prompt = row_prompt
@@ -152,7 +178,10 @@ class GenerateImages:
 
             if delete_temp:
                 for image_path in image_paths:
-                    os.remove(image_path)
+                    try:
+                        os.remove(image_path)
+                    except Exception as e:
+                        print(f"cant remove {image_path}:", e)
 
             return final_path
         except:
@@ -194,10 +223,30 @@ class GenerateImages:
         if hugging_face:
             models.append(Huggingface_API)
 
-        functions = [self.generate_image_grid(model_class=model, image_name=user_id, prompt=prompt, zip_name=zip_name,
-                                              delete_temp=delete_temp, row_prompt=row_prompt) for model in models]
+        # Награмождения для асинхроного многопоточного выполнения
+        with ThreadPoolExecutor() as executor:
+            loop = asyncio.get_running_loop()
+            tasks = [
+                loop.run_in_executor(
+                    executor,
+                    functools.partial(
+                        self.generate_image_grid_wrapper_sync,
+                        model_class=model,
+                        image_name=user_id,
+                        prompt=prompt,
+                        zip_name=zip_name,
+                        delete_temp=delete_temp,
+                        row_prompt=row_prompt
+                    )
+                )
+                for model in models
+            ]
 
-        results = [result for result in await asyncio.gather(*functions) if result and os.path.exists(result)]
+            # Await the results of the coroutines
+            results = await asyncio.gather(*tasks)
+            print("results", results)
+
+        results = [result for result in results if result and os.path.exists(result)]
 
         if zip_name:
             with zipfile.ZipFile(zip_name, "a") as zipf:
@@ -382,6 +431,8 @@ class Waifus_API:
             print("Waifu status:", response.text)
             if response.text == "completed":
                 return True
+            if response.text == "unknown":
+                return None
             time.sleep(delay)
 
     def get_result(self, request_id, model):
@@ -489,13 +540,14 @@ class Bing_API:
                 "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
             }
 
-            response = requests.request("POST", url, data="", headers=headers, params=data, proxies=self.generator.proxies)
+            response = requests.request("POST", url, data="", headers=headers, params=data,
+                                        proxies=self.generator.proxies)
 
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
                 continue
 
-            if i == attempts:
+            if i >= attempts:
                 with open("temp_response_bing.txt", "w", encoding="utf-8") as writer:
                     writer.write(response.text)
                 raise Exception(f"Спустя {attempts} попыток не отправлен запрос")
@@ -545,7 +597,6 @@ class Bing_API:
 
             i += 1
             if len(prompt) > max_request_len:
-                i = attempts - 1  # ещё 1 шанс на запрос
                 prompt = f"Табличка с текстом \"{prompt_row}\""
                 logger.logging("Запрос изменён на:", prompt, color=Color.BLUE)
 

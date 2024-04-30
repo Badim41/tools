@@ -23,13 +23,14 @@
     1. [С указанием ключей](#section-5.1)
 6. [Цветные логи](#section-6)
 7. [Таймеры](#section-7)
-8. [Авторизация Discord](#section-8)
-9. [Перевод](#section-9)
-10. [База данных](#section-10)
-11. [Скачать аудиофайл по ссылке с ютуба](#section-11)
-12. [Отделить вокал/иструментал](#section-12)
+8. [Перевод](#section-9)
+9. [База данных](#section-10)
+10. [Скачать аудиофайл по ссылке с ютуба](#section-11)
+11. [Отделить вокал/иструментал](#section-12)
     1. [Одна модель](#section-12.1)
     2. [Несколько моделей](#section-12.2)
+12. [Увеличение разрешения изображени](#section-13)
+13. [Убрать фон с изображения](#section-14)
 
 ## Установка <a name="section-1"></a>
 
@@ -43,26 +44,35 @@ pip install git+https://github.com/Badim41/tools.git
 ## Создание класса <a name="section-2.1"></a>
 ```python
 from discord_tools.chat_gpt import ChatGPT
+
 chat_gpt = ChatGPT()
 ```
 ### С ключами OPEN_AI  <a name="section-2.2"></a>
 ```python
+from discord_tools.chat_gpt import ChatGPT
+
 chat_gpt = ChatGPT(OPEN_AI_KEY: [str, list])
 ```
 ### С аутентификационным ключом ChatGPT (бесплатно)  <a name="section-2.3"></a>
 ```python
+from discord_tools.chat_gpt import ChatGPT
+
 # https://chat.openai.com/api/auth/session - {accessToken}
 chat_gpt = ChatGPT(auth_keys=AUTH_KEY: [str, list])
 ```
 ### С аутентификационным ключом character.ai (бесплатно)  <a name="section-2.4"></a>
 ![img.png](img.png)
 ```python
+from discord_tools.chat_gpt import ChatGPT
+
 # https://beta.character.ai - На F12 смотрите char_token в Local Storage
 chat_gpt = ChatGPT(char_tokens=CHAR_TOKEN: [str, list])
 ```
 
 ### С аутентификационным ключом deepseek (бесплатно)  <a name="section-2.4.1"></a>
 ```python
+from discord_tools.chat_gpt import ChatGPT
+
 # https://chat.deepseek.com - На F12 смотрите Authorization в любом запросе к сайту
 chat_gpt = ChatGPT(deep_seek_auth_keys=DEEP_SEEK_AUTH_KEYS: [str, list])
 ```
@@ -73,39 +83,44 @@ chat_gpt = ChatGPT(deep_seek_auth_keys=DEEP_SEEK_AUTH_KEYS: [str, list])
 chat_gpt = ChatGPT(deep_seek_keys=DEEP_SEEK_API_KEYS: [str, list])
 ```
 
-### С логином и паролем https://coral.cohere.com
+### С логином и паролем или ключом https://coral.cohere.com
 ```python
-import asyncio
 from discord_tools.chat_gpt import ChatGPT
 from discord_tools.coral_API import Coral_API
+
 coral_api = Coral_API(email="EMAIL", password="PASSWORD")
+coral_api = Coral_API(api_key="API_KEY")
 
 chat_gpt = ChatGPT(coral_api=coral_api)
 
-result = asyncio.run(chat_gpt.run_all_gpt("Что ты умеешь?"))
+result = await chat_gpt.run_all_gpt("Что ты умеешь?")
 print(result)
 ```
 
 ### Все сразу
 ```python
-chat_gpt = ChatGPT(OPEN_AI_KEY: [str, list],
-                   AUTH_KEY: [str, list],
-                   CHAR_TOKEN: [str, list])
+from discord_tools.chat_gpt import ChatGPT
+chat_gpt = ChatGPT(openAI_keys=OPEN_AI_KEYS,
+                auth_keys=AUTH_KEYS,
+                char_tokens=CHAR_TOKEN,
+                deep_seek_keys=DEEP_SEEK_API_KEYS,
+                deep_seek_auth_keys=DEEP_SEEK_AUTH_KEYS,
+                coral_api=coral_api)
 ```
-## Ответ  <a name="section-2.5"></a>
+## Ответ <a name="section-2.5"></a>
 ```python
 result = await chat_gpt.run_all_gpt("запрос")
 print(result)
 ```
-### Несколько ответов  <a name="section-2.6"></a>
+### Несколько ответов <a name="section-2.6"></a>
 ```python
-from discord_tools.chat_gpt import ChatGPT, ChatGPT_Mode
+from discord_tools.chat_gpt import ChatGPT_Mode
 result = await chat_gpt.run_all_gpt("запрос", mode=ChatGPT_Mode.all)
 print(result)
 ```
-### Сохранение истории  <a name="section-2.7"></a>
+### Сохранение истории <a name="section-2.7"></a>
 ```python
-from discord_tools.chat_gpt import 
+from discord_tools.chat_gpt import clear_history
 result = await chat_gpt.run_all_gpt("запрос", user_id=123) # 123 - номер для сохранения
 print(result)
 await clear_history(123) # отчистка
@@ -117,6 +132,8 @@ print(result)
 ```
 ## Поиск в интернете с GPT  <a name="section-2.9"></a>
 ```python
+from discord_tools.internet import Internet
+
 internet = Internet(chat_gpt)
 result = await internet_searcher.search("Погода в Москве сейчас")
 ```
@@ -126,6 +143,11 @@ API_SEARCH_KEY, CSE_ID - https://docs.typingmind.com/plugins/use-web-search-and-
 internet = Internet(chat_gpt, api_search_key=API_SEARCH_KEY, cse_id=CSE_ID)
 result = await internet.search("Погода в Москве сейчас")
 ```
+## Суммирование информации с GPT  <a name="section-2.10-2"></a>
+```python
+result = await chat_gpt.summarise("запрос", full_text="Содержание текст")
+print(result)
+```
 ## Ограничить использование ключа OPEN_AI  <a name="section-2.11"></a>
 ```python
 result = await chat_gpt.run_all_gpt("запрос", limited=True)
@@ -133,6 +155,9 @@ print(result)
 
 internet = Internet(chat_gpt, limited=True)
 result = await internet.search("запрос")
+print(result)
+
+result = await chat_gpt.summarise("запрос", full_text="Содержание текст", limited=True) 
 print(result)
 ```
 ## Модерация  <a name="section-2.12"></a>
@@ -175,10 +200,17 @@ print(images) # пути к файлам
 ```
 ## С указанием ключей <a name="section-5.1"></a>
 ```python
+from discord_tools.image_generate import GenerateImages
 KANDINSKY_KEYS - https://fusionbrain.ai/keys/
 CHAR_TOKENS - https://beta.character.ai - На F12 смотрите char_token в Local Storage
 
-generator = GenerateImages(SECRET_KEYS_KANDINSKY: [str, list], APIS_KANDINSKY: [str, list], CHAR_TOKENS: [str, list])
+# куки, отправляемые на сайт. Можно посмотреть в F12
+BING_COOKIES - https://www.bing.com/images/create/
+
+generator = GenerateImages(secret_keys_kandinsky=secret_keys_kandinsky,
+                                 apis_kandinsky=apis_kandinsky,
+                                 char_tokens=char_tokens,
+                                 bing_cookies=bing_cookies)
 images = await generator.generate("Tree 4K")
 print(images) # пути к файлам
 ```
@@ -196,16 +228,9 @@ time.sleep(1)
 spent_time = timer.count_time()
 print("прошло", spent_time)
 ```
-# Авторизация Discord: просмотр и написание сообщений <a name="section-8"></a>
-```python
-from discord_tool.discord_auth import Discord_User
-ds_user = Discord_User("Username", login=LOGIN, password=PASSWORD)
-message = await get_new_chat_message() # получение последнего сообщения
-await ds_user.write("Привет!", mension=message) # ответ на сообщение
-await set_reaction(message, "👋") # поставить реакцию
-```
 # Перевод <a name="section-9"></a>
 ```python
+# Сделан, потому что многие библиотеки для перевода конфликтуют с OpenAI
 from discord_tools.translate import translate_text, Languages
 text = "Привет!"
 translated_text = await translate_text(text, Languages.en)
@@ -263,4 +288,44 @@ results = full_process_file_pipeline(input_str,
                                             LalalAIModes.Strings,
                                             LalalAIModes.Wind])
 print("All results:", results)
+```
+# Увеличение разрешения изображения до 8К <a name="section-13"></a>
+```python
+from discord_tools.upscaler import upscale_image, Upscale_Mode
+
+image_path = "image.png"
+result_path, result_url = upscale_image(image_path, Upscale_Mode.quality_8K)
+print(result_path, result_url)
+```
+
+# Убрать фон с изображения <a name="section-14"></a>
+```python
+from discord_tools.upscaler import remove_background
+
+image_path = "image.png"
+result_path, result_url = remove_background(image_path)
+print(result_path, result_url)
+```
+
+# Описать изображение <a name="section-14"></a>
+```python
+from discord_tools.describe_image import describe_image
+
+image_path = "temp.png"
+nsfw, result = describe_image(image_path,prompt="Что изображено на картинке?")
+print(result)
+if nsfw:
+    print("Картинка содержит нежелательное содержимое")
+```
+
+# Модерация изображений <a name="section-14"></a>
+```python
+from discord_tools.describe_image import detect_bad_image
+
+image_path = "temp.png"
+nsfw = detect_bad_image(image_path)
+if nsfw:
+    print("Картинка содержит нежелательное содержимое")
+else:
+    print("Картинка прошла модерацию")
 ```

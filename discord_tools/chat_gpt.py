@@ -1,12 +1,13 @@
+
 import asyncio
 import g4f
 import json
-import logging
 import os
 import requests
 import traceback
 import uuid
 import aiohttp
+
 
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessage
@@ -752,23 +753,4 @@ class ChatGPT:
         return summarized_text
 
 
-def convert_answer_to_json(answer, keys):
-    if isinstance(keys, str):
-        keys = [keys]
 
-    if '{' in answer and '}' in answer:
-        answer = answer[answer.find("{"):]
-        answer = answer[:answer.rfind("}") + 1]
-    else:
-        print("Не json")
-        return False, "Не json"
-
-    try:
-        response = json.loads(answer)
-        for key in keys:
-            if not response.get(key):
-                print("Нет ключа")
-                return False, "Нет ключа"
-    except json.JSONDecodeError as e:
-        print("Error", e)
-        return False, str(e)

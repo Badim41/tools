@@ -25,7 +25,7 @@ class FotorModes:
 
 
 class FotorAPI:
-    def __init__(self, mode, upscale_factor: int, testing=False):
+    def __init__(self, mode, upscale_factor=None, testing=False):
         self.key = None
         self.upload_url = None
         self.mode = mode
@@ -78,7 +78,7 @@ class FotorAPI:
                 logger.logging("Ошибка:", response.status_code)
                 return
 
-    def upload_on_url(self, image_path):
+    def upload_on_url_upscale(self, image_path):
         if self.testing:
             logger.logging("UPLOAD")
 
@@ -98,7 +98,7 @@ class FotorAPI:
         else:
             logger.logging("Ошибка:", response.status_code)
 
-    def get_upload_url(self):
+    def get_upload_url_upscale(self):
         url = "https://www.fotor.com/api/image/sr/upload/url/v2"
 
         querystring = {"mimeType": "jpg"}
@@ -115,6 +115,96 @@ class FotorAPI:
 
         self.upload_url = response.json()['data']['uploadUrl']
         self.key = response.json()['data']['key']
+
+    def get_result_background(self, task_id):
+        while True:
+            url = f"https://www.fotor.com/api/app/cutout/result/{task_id}"
+
+            payload = ""
+            response = requests.request("GET", url, data=payload)
+            result_status = response.json()['data']['status']
+            print(result_status, response.text)
+            if not result_status:
+                time.sleep(5)
+                continue
+            else:
+                break
+        return response.json()['data']['imgUrl']
+
+    def send_background_request(self, image_key):
+        url = "https://www.fotor.com/api/app/cutout/request"
+
+        querystring = {"action": "auto", "imageKey": image_key,
+                       "returnForm": "png"}
+
+        payload = {}
+        response = requests.request("POST", url, json=payload, params=querystring)
+
+        # print(response.text)
+        return response.json()['data']['taskId']
+
+    def upload_on_url_background(self, image_path, expires, oss_access_key_id, signature, upload_key):
+        url = f'https://fotor-com-cutout.oss-accelerate.aliyuncs.com/{upload_key}'
+        querystring = {"Expires": expires, "OSSAccessKeyId": oss_access_key_id,
+                       "Signature": signature}
+
+        with open(image_path, 'rb') as file:
+            file_content = file.read()
+
+        # print("upload url", url)
+
+        headers = {
+            "Content-Type": "image/png",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "ru,en;q=0.9",
+            "Connection": "keep-alive",
+            "Origin": "https://www.fotor.com",
+            "Referer": "https://www.fotor.com/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "cross-site",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36",
+            "sec-ch-ua-mobile": "?0",
+        }
+
+        response = requests.request("PUT", url, data=file_content, headers=headers, params=querystring)
+
+        # print(response.text, response.status_code, querystring)
+
+    def get_upload_url_remove_background(self):
+        from urllib.parse import urlparse, parse_qs
+        url = "https://www.fotor.com/api/app/cutout/v2/upload-img"
+
+        querystring = {"mimeType": "image/png", "num": "1"}
+
+        payload = ""
+        response = requests.request("GET", url, data=payload, params=querystring)
+
+        data = response.json()['data'][0]
+
+        parsed_url = urlparse(data['uploadUrl'])
+
+        # Извлечение значений переменных из запроса
+        query_params = parse_qs(parsed_url.query)
+
+        # Получение значений переменных
+        expires = query_params.get('Expires', [''])[0]
+        oss_access_key_id = query_params.get('OSSAccessKeyId', [''])[0]
+        signature = query_params.get('Signature', [''])[0]
+
+        base_url = "{url.scheme}://{url.netloc}{url.path}".format(url=parsed_url)
+
+        # print("Базовая часть URL без параметров:", base_url)
+
+        # print(response.text)
+
+        self.upload_url = base_url
+
+        upload_key = data['uploadKey']
+
+        # print("expires, oss_access_key_id, signature, upload_key", expires, oss_access_key_id, signature, upload_key)
+
+        return expires, oss_access_key_id, signature, upload_key
 
 
 def save_image_png(image_url, image_path):
@@ -152,7 +242,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
     if upscale_factor == Upscale_Mode.quality_8K:
         upscale_factor_val = float(
             (MAX_PIXELS * MAX_PIXELS / (
-                        get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+                    get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
     elif upscale_factor == Upscale_Mode.quality_4K:
         upscale_factor_val = float(
             (4000 * 4000 / (get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
@@ -162,7 +252,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
     elif upscale_factor is None:
         upscale_factor_val = float(
             (MAX_PIXELS * MAX_PIXELS / (
-                        get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
+                    get_image_dimensions(image_path)[0] * get_image_dimensions(image_path)[1])) ** 0.5)
     else:
         logger.logging("Invalid upscale factor provided.")
         return None, None
@@ -179,8 +269,8 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
                    int(get_image_dimensions(image_path)[1] * upscale_factor_val))
 
     fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor_val, testing=testing)
-    fotor.get_upload_url()
-    fotor.upload_on_url(image_path)
+    fotor.get_upload_url_upscale()
+    fotor.upload_on_url_upscale(image_path)
     fotor.change_mode()
     result_url = f"https://u-static.fotor.com/images/text-to-image/result/{fotor.get_result_upscale()}.jpg"
 
@@ -188,5 +278,20 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
         result_path = ""
     else:
         result_path = save_image_png(result_url, random_factor + "upscaled.png")
+
+    return result_path, result_url
+
+
+def remove_background(image_path, random_factor="", testing=False, only_url=False):
+    fotor = FotorAPI(mode=FotorModes.upscaler, testing=testing)
+    expires, oss_access_key_id, signature, upload_key = fotor.get_upload_url_remove_background()
+    fotor.upload_on_url_background(image_path, expires, oss_access_key_id, signature, upload_key)
+    task_id = fotor.send_background_request(upload_key)
+    result_url = fotor.get_result_background(task_id)
+
+    if only_url:
+        result_path = ""
+    else:
+        result_path = save_image_png(result_url, random_factor + "remove_background.png")
 
     return result_path, result_url

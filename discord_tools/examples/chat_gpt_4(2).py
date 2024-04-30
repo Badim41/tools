@@ -5,11 +5,11 @@ proxies = {
     'http': proxy,
     'https': proxy
 }
+
 account = ChatGPT_4_Account(proxies=proxies)
 
-prompt = input("Введите запрос:\n")
+prompt = input("Введите запрос:")
 
-print(len(prompt))
 result = account.ask_gpt(prompt)
 print(result)
 

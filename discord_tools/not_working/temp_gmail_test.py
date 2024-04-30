@@ -9,7 +9,7 @@ import string
 from discord_tools.astica_API import Astica_Free_API_key
 from discord_tools.logs import Logs
 
-logger = Logs(warnings=False)
+logger = Logs(warnings=True)
 
 
 #
@@ -38,52 +38,6 @@ def extract_urls(text):
     urls = re.findall(url_pattern, text)
 
     return urls
-
-
-class Coral_Account():
-    def create_account(self, email, password):
-        import requests
-
-        url = "https://production.api.os.cohere.ai/rpc/BlobheartAPI/RegisterWithEmail"
-
-        recapcha_token = "AVGAUYxwSbf4l0H6PwM2qjku64V_EulzweLvJFDFxVpQFjaNfXCJN-T1q5D2VC6RVOcrOvJBubFc0XI_yhf9vo79uIvenlRb61AjshySOi1BMo3tcL5QISuF7QwD4M-IXrOweXaI2jX52zLh1etQ-BIxeWQr7E_SBMNv:U=f34be19120000000"
-
-        payload = {
-            "email": email,
-            "password": password,
-            "freeCreditCode": "SPRING25",
-            "agreements": [
-                {
-                    "data": {"content": 1713421772164},
-                    "type": "CONFIDENTIALITY"
-                },
-                {
-                    "data": {"content": 1713421772164},
-                    "type": "TERMS"
-                }
-            ]
-        }
-        headers = {
-            "authority": "production.api.os.cohere.ai",
-            "accept": "*/*",
-            "accept-language": "ru,en;q=0.9",
-            "authorization": "",
-            "content-type": "application/json",
-            "origin": "https://dashboard.cohere.com",
-            "referer": "https://dashboard.cohere.com/",
-            "request-source": "playground",
-            "sec-ch-ua-mobile": "?0",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "cross-site",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36",
-            "x-email-domain": "gmail.com",
-            "x-recaptcha-token": recapcha_token
-        }
-
-        response = requests.request("POST", url, json=payload, headers=headers)
-
-        print(response.text)
 
 
 class MailTM:
@@ -491,7 +445,6 @@ class Temp_Gmail_API:
                 if sender_name in message['textFrom']:
                     return self.get_message(gmail_address, message['mid'])
 
-
     def get_messages(self, gmail_address, timestamp):
         url = "https://api.sonjj.com/email/gm/check"
 
@@ -522,42 +475,33 @@ class Temp_Gmail_API:
         return response.json()['items']
 
 
+def get_temp_gmail_message(sender_name, capcha_code=None):
+    if not capcha_code:
+        capcha_code = "03AFcWeA6ibuyjAK5sX-b5iPi0kyrIV8RT0KW54_YBKYahASdBLypnhg7v4yKjncXl1tw6lmOjPb1JexbYaO8D-7wOK6xYyzOC3T60Xg9NoYYkb4rhX7M4c_IUGNlPmPC9coUmh3L2Ldwpa0HPi62ifZAqmuPtLgC0Dggsm_1j-Ryhk7wj-Q5iZyL4SR6NmHu-3yUnh7q9S9dTlHqngDrcPWZzF7W6ARjMVwy0UEBJ4ymVwiIwTdxzKn2BPzAigY5bErIhwLoH4bXH5-DAuc3x_CSsFgZSgDSPrt0DA83rzh7sCIITnnUo7kfyRcc80Fqv7dhstVdIgxfMW6LN-ADtyLPMBHTHO9vIqqwYK-FRF70jYiO9ErGrLEtp7TFp2doTcOrcmLiO4sEUj95kF7i2y3ZFAwICPJyKm5BrQhcOuGp17TpjuTwiy7puzLz6uqbYT8-S6YcyHXQ-hqzshGMy-T69VkoLhkVHN82gugfyEpnKPbz7BsZGUrdC7Q0O2dZxBM-0RMlWFliUgq-cWxxukdJt8Id9SFWkkE8w289wWbn_yZqVgwhmpHpi_UkytTCTrkmqcZ2RvNMMYB7vVHlb2qUzLEkA3qYFVNJ_KqLTJGuc-3UySPWhuXpM6G_Gr8vRTgTrpLrFFlEAy4Wn-k-WsBUVAfX936oU0ZDxV__ua-F0LuzSm1uDMJ7iquT2poxl5FkpBcFrSMY6MDSGPBoXfsG-DUCZtWpD4Q"
+
+    api = Temp_Gmail_API(capcha_code=capcha_code)
+    gmail_address, timestamp = api.get_gmail()
+    message_row = api.wait_untill_send_message(gmail_address=gmail_address, timestamp=timestamp,
+                                               sender_name=sender_name)
+    return message_row
+
+
+def get_temp_email_message(sender_email, password=None):
+    mail_tm = MailTM()
+    # # Получение список доменов
+    domains = mail_tm.get_domains()
+    available_domains = [domain['domain'] for domain in domains['hydra:member']]
+    # print(f"Доступные домены: {available_domains}")
+    # Создание нового аккаунта
+    account = mail_tm.get_account(password=password)
+    token = account['token']['token']
+    message_row = mail_tm.wait_untill_send_message(sender_email=sender_email, token=token)
+    return message_row
+
+
 if __name__ == "__main__":
-    # api = Temp_Gmail_API(
-    #     capcha_code="03AFcWeA6ibuyjAK5sX-b5iPi0kyrIV8RT0KW54_YBKYahASdBLypnhg7v4yKjncXl1tw6lmOjPb1JexbYaO8D-7wOK6xYyzOC3T60Xg9NoYYkb4rhX7M4c_IUGNlPmPC9coUmh3L2Ldwpa0HPi62ifZAqmuPtLgC0Dggsm_1j-Ryhk7wj-Q5iZyL4SR6NmHu-3yUnh7q9S9dTlHqngDrcPWZzF7W6ARjMVwy0UEBJ4ymVwiIwTdxzKn2BPzAigY5bErIhwLoH4bXH5-DAuc3x_CSsFgZSgDSPrt0DA83rzh7sCIITnnUo7kfyRcc80Fqv7dhstVdIgxfMW6LN-ADtyLPMBHTHO9vIqqwYK-FRF70jYiO9ErGrLEtp7TFp2doTcOrcmLiO4sEUj95kF7i2y3ZFAwICPJyKm5BrQhcOuGp17TpjuTwiy7puzLz6uqbYT8-S6YcyHXQ-hqzshGMy-T69VkoLhkVHN82gugfyEpnKPbz7BsZGUrdC7Q0O2dZxBM-0RMlWFliUgq-cWxxukdJt8Id9SFWkkE8w289wWbn_yZqVgwhmpHpi_UkytTCTrkmqcZ2RvNMMYB7vVHlb2qUzLEkA3qYFVNJ_KqLTJGuc-3UySPWhuXpM6G_Gr8vRTgTrpLrFFlEAy4Wn-k-WsBUVAfX936oU0ZDxV__ua-F0LuzSm1uDMJ7iquT2poxl5FkpBcFrSMY6MDSGPBoXfsG-DUCZtWpD4Q")
-    # gmail_address, timestamp = api.get_gmail()
-    # message_row = api.wait_untill_send_message(gmail_address=gmail_address, timestamp=timestamp, sender_name="Cohere")
-    # print(message_row)
-    # urls = extract_urls(message_row)
-    # for url in urls:
-    #     if url.startswith("https://dashboard.cohere.com/confirm-email"):
-    #         print(url)
-
-    try:
-        input("press enter")
-        mail_tm = MailTM()
-        # # Получение список доменов
-        domains = mail_tm.get_domains()
-        available_domains = [domain['domain'] for domain in domains['hydra:member']]
-        print(f"Доступные домены: {available_domains}")
-
-        # Создание нового аккаунта
-        account = mail_tm.get_account(password="---GOG---LE.!")
-        token = account['token']['token']
-        print(f"Новый аккаунт создан: {account['address']}, {token}")
-        message_row = mail_tm.wait_untill_send_message(sender_email='', token=token)
-        print(message_row)
-        urls = extract_urls(message_row)
-        for url in urls:
-            if url.startswith("https://dashboard.cohere.com/confirm-email"):
-                print(url)
-
-        # Удаление аккаунта
-        # mail_tm.delete_account_by_id(account['id'], account['token']['token'])
-
-    except MailTMInvalidResponse as e:
-        # Обработка ошибочного ответа от API
-        print(f"Ошибка при работе с API MailTM: {e}")
-# ={email}=
-
-# 1, 8, 6, 3, 0, 7, 4, 2, 5
+    message_row = get_temp_gmail_message("Cohere")
+    urls = extract_urls(message_row)
+    for url in urls:
+        if url.startswith("https://dashboard.cohere.com/confirm-email"):
+            print(url)
