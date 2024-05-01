@@ -158,7 +158,7 @@ class Coral_API:
                  model="command-r-plus", web_access=False, error=0):
         changed_messages = messages
         if not self.api_keys:
-            logger.logging("coral_API: No keys")
+            logger.logging("coral_API has no keys")
             time.sleep(delay_for_gpt)
             return
 
@@ -213,6 +213,7 @@ class Coral_API:
             if response.status_code == 429:
                 if not error == 5 and self.api_keys:
                     self.api_keys = self.api_keys[1:]
+                    time.sleep(5)
                     return self.generate(messages=messages, gpt_role=gpt_role, delay_for_gpt=delay_for_gpt,
                                          temperature=temperature, model=model, web_access=web_access, error=error + 1)
                 else:
