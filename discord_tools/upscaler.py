@@ -290,8 +290,9 @@ def remove_background(image_path, random_factor="", testing=False, only_url=Fals
     result_url = fotor.get_result_background(task_id)
 
     if only_url:
-        result_path = ""
+        return "", result_url
     else:
+        time.sleep(15)
         result_path = save_image_png(result_url, random_factor + "remove_background.png")
 
     return result_path, result_url
