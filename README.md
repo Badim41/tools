@@ -186,15 +186,26 @@ ModerateParams.replace_mat - заменить все нежелательные 
 # Все инструменты для модерации  <a name="section-4"></a>
 ```python
 from discord_tools.detect_mat import moderate_mat_in_sentence
+# Auto mod
 sentence = "пошёл &*:+@ !"
 found_mats, sentence = await moderate_mat_in_sentence(sentence)
 if found_mats:
     print("Найдены нежелательные слова, изменённое предложение:", sentence)
 
+# ChatGPT
 flagged_status, violated_categories = await chat_gpt.moderation_request(text)
 if flagged_status:
     print("Нарушенные категории:", violated_categories)
 
+# Images
+from discord_tools.describe_image import detect_bad_image
+
+image_path = "temp.png"
+nsfw = detect_bad_image(image_path)
+if nsfw:
+    print("Картинка содержит нежелательное содержимое")
+else:
+    print("Картинка прошла модерацию")
 
 ```
 # Бесплатная генерация изображений <a name="section-5"></a>
