@@ -18,7 +18,7 @@ def convert_answer_to_json(answer, keys, start_symbol="{", end_symbol="}"):
     try:
         response = json.loads(answer)
         for key in keys:
-            if not response.get(key):
+            if response.get(key, "NULL_VALUE") == "NULL_VALUE":
                 print("Нет ключа")
                 return False, "Нет ключа"
         return True, response
