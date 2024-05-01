@@ -173,7 +173,7 @@ character = Character_AI(char_id, char_token)
 result = await character.get_answer("запрос")
 print(result)
 ```
-## Модерация мата <a name="section-3.1"></a>
+## Модерация мата в character.ai <a name="section-3.1"></a>
 ```python
 from discord_tools.character_ai_chat import Character_AI, ModerateParams
 character = Character_AI(char_id, char_token)
@@ -183,13 +183,19 @@ ModerateParams.skip - не модерировать
 ModerateParams.until_good - генерировать до ответа, который пройдёт модерацию
 ModerateParams.replace_mat - заменить все нежелательные слова на "^_^"
 ```
-# Инструменты для модерации  <a name="section-4"></a>
+# Все инструменты для модерации  <a name="section-4"></a>
 ```python
 from discord_tools.detect_mat import moderate_mat_in_sentence
 sentence = "пошёл &*:+@ !"
 found_mats, sentence = await moderate_mat_in_sentence(sentence)
 if found_mats:
     print("Найдены нежелательные слова, изменённое предложение:", sentence)
+
+flagged_status, violated_categories = await chat_gpt.moderation_request(text)
+if flagged_status:
+    print("Нарушенные категории:", violated_categories)
+
+
 ```
 # Бесплатная генерация изображений <a name="section-5"></a>
 ```python
