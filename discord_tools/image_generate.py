@@ -22,7 +22,7 @@ from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
 
-logger = Logs(warnings=True)
+logger = Logs(warnings=False, errors=False)
 
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
@@ -39,12 +39,6 @@ async def get_image_size(image_path):
     except Exception as e:
         logger.logging(f"Ошибка при получении размера изображения: {e}")
         return None
-
-
-def execute_function(func, result_queue):
-    result = asyncio.run(func)
-    result_queue.put(result)
-
 
 class GenerateImages:
     def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None, bing_cookies=None,
@@ -88,16 +82,20 @@ class GenerateImages:
     # [Kandinsky_API, Polinations_API, CharacterAI_API, Bing_API]
     def generate_image_grid_wrapper_sync(self, model_class, image_name, prompt, zip_name=None, delete_temp=True,
                                          row_prompt=None):
-        return asyncio.run(
-            self.generate_image_grid(
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        image_path = loop.run_until_complete(self.generate_image_grid(
                 model_class=model_class,
                 image_name=image_name,
                 prompt=prompt,
                 zip_name=zip_name,
                 delete_temp=delete_temp,
                 row_prompt=row_prompt
-            )
-        )
+            ))
+
+        loop.close()
+        return image_path
 
     async def generate_image_grid(self, model_class, image_name, prompt, row_prompt, delete_temp=True, zip_name=None):
         def create_black_image(width, height):
@@ -105,7 +103,7 @@ class GenerateImages:
 
         try:
             model_instance = model_class(self)
-            # print(f"async def for {model_instance.__class__.__name__}")
+            print(f"async def for {model_instance.__class__.__name__}")
 
             if model_instance.support_russian:
                 prompt = row_prompt
@@ -218,27 +216,18 @@ class GenerateImages:
         if hugging_face:
             models.append(Huggingface_API)
 
-        # Награмождения для асинхроного многопоточного выполнения
-        loop = asyncio.get_running_loop()
-        tasks = [
-            loop.run_in_executor(
-                ThreadPoolExecutor(),
-                functools.partial(
-                    self.generate_image_grid_wrapper_sync,
-                    model_class=model,
-                    image_name=user_id,
-                    prompt=prompt,
-                    zip_name=zip_name,
-                    delete_temp=delete_temp,
-                    row_prompt=row_prompt
-                )
-            )
-            for model in models
-        ]
+            # Награмождения для асинхроного многопоточного выполнения
+            tasks = [asyncio.to_thread(self.generate_image_grid_wrapper_sync,
+                                       model_class=model,
+                                       image_name=user_id,
+                                       prompt=prompt,
+                                       zip_name=zip_name,
+                                       delete_temp=delete_temp,
+                                       row_prompt=row_prompt) for model in models]
 
-        # Await the results of the coroutines
-        results = await asyncio.gather(*tasks)
-        print("results", results)
+            # Await the results of the coroutines
+            results = await asyncio.gather(*tasks)
+            print("results", results)
 
         results = [result for result in results if result and os.path.exists(result)]
 
