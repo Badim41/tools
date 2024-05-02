@@ -219,27 +219,26 @@ class GenerateImages:
             models.append(Huggingface_API)
 
         # Награмождения для асинхроного многопоточного выполнения
-        with ThreadPoolExecutor() as executor:
-            loop = asyncio.get_running_loop()
-            tasks = [
-                loop.run_in_executor(
-                    executor,
-                    functools.partial(
-                        self.generate_image_grid_wrapper_sync,
-                        model_class=model,
-                        image_name=user_id,
-                        prompt=prompt,
-                        zip_name=zip_name,
-                        delete_temp=delete_temp,
-                        row_prompt=row_prompt
-                    )
+        loop = asyncio.get_running_loop()
+        tasks = [
+            loop.run_in_executor(
+                ThreadPoolExecutor(),
+                functools.partial(
+                    self.generate_image_grid_wrapper_sync,
+                    model_class=model,
+                    image_name=user_id,
+                    prompt=prompt,
+                    zip_name=zip_name,
+                    delete_temp=delete_temp,
+                    row_prompt=row_prompt
                 )
-                for model in models
-            ]
+            )
+            for model in models
+        ]
 
-            # Await the results of the coroutines
-            results = await asyncio.gather(*tasks)
-            print("results", results)
+        # Await the results of the coroutines
+        results = await asyncio.gather(*tasks)
+        print("results", results)
 
         results = [result for result in results if result and os.path.exists(result)]
 
