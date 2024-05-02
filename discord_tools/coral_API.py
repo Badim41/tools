@@ -1,14 +1,11 @@
 import csv
 import json
-import os
 import re
 import requests
 import time
 
-from discord_tools.str_tools import convert_answer_to_json
 from discord_tools.logs import Logs, Color
 from discord_tools.sql_db import get_database, set_database_not_async as set_database
-from discord_tools.timer import Time_Count
 
 logger = Logs(warnings=True)
 

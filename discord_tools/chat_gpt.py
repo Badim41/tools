@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import os
@@ -6,9 +5,6 @@ import requests
 import traceback
 import uuid
 import aiohttp
-
-
-from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessage
 
 from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account, GPT_Models
@@ -18,73 +14,6 @@ from discord_tools.translate import translate_text
 
 logger = Logs(warnings=True)
 
-# _providers = [
-#     # AUTH
-#     # g4f.Provider.Raycast,
-#     # g4f.Provider.Phind,
-#     g4f.Provider.Liaobots,  # - Doker output & Unauth
-#     g4f.Provider.Bing,
-#     # g4f.Provider.Bard,
-#     # g4f.Provider.OpenaiChat,
-#     # g4f.Provider.Theb,
-#
-#     # Binary location error
-#     # g4f.Provider.Poe,
-#     # g4f.Provider.GptChatly,
-#     # g4f.Provider.AItianhuSpace,
-#
-#     # g4f.Provider.GPTalk, # error 'data'
-#     g4f.Provider.GeminiProChat, # Server Error
-#     # g4f.Provider.Gpt6, # ?
-#     # g4f.Provider.AiChatOnline, # ?
-#     # g4f.Provider.GptGo, # error
-#     # g4f.Provider.Chatxyz, # error
-#
-#     # not exists
-#     # g4f.Provider.ChatgptAi,
-#     # g4f.Provider.OnlineGpt,
-#     # g4f.Provider.ChatgptNext,
-#
-#     # g4f.Provider.Vercel,  # cut answer
-#     # g4f.Provider.ChatgptDemo,  # ?
-#
-#     # g4f.Provider.ChatgptLogin,  # error 403
-#     # g4f.Provider.ChatgptX,  # error
-#     # g4f.Provider.ChatgptFree,
-#
-#     # Short answer
-#     # g4f.Provider.Aura,
-#     # g4f.Provider.ChatBase,
-#     # g4f.Provider.Koala,
-#     g4f.Provider.ChatForAi,  # too many req
-#     g4f.Provider.FreeChatgpt,
-#
-#     # bad providers
-#     # g4f.Provider.GptGod,  # error list
-#     # g4f.Provider.FreeGpt,# wrong language
-#     # g4f.Provider.GptForLove,  # error no OpenAI Key
-#     # g4f.Provider.Opchatgpts,  # bad
-#     # g4f.Provider.Chatgpt4Online,  # - bad
-#
-#     # g4f.Provider.Llama2, # no model
-#
-#     # not working
-#     # g4f.Provider.You,
-#     # g4f.Provider.GeekGpt,
-#     # g4f.Provider.AiAsk,
-#     # g4f.Provider.Hashnode,
-#     # g4f.Provider.FakeGpt,
-#     # g4f.Provider.Aichat,
-#
-#     # undetected chrome driver
-#     # g4f.Provider.MyShell,
-#     # g4f.Provider.PerplexityAi,
-#     # g4f.Provider.TalkAi,
-#
-#     # Other
-#     g4f.Provider.DeepInfra,
-#     # g4f.Provider.Llama2,
-# ]
 
 def get_cookie_value(cookie_string, key):
     cookies = cookie_string.split(';')
@@ -303,6 +232,8 @@ class ChatGPT:
             g4f.Provider.FreeChatgpt,
             g4f.Provider.DeepInfra,
         ]
+        from openai import AsyncOpenAI
+        self.AsyncOpenAI = AsyncOpenAI
 
     async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
                           translate_lang=None, chat_gpt_4=True):
@@ -397,7 +328,9 @@ class ChatGPT:
 
             functions = get_fake_gpt_functions(30)
 
-            done, pending = await asyncio.wait(functions, return_when=asyncio.FIRST_COMPLETED)
+            task_objects = [asyncio.create_task(task) for task in functions]
+
+            done, pending = await asyncio.wait(task_objects, return_when=asyncio.FIRST_COMPLETED)
 
             # Принудительное завершение оставшихся функций
             for task in pending:
@@ -527,7 +460,7 @@ class ChatGPT:
 
             try:
                 openai_key = self.openAI_keys[self.gpt_queue % len(self.openAI_keys)]
-                client = AsyncOpenAI(api_key="sk-" + openai_key.replace("sk-", ""))
+                client = self.AsyncOpenAI(api_key="sk-" + openai_key.replace("sk-", ""))
                 completion = await client.chat.completions.create(
                     model="gpt-3.5-turbo-1106",
                     messages=messages
@@ -590,7 +523,7 @@ class ChatGPT:
 
             try:
 
-                client = AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0].replace("sk-", ""),
+                client = self.AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0].replace("sk-", ""),
                                      base_url="https://api.deepseek.com/v1")
 
                 response = await client.chat.completions.create(
