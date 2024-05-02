@@ -690,7 +690,7 @@ class Kandinsky_API:
         self.suffix = "r1"
         self.return_images = 1
         self.support_russian = True
-        self.support_async = True
+        self.support_async = False # ради оптимизации. Вообще поддерживает
 
     def get_model(self):
         response = requests.get(self.URL + 'key/api/v1/models', headers=self.AUTH_HEADERS)
