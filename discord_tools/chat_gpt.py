@@ -1,6 +1,5 @@
 
 import asyncio
-import g4f
 import json
 import os
 import requests
@@ -19,74 +18,73 @@ from discord_tools.translate import translate_text
 
 logger = Logs(warnings=True)
 
-_providers = [
-    # AUTH
-    # g4f.Provider.Raycast,
-    # g4f.Provider.Phind,
-    g4f.Provider.Liaobots,  # - Doker output & Unauth
-    g4f.Provider.Bing,
-    # g4f.Provider.Bard,
-    # g4f.Provider.OpenaiChat,
-    # g4f.Provider.Theb,
-
-    # Binary location error
-    # g4f.Provider.Poe,
-    # g4f.Provider.GptChatly,
-    # g4f.Provider.AItianhuSpace,
-
-    # g4f.Provider.GPTalk, # error 'data'
-    g4f.Provider.GeminiProChat, # Server Error
-    # g4f.Provider.Gpt6, # ?
-    # g4f.Provider.AiChatOnline, # ?
-    # g4f.Provider.GptGo, # error
-    # g4f.Provider.Chatxyz, # error
-
-    # not exists
-    # g4f.Provider.ChatgptAi,
-    # g4f.Provider.OnlineGpt,
-    # g4f.Provider.ChatgptNext,
-
-    # g4f.Provider.Vercel,  # cut answer
-    # g4f.Provider.ChatgptDemo,  # ?
-
-    # g4f.Provider.ChatgptLogin,  # error 403
-    # g4f.Provider.ChatgptX,  # error
-    # g4f.Provider.ChatgptFree,
-
-    # Short answer
-    # g4f.Provider.Aura,
-    # g4f.Provider.ChatBase,
-    # g4f.Provider.Koala,
-    g4f.Provider.ChatForAi,  # too many req
-    g4f.Provider.FreeChatgpt,
-
-    # bad providers
-    # g4f.Provider.GptGod,  # error list
-    # g4f.Provider.FreeGpt,# wrong language
-    # g4f.Provider.GptForLove,  # error no OpenAI Key
-    # g4f.Provider.Opchatgpts,  # bad
-    # g4f.Provider.Chatgpt4Online,  # - bad
-
-    # g4f.Provider.Llama2, # no model
-
-    # not working
-    # g4f.Provider.You,
-    # g4f.Provider.GeekGpt,
-    # g4f.Provider.AiAsk,
-    # g4f.Provider.Hashnode,
-    # g4f.Provider.FakeGpt,
-    # g4f.Provider.Aichat,
-
-    # undetected chrome driver
-    # g4f.Provider.MyShell,
-    # g4f.Provider.PerplexityAi,
-    # g4f.Provider.TalkAi,
-
-    # Other
-    g4f.Provider.DeepInfra,
-    # g4f.Provider.Llama2,
-]
-
+# _providers = [
+#     # AUTH
+#     # g4f.Provider.Raycast,
+#     # g4f.Provider.Phind,
+#     g4f.Provider.Liaobots,  # - Doker output & Unauth
+#     g4f.Provider.Bing,
+#     # g4f.Provider.Bard,
+#     # g4f.Provider.OpenaiChat,
+#     # g4f.Provider.Theb,
+#
+#     # Binary location error
+#     # g4f.Provider.Poe,
+#     # g4f.Provider.GptChatly,
+#     # g4f.Provider.AItianhuSpace,
+#
+#     # g4f.Provider.GPTalk, # error 'data'
+#     g4f.Provider.GeminiProChat, # Server Error
+#     # g4f.Provider.Gpt6, # ?
+#     # g4f.Provider.AiChatOnline, # ?
+#     # g4f.Provider.GptGo, # error
+#     # g4f.Provider.Chatxyz, # error
+#
+#     # not exists
+#     # g4f.Provider.ChatgptAi,
+#     # g4f.Provider.OnlineGpt,
+#     # g4f.Provider.ChatgptNext,
+#
+#     # g4f.Provider.Vercel,  # cut answer
+#     # g4f.Provider.ChatgptDemo,  # ?
+#
+#     # g4f.Provider.ChatgptLogin,  # error 403
+#     # g4f.Provider.ChatgptX,  # error
+#     # g4f.Provider.ChatgptFree,
+#
+#     # Short answer
+#     # g4f.Provider.Aura,
+#     # g4f.Provider.ChatBase,
+#     # g4f.Provider.Koala,
+#     g4f.Provider.ChatForAi,  # too many req
+#     g4f.Provider.FreeChatgpt,
+#
+#     # bad providers
+#     # g4f.Provider.GptGod,  # error list
+#     # g4f.Provider.FreeGpt,# wrong language
+#     # g4f.Provider.GptForLove,  # error no OpenAI Key
+#     # g4f.Provider.Opchatgpts,  # bad
+#     # g4f.Provider.Chatgpt4Online,  # - bad
+#
+#     # g4f.Provider.Llama2, # no model
+#
+#     # not working
+#     # g4f.Provider.You,
+#     # g4f.Provider.GeekGpt,
+#     # g4f.Provider.AiAsk,
+#     # g4f.Provider.Hashnode,
+#     # g4f.Provider.FakeGpt,
+#     # g4f.Provider.Aichat,
+#
+#     # undetected chrome driver
+#     # g4f.Provider.MyShell,
+#     # g4f.Provider.PerplexityAi,
+#     # g4f.Provider.TalkAi,
+#
+#     # Other
+#     g4f.Provider.DeepInfra,
+#     # g4f.Provider.Llama2,
+# ]
 
 def get_cookie_value(cookie_string, key):
     cookies = cookie_string.split(';')
@@ -296,6 +294,16 @@ class ChatGPT:
         else:
             self.chat_gpt_4 = ChatGPT_4_Account()
 
+        import g4f
+        self.g4f = g4f
+        self._providers = [
+            g4f.Provider.Bing,
+            g4f.Provider.GeminiProChat,
+            g4f.Provider.ChatForAi,
+            g4f.Provider.FreeChatgpt,
+            g4f.Provider.DeepInfra,
+        ]
+
     async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
                           translate_lang=None, chat_gpt_4=True):
         if not os.path.exists('gpt_history'):
@@ -331,7 +339,7 @@ class ChatGPT:
         def get_fake_gpt_functions(delay):
             functions_add = \
                 [self.one_gpt_run(provider=provider, messages=messages, delay_for_gpt=delay,
-                                  translate_lang=translate_lang) for provider in _providers]
+                                  translate_lang=translate_lang) for provider in self._providers]
 
             if self.chars:
                 char = self.chars[self.character_queue % len(self.chars)]
@@ -425,8 +433,8 @@ class ChatGPT:
     async def one_gpt_run(self, provider, messages, delay_for_gpt, translate_lang):
         try:
 
-            result = await g4f.ChatCompletion.create_async(
-                model=g4f.models.default,
+            result = await self.g4f.ChatCompletion.create_async(
+                model=self.g4f.models.default,
                 provider=provider,
                 messages=messages,
                 timeout=30
@@ -546,10 +554,10 @@ class ChatGPT:
             try:
                 auth_key = self.openAI_auth_keys[self.gpt_queue % len(self.openAI_auth_keys)]
 
-                response = await g4f.ChatCompletion.create_async(
+                response = await self.g4f.ChatCompletion.create_async(
                     model="gpt-3.5-turbo",
                     messages=messages,
-                    provider=g4f.Provider.OpenaiChat,
+                    provider=self.g4f.Provider.OpenaiChat,
                     access_token=auth_key,
                     auth=auth_key,
                     timeout=30
