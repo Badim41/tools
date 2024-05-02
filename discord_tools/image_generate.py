@@ -203,7 +203,7 @@ class GenerateImages:
         if kandinsky and self.apis_kandinsky and self.secret_keys_kandinsky:
             models.append(Kandinsky_API)
         if polinations:
-            models.append(Polinations_API)
+            models.append(Pollinations_API)
         if character_ai and self.char_tokens:
             models.append(CharacterAI_API)
         if bing_image_generator and self.bing_cookies:
@@ -278,17 +278,16 @@ class Huggingface_API:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
 
-class Polinations_API:
+class Pollinations_API:
     def __init__(self, generator: GenerateImages):
         self.generator = generator
         self.queue = generator.queue
         self.suffix = "r3"
         self.return_images = 1
         self.support_russian = False
-        self.support_async = True
+        self.support_async = False
 
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
-        for i in range(2):
             try:
                 response = requests.get(image_url, timeout=timeout - 5)
                 if response.status_code == 200:
@@ -311,7 +310,7 @@ class Polinations_API:
             image_site = f"https://image.pollinations.ai/prompt/{prompt}?&seed={seed}&nologo=true"
             self.save_image(image_url=image_site, image_path=image_path)
 
-            x, y = Polinations_API.get_image_size(image_path)
+            x, y = Pollinations_API.get_image_size(image_path)
 
             if x == 1024 and y == 1024:
                 image = Image.open(image_path)
