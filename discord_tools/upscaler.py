@@ -5,6 +5,7 @@ import time
 from PIL import Image
 
 from discord_tools.logs import Logs, Color
+from urllib.parse import urlparse, parse_qs
 
 logger = Logs(warnings=True)
 
@@ -172,7 +173,6 @@ class FotorAPI:
         # print(response.text, response.status_code, querystring)
 
     def get_upload_url_remove_background(self):
-        from urllib.parse import urlparse, parse_qs
         url = "https://www.fotor.com/api/app/cutout/v2/upload-img"
 
         querystring = {"mimeType": "image/png", "num": "1"}

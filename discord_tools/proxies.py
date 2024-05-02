@@ -1,7 +1,5 @@
 import random
 import requests
-import uuid
-
 from bs4 import BeautifulSoup as bs
 
 
