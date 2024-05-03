@@ -139,6 +139,7 @@ class ChatGPT_Mode:
     fast = "Fast"
     all = "All"
 
+
 class ChatGPT_Responses:
     gpt4 = "ChatGPT-4"
     coral = "Coral API"
@@ -253,7 +254,8 @@ class ChatGPT:
 
         provider, answer = await self.wrapped_run_all_gpt(prompt=prompt, mode=mode, user_id=user_id, gpt_role=gpt_role,
                                                           limited=limited,
-                                                          translate_lang=translate_lang, chat_history=chat_history, chat_gpt_4=chat_gpt_4)
+                                                          translate_lang=translate_lang, chat_history=chat_history,
+                                                          chat_gpt_4=chat_gpt_4)
         if not provider == ChatGPT_Responses.all:
             chat_history.append({"role": "user", "content": prompt})
             chat_history.append({"role": "assistant", "content": answer})
@@ -266,7 +268,8 @@ class ChatGPT:
 
         return answer
 
-    async def wrapped_run_all_gpt(self, prompt, mode, user_id, gpt_role, limited, translate_lang, chat_history, chat_gpt_4):
+    async def wrapped_run_all_gpt(self, prompt, mode, user_id, gpt_role, limited, translate_lang, chat_history,
+                                  chat_gpt_4):
         def get_fake_gpt_functions(delay):
             functions_add = \
                 [self.one_gpt_run(provider=provider, messages=messages, delay_for_gpt=delay,
@@ -281,10 +284,11 @@ class ChatGPT:
             return functions_add
 
         # CHAT GPT 4 (BEST OF THE BEST)
-        if self.chat_gpt_4 and chat_gpt_4:
+        if self.chat_gpt_4 and chat_gpt_4 and mode == ChatGPT_Mode.fast:
             chat_history_temp = chat_history
             messages = get_sys_prompt(user_id, gpt_role) + trim_history(chat_history_temp, max_length=15000)
-            answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=messages)
+            answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3,
+                                             image_path=None, chat_history=messages)
 
             if answer:
                 return ChatGPT_Responses.gpt4, answer
@@ -346,6 +350,9 @@ class ChatGPT:
             functions += [self.run_deep_seek(messages, 1, value, user_id, gpt_role) for value in values]
             functions += [asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1,
                                             temperature=0.3, model="command-r-plus", web_access=False)]
+            functions += [
+                asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None,
+                                  chat_history=messages)]
 
             functions += get_fake_gpt_functions(1)
 
@@ -524,7 +531,7 @@ class ChatGPT:
             try:
 
                 client = self.AsyncOpenAI(api_key="sk-" + self.deep_seek_keys[0].replace("sk-", ""),
-                                     base_url="https://api.deepseek.com/v1")
+                                          base_url="https://api.deepseek.com/v1")
 
                 response = await client.chat.completions.create(
                     model="deepseek-chat",
@@ -680,7 +687,8 @@ class ChatGPT:
             if i > limit:
                 break
             i += 1
-            response = await self.run_all_gpt(prompt + chunk, mode=ChatGPT_Mode.fast, user_id=0, limited=limited, chat_gpt_4=False)
+            response = await self.run_all_gpt(prompt + chunk, mode=ChatGPT_Mode.fast, user_id=0, limited=limited,
+                                              chat_gpt_4=False)
             if (response.startswith("I'm sorry") or
                     response.startswith("Извините") or
                     response.startswith("I cannot provide") or
@@ -692,6 +700,3 @@ class ChatGPT:
         summarized_text = '\n'.join(gpt_responses)
 
         return summarized_text
-
-
-
