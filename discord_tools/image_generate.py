@@ -27,7 +27,7 @@ logger = Logs(warnings=False, errors=False)
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
 RESULT_PATH = 'images'
-GLOBAL_IMAGE_TIMEOUT = 60
+GLOBAL_IMAGE_TIMEOUT = 6000
 
 
 async def get_image_size(image_path):
