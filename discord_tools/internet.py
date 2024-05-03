@@ -95,7 +95,7 @@ class Internet:
                                  "Ответьте только в формате JSON:\n" + example_json)
 
                 search_text = asyncio.run(
-                    self.chat_gpt.run_all_gpt(search_prompt, mode="Fast", user_id=0, limited=limited))
+                    self.chat_gpt.run_all_gpt(search_prompt, mode="Fast", user_id=0, limited=limited, chat_gpt_4=False))
                 search_json = json.loads(search_text.replace("```json", "").replace("```", ""))
                 links = set()
                 for search_request in search_json.values():
@@ -110,12 +110,12 @@ class Internet:
                     background_text = asyncio.run(self.chat_gpt.summarise(f"{today_prompt}\n\n"
                                                                           "Вы предоставляете полезные и полные ответы.\n\n"
                                                                           f"Составьте список фактов из информации с сайтов, которые помогут с вопросом{text_request}:",
-                                                                          text_from_pages, limited=limited))
+                                                                          text_from_pages, limited=limited, chat_gpt_4=False))
                     while len(background_text) > 4000:
                         background_text = asyncio.run(self.chat_gpt.summarise(f"{today_prompt}\n\n"
                                                                               "Вы предоставляете полезные и полные ответы.\n\n"
                                                                               f"ВЫБЕРИ ТОЛЬКО САМУЮ ВАЖНУЮ информацию, которая поможет с вопросом {text_request}",
-                                                                              background_text, limited=limited))
+                                                                              background_text, limited=limited, chat_gpt_4=False))
                     if not full_answer:
                         return '\nИсточники:\n' + '\n\n'.join(links), background_text, "\n\n".join([
                             "Ты должен проанализировать информацию, и дать ответ на запрос\n"
@@ -132,7 +132,7 @@ class Internet:
                             today_prompt,
                             "# Запрос",
                             f"{text_request}"]),
-                            "Fast", 0, limited=limited))
+                            "Fast", 0, limited=limited, chat_gpt_4=False))
                         return answer + '\n\nИсточники:\n' + '\n\n'.join(links)
             except Exception:
                 traceback_str = traceback.format_exc()

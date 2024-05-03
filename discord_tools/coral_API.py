@@ -208,7 +208,7 @@ class Coral_API:
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
             if response.status_code == 429:
-                if not error == 5 and self.api_keys:
+                if not error == 25 and self.api_keys:
                     self.api_keys = self.api_keys[1:]
                     time.sleep(5)
                     return self.generate(messages=messages, gpt_role=gpt_role, delay_for_gpt=delay_for_gpt,
