@@ -217,16 +217,17 @@ class GenerateImages:
             models.append(Huggingface_API)
 
             # Награмождения для асинхроного многопоточного выполнения
-            tasks = [asyncio.to_thread(self.generate_image_grid_wrapper_sync,
-                                       model_class=model,
+            tasks = [self.generate_image_grid(model_class=model,
                                        image_name=user_id,
                                        prompt=prompt,
                                        zip_name=zip_name,
                                        delete_temp=delete_temp,
                                        row_prompt=row_prompt) for model in models]
 
+            task_objects = [asyncio.create_task(task) for task in tasks]
+
             # Await the results of the coroutines
-            results = await asyncio.gather(*tasks)
+            results = await asyncio.gather(*task_objects)
             print("results", results)
 
         results = [result for result in results if result and os.path.exists(result)]
