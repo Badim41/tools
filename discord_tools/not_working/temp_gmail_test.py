@@ -439,7 +439,7 @@ class Temp_Gmail_API:
         print("get_message", response.text)
         return response.json()['items']['body']
 
-    def wait_untill_send_message(self, gmail_address, timestamp, sender_name, attempts=120):
+    def wait_untill_send_message(self, gmail_address, timestamp, sender_name, attempts=10):
         for i in range(attempts):
             time.sleep(15)
             messages = self.get_messages(gmail_address, timestamp)

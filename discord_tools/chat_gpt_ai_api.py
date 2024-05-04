@@ -562,15 +562,16 @@ if __name__ == "__main__":
         'http': proxy,
         'https': proxy
     }
-    account = ChatGPT_4_Account()
     # account.api_chatgpt, account.api_gmail = account.init_api()
     # print(account.api_chatgpt.auto_register(local_id=account.localId, email=account.email))
 
     #
     # print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
-    for i in range(50):
-        try:
-            account.create_account()
-            time.sleep(60)
-        except Exception as e:
-            logger.logging(e)
+    for i in range(10):
+        account = ChatGPT_4_Account()
+        for i in range(10):
+            try:
+                account.create_account()
+                time.sleep(60)
+            except Exception as e:
+                logger.logging(e)
