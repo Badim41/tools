@@ -2,9 +2,7 @@ import base64
 import os
 import requests
 import time
-import traceback
 from PIL import Image
-from msilib.schema import Media
 
 from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account
 from discord_tools.logs import Logs, Color
