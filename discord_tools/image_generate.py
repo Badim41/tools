@@ -27,7 +27,7 @@ logger = Logs(warnings=False, errors=False)
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
 RESULT_PATH = 'images'
-GLOBAL_IMAGE_TIMEOUT = 6000
+GLOBAL_IMAGE_TIMEOUT = 60
 
 
 async def get_image_size(image_path):
@@ -290,7 +290,7 @@ class Pollinations_API:
 
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
             try:
-                response = requests.get(image_url, timeout=timeout - 5)
+                response = requests.get(image_url, timeout=timeout // 3)
                 if response.status_code == 200:
                     image = Image.open(io.BytesIO(response.content))
                     image.save(image_path, "PNG")
