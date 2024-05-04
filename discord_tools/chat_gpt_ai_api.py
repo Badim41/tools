@@ -72,6 +72,7 @@ class ChatGPT_4_Account:
         if account:
             self.__dict__.update(account.__dict__)
         else:
+            # raise Exception("Not found account")
             for i in range(3):
                 try:
                     self.create_account()
