@@ -101,9 +101,9 @@ class Reka_API:
             print("Error in generate (reka):", e)
 
 
-if __name__ == "__main__":
-    api = Reka_API(app_session="APP SESSION")
-
-    answer = api.generate(messages=[{"role": "user", "content": "Какая игра на видео?"}], file_path= r"C:\Users\as280\Pictures\mine-imator\falling.mp4", media_type = MediaType.video)
-
-    print(answer)
+# if __name__ == "__main__":
+#     api = Reka_API(app_session="APP SESSION")
+#
+#     answer = api.generate(messages=[{"role": "user", "content": "Какая игра на видео?"}], file_path= r"C:\Users\as280\Pictures\mine-imator\falling.mp4", media_type = MediaType.video)
+#
+#     print(answer)

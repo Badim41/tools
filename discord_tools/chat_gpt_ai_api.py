@@ -549,10 +549,6 @@ def merge_json_files(directory):
 
 
 if __name__ == "__main__":
-    # api = ChatGPT_4_Site()
-    # cookies = api.auto_register(local_id="j4IALbWK5USd1JNHDI6tEDykNPs2", email="chloe.ab.el.e07@gmail.com")
-    # print(cookies)
-    # exit()
     # arguments = sys.argv
     # if len(arguments) > 1:
     #     JSON_ACCOUNT_SAVE = arguments[1]
@@ -566,7 +562,7 @@ if __name__ == "__main__":
         'http': proxy,
         'https': proxy
     }
-    account = ChatGPT_4_Account(proxies=proxies)
+    account = ChatGPT_4_Account()
     # account.api_chatgpt, account.api_gmail = account.init_api()
     # print(account.api_chatgpt.auto_register(local_id=account.localId, email=account.email))
 
@@ -575,6 +571,6 @@ if __name__ == "__main__":
     for i in range(50):
         try:
             account.create_account()
-            time.sleep(20)
+            time.sleep(60)
         except Exception as e:
             logger.logging(e)

@@ -187,6 +187,6 @@ class Stable_Diffusion_API:
             raise Exception(str(response.json()))
 
 
-api = Stable_Diffusion_API()
-api.img_to_video(r"C:\Users\as280\Downloads\test.png")
+# api = Stable_Diffusion_API()
+# api.img_to_video(r"C:\Users\as280\Downloads\test.png")
 # api.search_and_replace(image_path=r"C:\Users\as280\Downloads\test.png", prompt="zoombie", search_prompt="brain")
