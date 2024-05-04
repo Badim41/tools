@@ -4,11 +4,13 @@ import requests
 import time
 import traceback
 from PIL import Image
+from msilib.schema import Media
 
 from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account
 from discord_tools.logs import Logs, Color
 from discord_tools.astica_API import Astica_Describe_Params, Astica_API
 from discord_tools.detect_mat import ban_words
+from discord_tools.reka_API import Reka_API, MediaType, NSFW_DETECTED_MESSAGE
 from discord_tools.timer import Time_Count
 
 logger = Logs(warnings=True)
@@ -70,7 +72,6 @@ def vercel_API(image_path, proxies=None, timeout=60, attempts=2, *args, **kwargs
             time.sleep(3)
 
 
-
 def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=120, attempts=2, *args, **kwargs):
     """
     speed: slow
@@ -115,6 +116,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
             logger.logging("Error in iodraw_API", e, response_text)
             time.sleep(3)
 
+
 def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, attempts=3, *args, **kwargs):
     """
     speed: fast
@@ -143,7 +145,9 @@ def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, at
             logger.logging("Error in chatGPT-4", e, response_text)
             time.sleep(3)
 
-def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None, attempts=2, *args,
+
+def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None,
+               attempts=2, *args,
                **kwargs):
     """
     speed: faster
@@ -158,6 +162,7 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
             if 'parent' in item:
                 result = get_object_info([item['parent']], result=result, indent=indent + 1)
         return result
+
     for i in range(attempts):
         if i == 2:
             proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
@@ -187,29 +192,61 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
             time.sleep(3)
 
 
+def reka_recognize_image(image_path, reka_api, prompt="",
+                         attempts=2, *args, **kwargs):
+    """
+    speed: slow
+    Describe / moderate = 5-7s (20s с получением ключа)
+    comment: english only, не воспринимает запрос, плохо распознаёт текст
+    """
+    if not reka_api:
+        return None, None
+    if not prompt:
+        prompt = "Подробно опиши, что изображено на картинке"
+
+    for i in range(attempts):
+        try:
+            result = reka_api.generate(file_path=image_path, media_type=MediaType.image,
+                                       messages=[{"role": "user", "content": prompt}])
+
+            logger.logging("Response from server:", result, color=Color.GRAY)
+
+            if result == NSFW_DETECTED_MESSAGE:
+                return True, result
+
+            return False, result
+        except Exception as e:
+            logger.logging("Error in reka_API", e)
+            time.sleep(3)
+
+
 class Describers_API:
     Verstel = vercel_API
     Astica = astica_API
     Iodraw = iodraw_API
     ChatGPT4 = chat_gpt_4_vision
+    Reka = reka_recognize_image
 
 
 def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None,
-                     describers=None):
+                     describers=None, reka_api=None):
     if not os.path.isfile(image_path):
+        raise Exception("Файл с изображением не найден.")
         raise Exception("Файл с изображением не найден.")
 
     lower_image_resolution(image_path)
 
     if describers is None:
-        describers = [Describers_API.Iodraw, Describers_API.Astica, Describers_API.ChatGPT4, Describers_API.Verstel]
+        describers = [Describers_API.Iodraw, Describers_API.Astica, Describers_API.Reka, Describers_API.ChatGPT4,
+                      Describers_API.Verstel]
 
     for describer_method in describers:
         try:
             timer = Time_Count()
             nsfw, _ = describer_method(image_path, prompt='', isAdultContent=isAdultContent,
-                                             isRacyContent=isRacyContent, isGoryContent=isGoryContent, proxies=proxies)
-            # print("Detect bad image:", nsfw, _, str(describer_method), timer.count_time(ignore_error=True))
+                                       isRacyContent=isRacyContent, isGoryContent=isGoryContent, proxies=proxies,
+                                       reka_api=reka_api)
+            print("Detect bad image:", nsfw, _, str(describer_method), timer.count_time(ignore_error=True))
             return nsfw
         except Exception as e:
             logger.logging("wanr in detect bad image:", e, color=Color.GRAY)
@@ -217,7 +254,7 @@ def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGory
 
 
 def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=True, isGoryContent=True, proxies=None,
-                   describers=None):
+                   describers=None, reka_api=None):
     """
     return:
     NSFW:
@@ -236,18 +273,21 @@ def describe_image(image_path, prompt="", isAdultContent=True, isRacyContent=Tru
     lower_image_resolution(image_path)
 
     if describers is None:
-        describers = [Describers_API.ChatGPT4, Describers_API.Iodraw, Describers_API.Verstel, Describers_API.Astica]
+        describers = [Describers_API.ChatGPT4, Describers_API.Iodraw, Describers_API.Reka, Describers_API.Verstel,
+                      Describers_API.Astica]
 
     for describer_method in describers:
         try:
-            # timer = Time_Count()
+            timer = Time_Count()
             nsfw, answer = describer_method(image_path, prompt=prompt, isAdultContent=isAdultContent,
-                                       isRacyContent=isRacyContent, isGoryContent=isGoryContent, proxies=proxies)
-            # print("Describe image:", nsfw, answer, str(describer_method), timer.count_time(ignore_error=True))
+                                            isRacyContent=isRacyContent, isGoryContent=isGoryContent, proxies=proxies,
+                                            reka_api=reka_api)
+            print("Describe image:", nsfw, answer, str(describer_method), timer.count_time(ignore_error=True))
             return nsfw, answer
         except Exception as e:
             logger.logging("wand in detect bad image:", e, color=Color.GRAY)
     return None, "-"
+
 
 def lower_image_resolution(image_path, max_pixels=1000000):
     img = Image.open(image_path)
@@ -259,4 +299,7 @@ def lower_image_resolution(image_path, max_pixels=1000000):
         img = img.resize((new_width, new_height))
         img.save(image_path)
 
+app_session_reka = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIiwidWF0IjoxNzE0NzczMTQzLCJpYXQiOjE3MTQwNzI0MzAsImV4cCI6MTcxNTAzMjM0M30..GKLezIt2EQ3PM4YK.f6TrbzetVtj2OmPe_eVhgpjitVwlkBOf9EoErbZamTwi456cUsZbQq6tm775c4zFnPq4qeMxWilROCPE17wGZ6ImwFKIM4NTP_H2bL2BVq4yBY74YL77ZzTdA02nIvItBSpNZgYf_KcjbtmBXsrYHSr_oACfgSb5iEQSFG65JX4BbdaPmpUlhE1X6KUh3qiDspjYvINA8Jklgls4cM-hJoOdBaCwyJcAxy2LDPAGOSjMAoGy3KS4pfZGFwvnDi7DUs9dncyUzjTVVxBjTr93o49khKz-lKwzJ9_iUow5ILh3h6ZaA8TbqDtWO_eH2jrtQuDk8x2yPcrKutpnQa7xvcMOepjkf7qBlquL0v6rKRdYfjWKVV2m2YzRwPsV-xHMDCDAN_16_NiE1p2whwTrNnGhKly4mDyaZQelBgRIRfOe-zEJALlUJrHGYyfRPx8DMRBRK-YsCGVrGkLtmUiUzh8n6mUiOdNGNIVWgu1OLpHWZFmjaTF6oND21eR5WKMx5xYVDZ6IQr_evCcT0tj9qHzF2_-6TDLGiyP_IcKaLL2f7VGpuY6-qTfqb-eqaRJKPcmtyTyr0NRTyD4CED5naCwoqPae7-V2AS3QYNSr4U6cuHdp8Da-ofUCHKIOO2KN4JOIh5o11WeHWZFti6C7UrT7QMr9bSw1gUHPiJCULX_79CFBSWxXo-B5LPHhCPpPVSbl6t1TS0lMtI9aL__lLWm11PgCB2LrJ23kCf9AgMWymsM8Y8eoE3jGscR5K2BusadrevSPoQcgVJG89hRYwepVBjcCussRPthnw1TKIv4U-oIwDWkEy6FSDgZCUg07fOgExM2fkhNAbUEa2LmNF0e8rA6Wf0bFa3y_r7bj3CFNkJ8Tpo4p9rHV23nniRLY2jXyuxJLB73iJv85tlLsT-2RgzxnwIxp6k2MSCISXqT7lb0b8JNHQmqF8_ILAgiEQsPwKa5XVd-xbA69yVXhI5zc8mSk7mp5mOIWR6s66l570MrWjDkxkWJbi1whzasCj9eQmSGvNd0o1JcGhos2TGm7R67MmGNDAllMctqZ1pFbDshJQpeP8tmpdwTrl_F8-ntrjNZW54zZ61Cei0IfZvQ8ZlluX0DKDAG7jBuWO28uR28Nf53209WSSttnt77_ynhjBxtRyhzEgzmHgNV8_jsAydzCM-F3sXi-jQ3m0u0ObLglJAf6sDL18w6vOemhb-43Bg98t8sYzx7xqEsDDKPmnt3GhEkvVanbYpghbR8TVTc80IMkH0OiDsjpa_bPdmjMwm0dznzhBPS_vpexMrEE1pcQhU84bT4DqWWmdeN461JfVg0ceejQAcl3-J5tC1gy9-80ARTz4DLEWgR3WbwTvwJ2LM-1I9iK7ZrwcWw-3nbB4wAFZ75gluHCsZ6fH3vHKWWsjKA4a_iYUcjITbljlXcAxcoc849Vt-ESIZb8rSBfSetVPm1RHEEKjyHVIDW8ex5g5pjd7woHgbrDR7nde8qXAgbwwdvc__gLxlFw7ZeplXGIaKROwcMVEFOYNcFRWmEgFnZkHhzevUnBWYoKxELWT2fJKByeEdtOnbqJtq1NSbsrBjZ1HW4r1j1e-KW_O5rq802-ntJsqSfB0bN4AcpIjE6RZKcecF_Jr3C7e5c51UuRjRY3Be-gkuXFtA3P_GZ-R4FKLDJYSnxErDqgxmhukYYcAXDsaXVqSMVz-Rm8uGLdBNMv4SZE60CP1Atn7I-CBS47EtgwZ6TwZD_fleibzqE8xcxBGbGLcwQlMXrLYAqtMsLSzmUwn1ZZmKGDNqiYhHxqG4-1m5gII4h2VpVqc6_tHYwKPh29UXv1OZ7pE-Wia3bz3z3cN4VKUFmNfi-bTCiFBtbzGWSExh5xUXv4dvrekXMTul9wVyj1vsIWFbGTtsf166ZwulTGl81W2L6PKg5fusxjU_4uLBhOtJHX_Svv0UAAEEYAgzS2o7xL9rNMy4LcZxFlcqyD_lBSu0avK5fxXukPnLaoCgDo6uLnF9T2jaQFbLroJs_fqSIg0-4iuM-wXCf-Hkdv8DYvzlG65EXnAESPbSFKs-JRvSEGHgp4EUeRlsoOsB67WxDJcCy1_z-bzl3tO9t2EtUYz1hVUebeHacHjfovKiQmdo_x9jTz53RIw027_C2ZG3q4H7Y273R0Ayoxn2zmLzkpa_-YIDO-l1_m_TpxKleWdh642k1A3ndLtGm7fU5FzSNY44hRrVFCEFARnChwkCe5XnQfMS0H45OLeqcqoE80vDiGMJHdQufJ9KLVF_2TCdgaw1p9ff4KYNUv6s81bxAewiALxhMqydf8HgCoGs0saGibfdgZufc9ahjvtHIEmAaCPsGlgsoigXEP7zOCbPW9YEuWLlOArzdJ49bEfQQqmqDCIbAoNefKKwqbpmgSGQYd1A-iivKWAjyX-jT1-XZebz-36IcLayaoLAzqCMJ7kmaCCaHx8TXBYn17Z8mOW0F77vu0BdMrC7JU1yAJY3M7DpuB1D5VHSs5v-PM5IhqPxJpZN14B488pqOWxqyIdppHcI44dll5aZLpHBZJsONPeKacyxKnmnvzQBTcXXuQx_NRxzIIn0OsQ0RWrAC7ivG0RKv8-jd6Zf8aXslwqolpbJCgkLOiaPfePmU43__nOv6IgFd-62gjUDvNlK0ZvWA3zG3JsQW2wn5bcAAQg1s15XqxTizl-k7WGIuAl-XZuJixXNH8qeqcd3FNvW-26pxg0huVnxtinqsbis3ChYNyTgaX5ERE0_G7gOzfk4gh5nLuKj1P8F-X4c9QiljpLdhhQVxlOI3hoYfVOAcUrKjrc8RZG6xkCpcYKDHbC9rugUgsdOdmZeHX8CO2dDERKTJD9XovAvVFMTx9KoYA9TKb2-3w0celzDMq87T8jR8nlYG5fCCveHR6tFmZan96eRSDef7Z66e_-Zpy5r3YczrMmnYp3QdZr9hd4RiBruzdytQlMRIJ2ynAME2ih0ceKJu8_2Wn7ZYxDyEy2sz8UDq2dw4l6MPgFsCnkgiaRpancmz5M2SWgm0YEq6cCGQU3caxp8glowosgEVBjdSy5RQ1ku9a0O_Lvl6N6TCJxb0iiSvdRSx53rpZl2B6GNO54NmcFQLIGSJgEbUlQ_OBrCh_-EHoouwS6NmupDJi4snFar0D8bV-S7byA_pz9KqQhAJNCs_yOran5WXILb-v4JbTqC3lDOxV4yXBKycG.7S4CbtpeAiSR3w7mYKxuMQ"
 
+api = Reka_API(app_session=app_session_reka)
+print(describe_image(image_path=r"C:\Users\as280\Downloads\NSWF_DETECTION_FILTER.png", describers=[Describers_API.Reka], reka_api=api))

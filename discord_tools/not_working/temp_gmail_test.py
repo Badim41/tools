@@ -180,7 +180,9 @@ class MailTM:
 
 
 class Temp_Gmail_API:
-    def __init__(self, capcha_code, proxies=None):
+    def __init__(self, capcha_code=None, proxies=None):
+        if not capcha_code:
+            capcha_code = "03AFcWeA6ibuyjAK5sX-b5iPi0kyrIV8RT0KW54_YBKYahASdBLypnhg7v4yKjncXl1tw6lmOjPb1JexbYaO8D-7wOK6xYyzOC3T60Xg9NoYYkb4rhX7M4c_IUGNlPmPC9coUmh3L2Ldwpa0HPi62ifZAqmuPtLgC0Dggsm_1j-Ryhk7wj-Q5iZyL4SR6NmHu-3yUnh7q9S9dTlHqngDrcPWZzF7W6ARjMVwy0UEBJ4ymVwiIwTdxzKn2BPzAigY5bErIhwLoH4bXH5-DAuc3x_CSsFgZSgDSPrt0DA83rzh7sCIITnnUo7kfyRcc80Fqv7dhstVdIgxfMW6LN-ADtyLPMBHTHO9vIqqwYK-FRF70jYiO9ErGrLEtp7TFp2doTcOrcmLiO4sEUj95kF7i2y3ZFAwICPJyKm5BrQhcOuGp17TpjuTwiy7puzLz6uqbYT8-S6YcyHXQ-hqzshGMy-T69VkoLhkVHN82gugfyEpnKPbz7BsZGUrdC7Q0O2dZxBM-0RMlWFliUgq-cWxxukdJt8Id9SFWkkE8w289wWbn_yZqVgwhmpHpi_UkytTCTrkmqcZ2RvNMMYB7vVHlb2qUzLEkA3qYFVNJ_KqLTJGuc-3UySPWhuXpM6G_Gr8vRTgTrpLrFFlEAy4Wn-k-WsBUVAfX936oU0ZDxV__ua-F0LuzSm1uDMJ7iquT2poxl5FkpBcFrSMY6MDSGPBoXfsG-DUCZtWpD4Q"
         self.capcha_code = capcha_code
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
         self.proxies = proxies
@@ -444,6 +446,7 @@ class Temp_Gmail_API:
             for message in messages:
                 if sender_name in message['textFrom']:
                     return self.get_message(gmail_address, message['mid'])
+                print("gmail message from:", message['textFrom'])
 
     def get_messages(self, gmail_address, timestamp):
         url = "https://api.sonjj.com/email/gm/check"
@@ -476,10 +479,7 @@ class Temp_Gmail_API:
 
 
 def get_temp_gmail_message(sender_name, capcha_code=None):
-    if not capcha_code:
-        capcha_code = "03AFcWeA6ibuyjAK5sX-b5iPi0kyrIV8RT0KW54_YBKYahASdBLypnhg7v4yKjncXl1tw6lmOjPb1JexbYaO8D-7wOK6xYyzOC3T60Xg9NoYYkb4rhX7M4c_IUGNlPmPC9coUmh3L2Ldwpa0HPi62ifZAqmuPtLgC0Dggsm_1j-Ryhk7wj-Q5iZyL4SR6NmHu-3yUnh7q9S9dTlHqngDrcPWZzF7W6ARjMVwy0UEBJ4ymVwiIwTdxzKn2BPzAigY5bErIhwLoH4bXH5-DAuc3x_CSsFgZSgDSPrt0DA83rzh7sCIITnnUo7kfyRcc80Fqv7dhstVdIgxfMW6LN-ADtyLPMBHTHO9vIqqwYK-FRF70jYiO9ErGrLEtp7TFp2doTcOrcmLiO4sEUj95kF7i2y3ZFAwICPJyKm5BrQhcOuGp17TpjuTwiy7puzLz6uqbYT8-S6YcyHXQ-hqzshGMy-T69VkoLhkVHN82gugfyEpnKPbz7BsZGUrdC7Q0O2dZxBM-0RMlWFliUgq-cWxxukdJt8Id9SFWkkE8w289wWbn_yZqVgwhmpHpi_UkytTCTrkmqcZ2RvNMMYB7vVHlb2qUzLEkA3qYFVNJ_KqLTJGuc-3UySPWhuXpM6G_Gr8vRTgTrpLrFFlEAy4Wn-k-WsBUVAfX936oU0ZDxV__ua-F0LuzSm1uDMJ7iquT2poxl5FkpBcFrSMY6MDSGPBoXfsG-DUCZtWpD4Q"
-
-    api = Temp_Gmail_API(capcha_code=capcha_code)
+    api = Temp_Gmail_API()
     gmail_address, timestamp = api.get_gmail()
     message_row = api.wait_untill_send_message(gmail_address=gmail_address, timestamp=timestamp,
                                                sender_name=sender_name)

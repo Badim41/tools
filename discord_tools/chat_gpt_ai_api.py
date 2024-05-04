@@ -4,10 +4,12 @@ import os.path
 import re
 import requests
 import sys
+import time
 import urllib
 from datetime import date
 
 from discord_tools.logs import Logs, Color
+from discord_tools.not_working.temp_gmail_test import Temp_Gmail_API
 
 logger = Logs(warnings=True)
 
@@ -87,18 +89,17 @@ class ChatGPT_4_Account:
             logger.logging(f"{attr}: {value}", color=Color.GRAY)
 
     def init_api(self):
-        return ChatGPT_4_Site(proxies=self.proxies), None  # Не рабоает
+        return ChatGPT_4_Site(proxies=self.proxies), Temp_Gmail_API()
 
     def create_account(self):
-        raise Exception("Больше не работает")
-
         if not self.api_chatgpt or not self.api_gmail:
             self.api_chatgpt, self.api_gmail = self.init_api()
 
-        self.email = self.api_gmail.get_email()
+        self.email, timestamp = self.api_gmail.get_gmail()
         self.api_chatgpt.email_send_code(self.email)
-        result = Temp_Email_API.get_message(email=self.email, sender=self.sender,
-                                            xsrf_token=self.api_gmail.xsrf_token, session_id=self.api_gmail.session_id)
+
+        result = self.api_gmail.wait_untill_send_message(gmail_address=self.email, timestamp=timestamp,
+                                                   sender_name="chatgate.ai")
         query_dict = ChatGPT_4_Site.create_query_dict((correct_link(result)))
         self.kind, self.idToken, self.refreshToken, self.localId = self.api_chatgpt.sign_in_with_email_link(
             email=self.email,
@@ -129,7 +130,7 @@ class ChatGPT_4_Account:
                                                      replace_prompt=replace_prompt)
                 except Exception as e:
                     if "Reached your daily limit" in str(e) or \
-                            "No restNonce" in str(e) or\
+                            "No restNonce" in str(e) or \
                             "Cookie check failed" in str(e):
                         print("Reset account")
                         self.save_to_json()
@@ -401,7 +402,7 @@ class ChatGPT_4_Site:
 
         response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
 
-        # logger.logging(response.text)
+        logger.logging(response.text)
         # ChatGPT_4_Site.print_cookie(response, "LOGGED")
 
         if "wordpress_logged_in_9a8088c047aa8a4d022063748baad4c8" not in response.cookies:
@@ -470,7 +471,6 @@ class ChatGPT_4_Site:
         elif role:
             prompt = f"Role: {role}\n\n\n{prompt}"
 
-
         # print(chat_history)
         # return
         bot_id = GPT_Models.get_id(model_name=model)
@@ -513,7 +513,6 @@ class ChatGPT_4_Site:
         if 'Cookie check failed' in response.text:
             raise Exception("Cookie check failed")
 
-
         answer = json.loads(last_line)['reply']
 
         return answer
@@ -548,11 +547,16 @@ def merge_json_files(directory):
 # merged_json = merge_json_files(directory_path)
 # logger.logging(json.dumps(merged_json, indent=4))
 
+
 if __name__ == "__main__":
-    arguments = sys.argv
-    if len(arguments) > 1:
-        JSON_ACCOUNT_SAVE = arguments[1]
-        logger.logging("name:", JSON_ACCOUNT_SAVE)
+    # api = ChatGPT_4_Site()
+    # cookies = api.auto_register(local_id="j4IALbWK5USd1JNHDI6tEDykNPs2", email="chloe.ab.el.e07@gmail.com")
+    # print(cookies)
+    # exit()
+    # arguments = sys.argv
+    # if len(arguments) > 1:
+    #     JSON_ACCOUNT_SAVE = arguments[1]
+    #     logger.logging("name:", JSON_ACCOUNT_SAVE)
 
     # clear_email_list(JSON_ACCOUNT_SAVE)
 
@@ -567,10 +571,10 @@ if __name__ == "__main__":
     # print(account.api_chatgpt.auto_register(local_id=account.localId, email=account.email))
 
     #
-    print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
-    # for i in range(50):
-    #     try:
-    #         account.create_account()
-    #         time.sleep(20)
-    #     except Exception as e:
-    #         logger.logging(e)
+    # print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
+    for i in range(50):
+        try:
+            account.create_account()
+            time.sleep(20)
+        except Exception as e:
+            logger.logging(e)

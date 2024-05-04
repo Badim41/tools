@@ -150,7 +150,7 @@ class Coral_API:
 
         return response.json()['rawKey']
 
-    def generate(self, messages, gpt_role="Ты полезный ассистент и даёшь только полезную информацию", delay_for_gpt=1,
+    def generate(self, messages, gpt_role=None, delay_for_gpt=1,
                  temperature=0.3,
                  model="command-r-plus", web_access=False, error=0):
         changed_messages = messages
@@ -172,7 +172,8 @@ class Coral_API:
                 connectors = []
 
             for i, msg in enumerate(changed_messages):
-                if 'system' in msg['role']:
+                if 'system' in msg['role'] and not gpt_role:
+                    gpt_role = msg['content']
                     continue
                 role = "User" if msg['role'] == "user" else "Chatbot"
                 message = msg['content']
@@ -183,6 +184,8 @@ class Coral_API:
 
             if not prompt:
                 raise Exception("Неправильный формат сообщений!")
+            if not gpt_role:
+                gpt_role = "Ты полезный ассистент и даёшь только полезную информацию"
 
             url = "https://api.cohere.ai/v1/chat"
 
