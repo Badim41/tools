@@ -82,7 +82,7 @@ class Reka_API:
                     }]
                 else:
                     transformed_messages.append({"type": role, "text": message})
-            print("MESSAGES:", transformed_messages)
+            # print("MESSAGES:", transformed_messages)
             payload = {
                 "conversation_history": transformed_messages,
                 "stream": False,

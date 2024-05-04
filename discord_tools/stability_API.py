@@ -9,6 +9,7 @@ class Stable_Diffusion_API:
     def __init__(self, api_key=None):
         if not api_key:
             api_key = self.get_free_api_key()
+
         self.api_key = api_key
 
     @staticmethod
@@ -66,11 +67,13 @@ class Stable_Diffusion_API:
             data=params
         )
         if not response.ok:
+            if response.status_code == 402:
+                print("Недостаточно средств на балансе")
             raise Exception(f"HTTP {response.status_code}: {response.text}")
 
         return response
 
-    def search_and_replace(self, image_path, prompt, search_prompt, negative_prompt="", seed=0, output_format="png"):
+    def search_and_replace(self, image_path, prompt, search_prompt, random_factor="", negative_prompt="", seed=0, output_format="png"):
         host = f"https://api.stability.ai/v2beta/stable-image/edit/search-and-replace"
 
         params = {
@@ -99,10 +102,10 @@ class Stable_Diffusion_API:
 
         # Save and display result
         filename, _ = os.path.splitext(os.path.basename(image_path))
-        edited = f"edited_{filename}_{seed}.{output_format}"
+        edited = f"images/{random_factor}edited_{filename}_{seed}.{output_format}"
         with open(edited, "wb") as f:
             f.write(output_image)
-        print(f"Saved image {edited}")
+        return edited
     @staticmethod
     def resize_image(image_path):
         # Открываем изображение
@@ -156,12 +159,10 @@ class Stable_Diffusion_API:
                 "motion_bucket_id": 127
             },
         )
-        print(response.text)
         video_id = response.json().get('id')
-        print("Generation ID:", video_id)
         return video_id
 
-    def img_to_video(self, image_path, attemps=100):
+    def img_to_video(self, image_path, random_factor="", attemps=100):
         generation_id = self.get_generate_video_id(image_path)
         for i in range(attemps):
 
@@ -173,16 +174,18 @@ class Stable_Diffusion_API:
                     'authorization': f"Bearer {self.api_key}"
                 },
             )
+
             if response.status_code == 202:
-                print("Generation in-progress, try again in 10 seconds.")
                 time.sleep(10)
             else:
                 break
 
+        output_path = f"images/{random_factor}video.mp4"
         if response.status_code == 200:
             print("Generation complete!")
-            with open("video.mp4", 'wb') as file:
+            with open(output_path, 'wb') as file:
                 file.write(response.content)
+            return output_path
         else:
             raise Exception(str(response.json()))
 
