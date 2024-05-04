@@ -3,13 +3,12 @@ import json
 import os.path
 import re
 import requests
-import sys
 import time
 import urllib
 from datetime import date
 
 from discord_tools.logs import Logs, Color
-from discord_tools.not_working.temp_gmail_test import Temp_Gmail_API
+from discord_tools.temp_gmail_test import Temp_Gmail_API
 
 logger = Logs(warnings=True)
 
