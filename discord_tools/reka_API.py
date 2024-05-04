@@ -45,6 +45,9 @@ class Reka_API:
             return response.json()['image_url']
 
     def generate(self, messages, file_path=None, media_type=None):
+        """
+        Не поддерживается история с файлом
+        """
         if not self.auth_key:
             return None
 
@@ -71,12 +74,12 @@ class Reka_API:
 
                 role = "human" if msg['role'] == "user" else "model"
                 if i == len(messages) - 1 and file_path:
-                    transformed_messages.append({
+                    transformed_messages = [{
                         "type": "human",
                         "text": message,
                         "image_url": file_url,
                         "media_type": media_type
-                    })
+                    }]
                 else:
                     transformed_messages.append({"type": role, "text": message})
             print("MESSAGES:", transformed_messages)
@@ -101,9 +104,9 @@ class Reka_API:
             print("Error in generate (reka):", e)
 
 
-# if __name__ == "__main__":
-#     api = Reka_API(app_session="APP SESSION")
-#
-#     answer = api.generate(messages=[{"role": "user", "content": "Какая игра на видео?"}], file_path= r"C:\Users\as280\Pictures\mine-imator\falling.mp4", media_type = MediaType.video)
-#
-#     print(answer)
+if __name__ == "__main__":
+    api = Reka_API(app_session="APP SESSION")
+
+    answer = api.generate(messages=[{"role": "user", "content": "Какая игра на видео?"}], file_path= r"C:\Users\as280\Pictures\mine-imator\falling.mp4", media_type = MediaType.video)
+
+    print(answer)
