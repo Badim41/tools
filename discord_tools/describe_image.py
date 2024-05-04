@@ -230,7 +230,6 @@ def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGory
                      describers=None, reka_api=None):
     if not os.path.isfile(image_path):
         raise Exception("Файл с изображением не найден.")
-        raise Exception("Файл с изображением не найден.")
 
     lower_image_resolution(image_path)
 

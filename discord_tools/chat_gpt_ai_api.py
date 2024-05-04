@@ -566,7 +566,7 @@ if __name__ == "__main__":
 
     #
     # print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
-    for i in range(10):
+    for i in range(5):
         account = ChatGPT_4_Account()
         for i in range(10):
             try:
