@@ -168,6 +168,11 @@ class Stable_Diffusion_API:
                 "motion_bucket_id": 127
             },
         )
+        if response.status_code == 402:
+            print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+            self.api_keys = self.api_keys[1:]
+            return self.get_generate_video_id(image_path=image_path)
+
         video_id = response.json().get('id')
         print("VIDEO ID", video_id, response.json())
         return video_id
@@ -202,10 +207,6 @@ class Stable_Diffusion_API:
                 with open(output_path, 'wb') as file:
                     file.write(response.content)
                 return output_path
-            elif response.status_code == 402:
-                    print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
-                    self.api_keys = self.api_keys[1:]
-                    return self.img_to_video(image_path=image_path, random_factor=random_factor, attemps=attemps)
             else:
                 raise Exception(str(response.json()))
         except Exception as e:
