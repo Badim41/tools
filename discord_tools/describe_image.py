@@ -206,6 +206,8 @@ def reka_recognize_image(image_path, reka_api, prompt="",
         try:
             result = reka_api.generate(file_path=image_path, media_type=MediaType.image,
                                        messages=[{"role": "user", "content": prompt}])
+            if not result:
+                return
 
             logger.logging("Response from server:", result, color=Color.GRAY)
 

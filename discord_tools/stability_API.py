@@ -169,6 +169,7 @@ class Stable_Diffusion_API:
             },
         )
         video_id = response.json().get('id')
+        print("VIDEO ID", video_id, response.json())
         return video_id
 
     def img_to_video(self, image_path, random_factor="", attemps=100):
