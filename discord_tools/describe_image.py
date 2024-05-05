@@ -152,6 +152,8 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
     Describe / moderate = 5-7s (20s с получением ключа)
     comment: english only, не воспринимает запрос, плохо распознаёт текст
     """
+    # NOT WORKING
+    return
 
     def get_object_info(data, result="", indent=0):
         for item in data:
