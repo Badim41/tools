@@ -4,25 +4,26 @@ import requests
 import time
 from PIL import Image
 
+if not os.path.exists("images"):
+    os.mkdir("images")
 
 class Stable_Diffusion_API:
-    def __init__(self, api_key=None):
-        if not api_key:
-            api_key = self.get_free_api_key()
+    def __init__(self, api_keys=None):
+        if isinstance(api_keys, list):
+            self.api_keys = api_keys
+        elif isinstance(api_keys, str):
+            self.api_keys = [api_keys]
 
-        self.api_key = api_key
+        if not self.api_keys:
+            self.api_keys = [self.get_free_api_key()]
 
     @staticmethod
     def get_free_api_key():
-        # import requestsw
-        # Исходная строка
-
         url = "https://www.midjourneyfree.ai/static/js/main.5be83a7f.js"
 
         payload = ""
         headers = {
             "Referer": "https://www.midjourneyfree.ai/",
-            "sec-ch-ua-mobile": "?0",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36"
         }
 
@@ -44,7 +45,7 @@ class Stable_Diffusion_API:
     def send_generation_request(self, host, params):
         headers = {
             "Accept": "image/*",
-            "Authorization": f"Bearer {self.api_key}"
+            "Authorization": f"Bearer {self.api_keys[0]}"
         }
 
         # Encode parameters
@@ -68,12 +69,18 @@ class Stable_Diffusion_API:
         )
         if not response.ok:
             if response.status_code == 402:
-                print("Недостаточно средств на балансе")
+                print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                self.api_keys = self.api_keys[1:]
+                return self.send_generation_request(host, params)
             raise Exception(f"HTTP {response.status_code}: {response.text}")
 
         return response
 
     def search_and_replace(self, image_path, prompt, search_prompt, random_factor="", negative_prompt="", seed=0, output_format="png"):
+        if not self.api_keys:
+            print("No api keys stability")
+            return False
+
         host = f"https://api.stability.ai/v2beta/stable-image/edit/search-and-replace"
 
         params = {
@@ -148,7 +155,7 @@ class Stable_Diffusion_API:
         response = requests.post(
             f"https://api.stability.ai/v2beta/image-to-video",
             headers={
-                "authorization": f"Bearer {self.api_key}"
+                "authorization": f"Bearer {self.api_keys[0]}"
             },
             files={
                 "image": open(image_path, "rb")
@@ -163,6 +170,9 @@ class Stable_Diffusion_API:
         return video_id
 
     def img_to_video(self, image_path, random_factor="", attemps=100):
+        if not self.api_keys:
+            print("No api keys stability")
+            return False
         generation_id = self.get_generate_video_id(image_path)
         for i in range(attemps):
 
@@ -171,7 +181,7 @@ class Stable_Diffusion_API:
                 f"https://api.stability.ai/v2beta/image-to-video/result/{generation_id}",
                 headers={
                     'accept': "video/*",  # Use 'application/json' to receive base64 encoded JSON
-                    'authorization': f"Bearer {self.api_key}"
+                    'authorization': f"Bearer {self.api_keys[0]}"
                 },
             )
 
@@ -180,16 +190,21 @@ class Stable_Diffusion_API:
             else:
                 break
 
+
         output_path = f"images/{random_factor}video.mp4"
         if response.status_code == 200:
             print("Generation complete!")
             with open(output_path, 'wb') as file:
                 file.write(response.content)
             return output_path
+        elif response.status_code == 402:
+                print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                self.api_keys = self.api_keys[1:]
+                return self.img_to_video(image_path=image_path, random_factor=random_factor, attemps=attemps)
         else:
             raise Exception(str(response.json()))
 
 
-# api = Stable_Diffusion_API()
+# api = Stable_Diffusion_API("^_^")
 # api.img_to_video(r"C:\Users\as280\Downloads\test.png")
 # api.search_and_replace(image_path=r"C:\Users\as280\Downloads\test.png", prompt="zoombie", search_prompt="brain")
