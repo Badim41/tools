@@ -37,3 +37,12 @@ def remove_emojis(text):
                                "]+", flags=re.UNICODE)
     # Удаляем смайлики из текста
     return emoji_pattern.sub(r'', text)
+
+def extract_urls(text):
+    # Регулярное выражение для поиска URL в тексте
+    url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+
+    # Используем регулярное выражение для поиска всех URL в тексте
+    urls = re.findall(url_pattern, text)
+
+    return urls

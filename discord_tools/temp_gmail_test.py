@@ -7,7 +7,8 @@ import random
 import string
 
 from discord_tools.astica_API import Astica_Free_API_key
-from discord_tools.logs import Logs
+from discord_tools.logs import Logs, Color
+from discord_tools.str_tools import extract_urls
 
 logger = Logs(warnings=True)
 
@@ -30,14 +31,7 @@ def validate_response(response) -> bool:
         return False
 
 
-def extract_urls(text):
-    # Регулярное выражение для поиска URL в тексте
-    url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
 
-    # Используем регулярное выражение для поиска всех URL в тексте
-    urls = re.findall(url_pattern, text)
-
-    return urls
 
 
 class MailTM:
@@ -90,7 +84,7 @@ class MailTM:
             "address": address,
             "password": password
         }
-        logger.logging(f'Create account with payload: {payload}')
+        logger.logging(f'Create account with payload: {payload}', color=Color.GREEN)
         response = self.session.post(f"{self.API_URL}/accounts", json=payload)
         logger.logging(f'Response for {self.API_URL}/accounts: {response.status_code}, {response.text}, ')
         if validate_response(response):
@@ -176,7 +170,7 @@ class MailTM:
                 message_source = self.get_message_source_by_id(message_id, token=token)
                 if sender_email in message_source['from']['address']:
                     return message_source['text']
-            time.sleep(1)
+            time.sleep(3)
 
 
 class Temp_Gmail_API:
