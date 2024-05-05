@@ -42,40 +42,6 @@ class Stable_Diffusion_API:
                 return sk_key
         raise Exception("sk-KEY не найден.")
 
-    def send_generation_request(self, host, params):
-        headers = {
-            "Accept": "image/*",
-            "Authorization": f"Bearer {self.api_keys[0]}"
-        }
-
-        # Encode parameters
-        files = {}
-        image = params.pop("image", None)
-        mask = params.pop("mask", None)
-        if image is not None and image != '':
-            files["image"] = open(image, 'rb')
-        if mask is not None and mask != '':
-            files["mask"] = open(mask, 'rb')
-        if len(files) == 0:
-            files["none"] = ''
-
-        # Send request
-        print(f"Sending REST request to {host}...")
-        response = requests.post(
-            host,
-            headers=headers,
-            files=files,
-            data=params
-        )
-        if not response.ok:
-            if response.status_code == 402:
-                print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
-                self.api_keys = self.api_keys[1:]
-                return self.send_generation_request(host, params)
-            raise Exception(f"HTTP {response.status_code}: {response.text}")
-
-        return response
-
     def search_and_replace(self, image_path, prompt, search_prompt, random_factor="", negative_prompt="", seed=0, output_format="png"):
         if not self.api_keys:
             print("No api keys stability")
@@ -84,7 +50,6 @@ class Stable_Diffusion_API:
             host = f"https://api.stability.ai/v2beta/stable-image/edit/search-and-replace"
 
             params = {
-                "image": image_path,
                 "seed": seed,
                 "mode": "search",
                 "output_format": output_format,
@@ -93,10 +58,29 @@ class Stable_Diffusion_API:
                 "search_prompt": search_prompt,
             }
 
-            response = self.send_generation_request(
+            headers = {
+                "Accept": "image/*",
+                "Authorization": f"Bearer {self.api_keys[0]}"
+            }
+
+            # Encode parameters
+            files = {}
+            files["image"] = open(image_path, 'rb')
+
+            # Send request
+            print(f"Sending REST request to {host}...")
+            response = requests.post(
                 host,
-                params
+                headers=headers,
+                files=files,
+                data=params
             )
+            if not response.ok:
+                if response.status_code == 402:
+                    print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                    self.api_keys = self.api_keys[1:]
+                    return self.search_and_replace(image_path=image_path, prompt=prompt, search_prompt=search_prompt, random_factor=random_factor, negative_prompt=negative_prompt, seed=seed, output_format=output_format)
+                raise Exception(f"HTTP {response.status_code}: {response.text}")
 
             # Decode response
             output_image = response.content
