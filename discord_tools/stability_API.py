@@ -80,39 +80,41 @@ class Stable_Diffusion_API:
         if not self.api_keys:
             print("No api keys stability")
             return False
+        try:
+            host = f"https://api.stability.ai/v2beta/stable-image/edit/search-and-replace"
 
-        host = f"https://api.stability.ai/v2beta/stable-image/edit/search-and-replace"
+            params = {
+                "image": image_path,
+                "seed": seed,
+                "mode": "search",
+                "output_format": output_format,
+                "prompt": prompt,
+                "negative_prompt": negative_prompt,
+                "search_prompt": search_prompt,
+            }
 
-        params = {
-            "image": image_path,
-            "seed": seed,
-            "mode": "search",
-            "output_format": output_format,
-            "prompt": prompt,
-            "negative_prompt": negative_prompt,
-            "search_prompt": search_prompt,
-        }
+            response = self.send_generation_request(
+                host,
+                params
+            )
 
-        response = self.send_generation_request(
-            host,
-            params
-        )
+            # Decode response
+            output_image = response.content
+            finish_reason = response.headers.get("finish-reason")
+            seed = response.headers.get("seed")
 
-        # Decode response
-        output_image = response.content
-        finish_reason = response.headers.get("finish-reason")
-        seed = response.headers.get("seed")
+            # Check for NSFW classification
+            if finish_reason == 'CONTENT_FILTERED':
+                raise Warning("Generation failed NSFW classifier")
 
-        # Check for NSFW classification
-        if finish_reason == 'CONTENT_FILTERED':
-            raise Warning("Generation failed NSFW classifier")
-
-        # Save and display result
-        filename, _ = os.path.splitext(os.path.basename(image_path))
-        edited = f"images/{random_factor}edited_{filename}_{seed}.{output_format}"
-        with open(edited, "wb") as f:
-            f.write(output_image)
-        return edited
+            # Save and display result
+            filename, _ = os.path.splitext(os.path.basename(image_path))
+            edited = f"images/{random_factor}edited_{filename}_{seed}.{output_format}"
+            with open(edited, "wb") as f:
+                f.write(output_image)
+            return edited
+        except Exception as e:
+            print("ERROR IN SEARCH AND REPLACE:", e)
     @staticmethod
     def resize_image(image_path):
         # Открываем изображение
@@ -173,36 +175,40 @@ class Stable_Diffusion_API:
         if not self.api_keys:
             print("No api keys stability")
             return False
-        generation_id = self.get_generate_video_id(image_path)
-        for i in range(attemps):
 
-            response = requests.request(
-                "GET",
-                f"https://api.stability.ai/v2beta/image-to-video/result/{generation_id}",
-                headers={
-                    'accept': "video/*",  # Use 'application/json' to receive base64 encoded JSON
-                    'authorization': f"Bearer {self.api_keys[0]}"
-                },
-            )
+        try:
+            generation_id = self.get_generate_video_id(image_path)
+            for i in range(attemps):
 
-            if response.status_code == 202:
-                time.sleep(10)
+                response = requests.request(
+                    "GET",
+                    f"https://api.stability.ai/v2beta/image-to-video/result/{generation_id}",
+                    headers={
+                        'accept': "video/*",  # Use 'application/json' to receive base64 encoded JSON
+                        'authorization': f"Bearer {self.api_keys[0]}"
+                    },
+                )
+
+                if response.status_code == 202:
+                    time.sleep(10)
+                else:
+                    break
+
+
+            output_path = f"images/{random_factor}video.mp4"
+            if response.status_code == 200:
+                print("Generation complete!")
+                with open(output_path, 'wb') as file:
+                    file.write(response.content)
+                return output_path
+            elif response.status_code == 402:
+                    print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                    self.api_keys = self.api_keys[1:]
+                    return self.img_to_video(image_path=image_path, random_factor=random_factor, attemps=attemps)
             else:
-                break
-
-
-        output_path = f"images/{random_factor}video.mp4"
-        if response.status_code == 200:
-            print("Generation complete!")
-            with open(output_path, 'wb') as file:
-                file.write(response.content)
-            return output_path
-        elif response.status_code == 402:
-                print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
-                self.api_keys = self.api_keys[1:]
-                return self.img_to_video(image_path=image_path, random_factor=random_factor, attemps=attemps)
-        else:
-            raise Exception(str(response.json()))
+                raise Exception(str(response.json()))
+        except Exception as e:
+            print("ERROR IN VIDEO GENERATE:", e)
 
 
 # api = Stable_Diffusion_API("^_^")
