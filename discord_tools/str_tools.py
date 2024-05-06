@@ -46,3 +46,8 @@ def extract_urls(text):
     urls = re.findall(url_pattern, text)
 
     return urls
+
+def get_cookie_dict_from_response(response):
+    cookies = response.cookies
+    cookie_dict = {cookie.name: cookie.value for cookie in cookies}
+    return cookie_dict

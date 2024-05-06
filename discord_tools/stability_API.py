@@ -3,6 +3,9 @@ import re
 import requests
 import time
 from PIL import Image
+from discord_tools.logs import Logs
+
+logger = Logs(warnings=True)
 
 if not os.path.exists("images"):
     os.mkdir("images")
@@ -68,7 +71,7 @@ class Stable_Diffusion_API:
             files["image"] = open(image_path, 'rb')
 
             # Send request
-            print(f"Sending REST request to {host}...")
+            logger.logging(f"Sending REST request to {host}...")
             response = requests.post(
                 host,
                 headers=headers,
@@ -77,7 +80,7 @@ class Stable_Diffusion_API:
             )
             if not response.ok:
                 if response.status_code == 402:
-                    print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                    logger.logging("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
                     self.api_keys = self.api_keys[1:]
                     return self.search_and_replace(image_path=image_path, prompt=prompt, search_prompt=search_prompt, random_factor=random_factor, negative_prompt=negative_prompt, seed=seed, output_format=output_format)
                 raise Exception(f"HTTP {response.status_code}: {response.text}")
@@ -89,7 +92,7 @@ class Stable_Diffusion_API:
 
             # Check for NSFW classification
             if finish_reason == 'CONTENT_FILTERED':
-                raise Warning("Generation failed NSFW classifier")
+                raise Exception("Generation failed NSFW classifier")
 
             # Save and display result
             filename, _ = os.path.splitext(os.path.basename(image_path))
@@ -98,7 +101,7 @@ class Stable_Diffusion_API:
                 f.write(output_image)
             return edited
         except Exception as e:
-            print("ERROR IN SEARCH AND REPLACE:", e)
+            logger.logging("ERROR IN SEARCH AND REPLACE:", e)
     @staticmethod
     def resize_image(image_path):
         # Открываем изображение
@@ -187,14 +190,14 @@ class Stable_Diffusion_API:
 
             output_path = f"images/{random_factor}video.mp4"
             if response.status_code == 200:
-                print("Generation complete!")
+                logger.logging("Generation complete!")
                 with open(output_path, 'wb') as file:
                     file.write(response.content)
                 return output_path
             else:
                 raise Exception(str(response.json()))
         except Exception as e:
-            print("ERROR IN VIDEO GENERATE:", e)
+            logger.logging("ERROR IN VIDEO GENERATE:", e)
 
 
 # api = Stable_Diffusion_API("^_^")

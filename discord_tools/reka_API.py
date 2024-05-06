@@ -1,6 +1,8 @@
 import os
 import requests
 
+from discord_tools.str_tools import get_cookie_dict_from_response
+
 NSFW_DETECTED_MESSAGE = "NSFW DETECTED MESSAGE"
 
 class MediaType:
@@ -11,16 +13,32 @@ class MediaType:
 
 class Reka_API:
     def __init__(self, app_session=None, proxies=None):
+        """
+        :app_session: AppSession в Request cookie в запросе "auth/firebase_token"
+        """
         self.app_session = app_session
         self.proxies = proxies
         self.auth_key = self.get_access_key()
 
     def get_access_key(self):
         try:
+            url = "https://chat.reka.ai/bff/auth/firebase_token"
+
+            payload = ""
+            headers = {
+                "cookie": f"appSession={self.app_session}",
+            }
+
+            response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
+
+            cookie_dict = get_cookie_dict_from_response(response)
+
             url = "https://chat.reka.ai/bff/auth/access_token"
 
             payload = ""
-            headers = {"cookie": f"appSession={self.app_session}", "authority": "chat.reka.ai"}
+            headers = {
+                "cookie": f"appSession={cookie_dict['appSession']}",
+            }
 
             response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
             return response.json()['accessToken']
@@ -105,7 +123,7 @@ class Reka_API:
 
 
 if __name__ == "__main__":
-    api = Reka_API(app_session="APP SESSION")
+    api = Reka_API(app_session="^_^")
 
     answer = api.generate(messages=[{"role": "user", "content": "Какая игра на видео?"}], file_path= r"C:\Users\as280\Pictures\mine-imator\falling.mp4", media_type = MediaType.video)
 
