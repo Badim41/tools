@@ -58,10 +58,10 @@ class KeyManager:
 
 if __name__ == '__main__':
     key_manager = KeyManager("Test")
-    key_manager.add_expired_key("test_key3")
-    key_manager.add_expired_key("test_key")
-    key_manager.add_expired_key("test_key2")
-    keys = ["test_key3", "test_key2"]
+    # key_manager.add_expired_key("test_key3")
+    # key_manager.add_expired_key("test_key")
+    # key_manager.add_expired_key("test_key2")
+    keys = ["test_key3", "test_key2", "test_key2", "test_key6", "test_key2"]
     current_keys = key_manager.get_not_expired_keys(keys, recovering_time=None)
 
     print("Валидные ключи:", current_keys)
