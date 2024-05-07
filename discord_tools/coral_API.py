@@ -3,11 +3,14 @@ import json
 import re
 import requests
 import time
+from discord_tools.key_manager import KeyManager
 
 from discord_tools.logs import Logs, Color
 from discord_tools.sql_db import get_database, set_database_not_async as set_database
 
 logger = Logs(warnings=True)
+
+key_manager = KeyManager("coral")
 
 class Coral_Account():
     def create_account(self, email, password, recapcha_token=None):
@@ -79,8 +82,11 @@ class Coral_API:
                 self.api_keys = [api_key]
             else:
                 raise Exception("API KEY должен быть str или list")
+            self.api_keys = key_manager.get_not_expired_keys(self.api_keys, recovering_time=30)
         else:
             raise Exception("Нет способа получения ключа")
+
+
 
     def login(self):
         url = "https://production.api.os.cohere.ai/rpc/BlobheartAPI/AuthV2"
@@ -212,6 +218,7 @@ class Coral_API:
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
             if response.status_code == 429:
                 if not error == 25 and self.api_keys:
+                    key_manager.add_expired_key(self.api_keys[0])
                     self.api_keys = self.api_keys[1:]
                     time.sleep(5)
                     return self.generate(messages=messages, gpt_role=gpt_role, delay_for_gpt=delay_for_gpt,
@@ -597,6 +604,7 @@ class Coral_API:
 
         if response.status_code == 429:
             if not error == 5 and self.api_keys:
+                key_manager.add_expired_key(self.api_keys[0])
                 self.api_keys = self.api_keys[1:]
                 return self.classify_request(inputs=inputs, error=error + 1)
             else:
