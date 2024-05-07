@@ -8,11 +8,14 @@ import aiohttp
 from openai.types.chat import ChatCompletionMessage
 
 from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account, GPT_Models
+from discord_tools.key_manager import KeyManager
 from discord_tools.logs import Logs, Color
 from discord_tools.character_ai_chat import Character_AI, ModerateParams
 from discord_tools.translate import translate_text
 
 logger = Logs(warnings=True)
+
+key_manager = KeyManager("openai")
 
 
 def get_cookie_value(cookie_string, key):
@@ -163,6 +166,8 @@ class ChatGPT:
         else:
             self.openAI_keys = None
 
+        self.openAI_keys = key_manager.get_not_expired_keys(self.openAI_keys, recovering_time=None)
+
         self.gpt_queue = 0
 
         self.moderation_queue = 0
@@ -184,6 +189,8 @@ class ChatGPT:
             self.openAI_auth_keys = [auth_keys]
         else:
             self.openAI_auth_keys = None
+
+        self.openAI_auth_keys = key_manager.get_not_expired_keys(self.openAI_auth_keys, recovering_time=None)
 
         self.character_queue = 0
 
@@ -248,6 +255,7 @@ class ChatGPT:
             self.logger.logging("run GPT", prompt[:25], color=Color.GRAY)
 
         if prompt == "" or prompt is None:
+            Warning("Пустой запрос")
             return "Пустой запрос"
 
         chat_history = load_history_from_json(user_id)
@@ -256,7 +264,8 @@ class ChatGPT:
                                                           limited=limited,
                                                           translate_lang=translate_lang, chat_history=chat_history,
                                                           chat_gpt_4=chat_gpt_4)
-        if not provider == ChatGPT_Responses.all:
+
+        if not provider == ChatGPT_Responses.all and answer:
             chat_history.append({"role": "user", "content": prompt})
             chat_history.append({"role": "assistant", "content": answer})
             save_history(chat_history, user_id)
@@ -480,6 +489,7 @@ class ChatGPT:
 
                 if "Incorrect API key provided" in str(
                         e) or "You exceeded your current quota, please check your plan and billing details." in str(e):
+                    key_manager.add_expired_key(self.openAI_keys[0])
                     self.openAI_keys = self.openAI_keys[1:]
 
                 if self.openAI_keys and not error:
@@ -513,6 +523,7 @@ class ChatGPT:
                         # or "Too many requests in 1 hour. Try again later." in str(e) # НЕ УДАЛЯТЬ, ЧЕРЕЗ ЧАС ВЕДЬ ВСЁ НОРМ БУДЕТ
                         or 'token is expired' in str(e)):
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
+                    key_manager.add_expired_key(self.openAI_keys[0])
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
                 if self.openAI_auth_keys and not error and 'Unable to load site' not in str(traceback.format_exc()):
                     if self.testing:

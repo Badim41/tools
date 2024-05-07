@@ -3,7 +3,6 @@ import requests
 
 from discord_tools.str_tools import get_cookie_dict_from_response
 
-NSFW_DETECTED_MESSAGE = "NSFW DETECTED MESSAGE"
 
 class MediaType:
     pdf = "pdf"
@@ -114,8 +113,6 @@ class Reka_API:
             }
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
-
-            print(response.text, response.status_code)
 
             return response.json()['text']
         except Exception as e:

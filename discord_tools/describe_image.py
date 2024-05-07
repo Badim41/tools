@@ -195,9 +195,10 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
 def reka_recognize_image(image_path, reka_api, prompt="",
                          attempts=2, *args, **kwargs):
     """
-    speed: slow
-    Describe / moderate = 5-7s (20s с получением ключа)
-    comment: english only, не воспринимает запрос, плохо распознаёт текст
+    speed: very slow
+    Describe = 25-30s
+    moderate = нет
+    comment: Медленный, нужен аккаунт
     """
     if not reka_api:
         return None, None
@@ -206,17 +207,20 @@ def reka_recognize_image(image_path, reka_api, prompt="",
 
     for i in range(attempts):
         try:
-            result = reka_api.generate(file_path=image_path, media_type=MediaType.image,
+            text = reka_api.generate(file_path=image_path, media_type=MediaType.image,
                                        messages=[{"role": "user", "content": prompt}])
-            if not result:
+            if not text:
                 return
 
-            logger.logging("Response from server:", result, color=Color.GRAY)
+            logger.logging("Response from server:", text, color=Color.GRAY)
 
-            if result == NSFW_DETECTED_MESSAGE:
-                return True, result
+            # Хотя бы так?
+            for ban_word in ban_words:
+                for word in text.split(" "):
+                    if (word.lower() + " ").startswith(ban_word):
+                        return True, text
 
-            return False, result
+            return False, text
         except Exception as e:
             logger.logging("Error in reka_API", e)
             time.sleep(3)

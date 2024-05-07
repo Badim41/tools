@@ -4,11 +4,19 @@ import requests
 import time
 from PIL import Image
 from discord_tools.logs import Logs
+from discord_tools.key_manager import KeyManager
+
+key_manager = KeyManager("stability")
 
 logger = Logs(warnings=True)
 
 if not os.path.exists("images"):
     os.mkdir("images")
+
+class FoundNSFW(Exception):
+    """Когда найден небезопасный контент"""
+    pass
+
 
 class Stable_Diffusion_API:
     def __init__(self, api_keys=None):
@@ -19,6 +27,8 @@ class Stable_Diffusion_API:
 
         if not self.api_keys:
             self.api_keys = [self.get_free_api_key()]
+
+        self.api_keys = key_manager.get_not_expired_keys(self.api_keys, recovering_time=None)
 
     @staticmethod
     def get_free_api_key():
@@ -81,6 +91,7 @@ class Stable_Diffusion_API:
             if not response.ok:
                 if response.status_code == 402:
                     logger.logging("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                    key_manager.add_expired_key(self.api_keys[0])
                     self.api_keys = self.api_keys[1:]
                     return self.search_and_replace(image_path=image_path, prompt=prompt, search_prompt=search_prompt, random_factor=random_factor, negative_prompt=negative_prompt, seed=seed, output_format=output_format)
                 raise Exception(f"HTTP {response.status_code}: {response.text}")
@@ -92,7 +103,7 @@ class Stable_Diffusion_API:
 
             # Check for NSFW classification
             if finish_reason == 'CONTENT_FILTERED':
-                raise Exception("Generation failed NSFW classifier")
+                raise FoundNSFW
 
             # Save and display result
             filename, _ = os.path.splitext(os.path.basename(image_path))
@@ -100,6 +111,8 @@ class Stable_Diffusion_API:
             with open(edited, "wb") as f:
                 f.write(output_image)
             return edited
+        except FoundNSFW:
+            return FoundNSFW
         except Exception as e:
             logger.logging("ERROR IN SEARCH AND REPLACE:", e)
     @staticmethod
@@ -157,8 +170,11 @@ class Stable_Diffusion_API:
         )
         if response.status_code == 402:
             print("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+            key_manager.add_expired_key(self.api_keys[0])
             self.api_keys = self.api_keys[1:]
             return self.get_generate_video_id(image_path=image_path)
+        if "Your request was flagged" in response.text:
+            return FoundNSFW
 
         video_id = response.json().get('id')
         print("VIDEO ID", video_id, response.json())

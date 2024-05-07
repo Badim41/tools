@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import functools
 import io
 import json
 import os
