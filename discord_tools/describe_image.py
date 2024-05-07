@@ -8,7 +8,7 @@ from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account
 from discord_tools.logs import Logs, Color
 from discord_tools.astica_API import Astica_Describe_Params, Astica_API
 from discord_tools.detect_mat import ban_words
-from discord_tools.reka_API import Reka_API, MediaType, NSFW_DETECTED_MESSAGE
+from discord_tools.reka_API import Reka_API, MediaType
 from discord_tools.timer import Time_Count
 
 logger = Logs(warnings=True)
