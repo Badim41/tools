@@ -11,9 +11,15 @@ class KeyManager:
     def load_keys(self):
         try:
             with open(self.json_file, 'r') as file:
-                return json.load(file)
+                keys = json.load(file)
         except FileNotFoundError:
-            return {self.service: []}
+            keys = {self.service: []}
+
+        # сервиса нет в ключах
+        if self.service not in keys.values():
+            keys[self.service] = []
+
+        return keys
 
     def save_keys(self, keys):
         with open(self.json_file, 'w') as file:
@@ -21,10 +27,6 @@ class KeyManager:
 
     def add_expired_key(self, key):
         keys = self.load_keys()
-
-        # сервиса нет в ключах
-        if self.service not in keys.values():
-            keys[self.service] = []
 
         keys[self.service].append({"key": key, "expired": datetime.now().strftime("%Y-%m-%d")})
         self.save_keys(keys)
@@ -38,6 +40,7 @@ class KeyManager:
 
         expired_days_ago = datetime.now() - timedelta(days=recovering_time)
         keys = self.load_keys()
+
         updated_keys = []
 
         for key in row_keys:
