@@ -523,7 +523,7 @@ class ChatGPT:
                         # or "Too many requests in 1 hour. Try again later." in str(e) # НЕ УДАЛЯТЬ, ЧЕРЕЗ ЧАС ВЕДЬ ВСЁ НОРМ БУДЕТ
                         or 'token is expired' in str(e)):
                     self.logger.logging("Remove AUTH key", self.openAI_auth_keys[0][:10], color=Color.CYAN)
-                    key_manager.add_expired_key(self.openAI_keys[0])
+                    key_manager.add_expired_key(self.openAI_auth_keys[0])
                     self.openAI_auth_keys = self.openAI_auth_keys[1:]
                 if self.openAI_auth_keys and not error and 'Unable to load site' not in str(traceback.format_exc()):
                     if self.testing:
