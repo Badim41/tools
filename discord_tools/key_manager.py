@@ -16,7 +16,8 @@ class KeyManager:
             keys = {self.service: []}
 
         # сервиса нет в ключах
-        if self.service not in keys.values():
+        if self.service not in keys.keys():
+            print(f"No service {self.service}, add")
             keys[self.service] = []
 
         return keys
@@ -57,8 +58,9 @@ class KeyManager:
 
 if __name__ == '__main__':
     key_manager = KeyManager("Test")
-    # key_manager.add_expired_key("test_key")
-    # key_manager.add_expired_key("test_key2")
+    key_manager.add_expired_key("test_key3")
+    key_manager.add_expired_key("test_key")
+    key_manager.add_expired_key("test_key2")
     keys = ["test_key3", "test_key2"]
     current_keys = key_manager.get_not_expired_keys(keys, recovering_time=None)
 
