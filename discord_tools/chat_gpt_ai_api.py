@@ -98,7 +98,7 @@ class ChatGPT_4_Account:
         self.api_chatgpt.email_send_code(self.email)
 
         result = self.api_gmail.wait_untill_send_message(gmail_address=self.email, timestamp=timestamp,
-                                                   sender_name="chatgate.ai")
+                                                         sender_name="chatgate.ai")
         query_dict = ChatGPT_4_Site.create_query_dict((correct_link(result)))
         self.kind, self.idToken, self.refreshToken, self.localId = self.api_chatgpt.sign_in_with_email_link(
             email=self.email,
@@ -509,8 +509,12 @@ class ChatGPT_4_Site:
 
         if "Reached your daily limit" in response.text:
             raise Exception("Reached your daily limit")
-        if 'Cookie check failed' in response.text:
+        elif 'Cookie check failed' in response.text:
             raise Exception("Cookie check failed")
+        elif 'Sorry, your query has been rejected.' in response.text:
+            raise Exception("Sorry, your query has been rejected.")
+        elif 'Sorry, your message has been rejected by moderation' in response.text:
+            raise Exception('Sorry, your message has been rejected by moderation')
 
         answer = json.loads(last_line)['reply']
 
