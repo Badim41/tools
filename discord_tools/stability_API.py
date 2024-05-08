@@ -107,7 +107,7 @@ class Stable_Diffusion_API:
 
             # Save and display result
             filename, _ = os.path.splitext(os.path.basename(image_path))
-            edited = f"images/{random_factor}edited_{filename}_{seed}.{output_format}"
+            edited = f"images/{random_factor}{filename}.{output_format}"
             with open(edited, "wb") as f:
                 f.write(output_image)
             return edited
