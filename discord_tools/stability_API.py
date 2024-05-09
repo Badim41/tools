@@ -294,7 +294,7 @@ class Stable_Diffusion_API:
 if __name__ == '__main__':
     import asyncio
     from discord_tools.image_generate import GenerateImages
-    sd = Stable_Diffusion_API(api_keys="sk-w8Pom9rlYhpLvbrV1vpoDGIywyw5EadZXMJLRZANk4o0ZefG")
+    sd = Stable_Diffusion_API(api_keys="")
     generator = GenerateImages(stable_diffusion=sd)
     images = asyncio.run(generator.generate("Tree 4K", polinations=False, waufu=False, hugging_face=False))
     print(images)
