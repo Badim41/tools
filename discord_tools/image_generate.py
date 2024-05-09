@@ -756,7 +756,7 @@ class Kandinsky_API:
 class Stability_API:
     def __init__(self, generator: GenerateImages):
 
-        self.suffix = "r1"
+        self.suffix = "r8"
         self.return_images = 1
         self.support_russian = False
         self.support_async = True
