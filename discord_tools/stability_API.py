@@ -287,7 +287,7 @@ class Stable_Diffusion_API:
 
         with open(output_path, "wb") as f:
             f.write(output_image)
-        print("saved stability as", output_image)
+        print("saved stability as", output_path)
 
         return output_path
 
