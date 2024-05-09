@@ -11,7 +11,7 @@ from requests.utils import dict_from_cookiejar
 from discord_tools.sql_db import get_database, set_database_not_async as set_database
 from discord_tools.logs import Logs, Color
 
-logger = Logs(warnings=True)
+logger = Logs(warnings=True, errors=True)
 
 # logger.logging("Astica API больше не работает!", color=Color.RED)
 

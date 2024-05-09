@@ -3,6 +3,9 @@ import re
 import requests
 import time
 from PIL import Image
+
+import json
+
 from discord_tools.logs import Logs
 from discord_tools.key_manager import KeyManager
 
@@ -227,8 +230,11 @@ class Stable_Diffusion_API:
         # seed = 0  # @param {type:"integer"}
         # output_format = "png"  # @param ["jpeg", "png"]
         # model = "sd3"  # @param ["sd3", "sd3-turbo"]
+        if not self.api_keys:
+            print("No api keys stability")
+            return False
 
-        host = f"https://api.stability.ai/v2beta/stable-image/generate/sd3"
+        host = "https://api.stability.ai/v2beta/stable-image/generate/sd3"
 
         params = {
             "prompt": prompt,
@@ -245,10 +251,15 @@ class Stable_Diffusion_API:
             "Authorization": f"Bearer {self.api_keys[0]}"
         }
 
+        # Encode parameters
+        files = {"none":""}
+
         # Send request
+        logger.logging(f"Sending REST request to {host}...")
         response = requests.post(
             host,
             headers=headers,
+            files=files,
             data=params
         )
 
@@ -278,6 +289,11 @@ class Stable_Diffusion_API:
 
         return output_path
 
-# api = Stable_Diffusion_API("^_^")
-# api.img_to_video(r"C:\Users\as280\Downloads\test.png")
-# api.search_and_replace(image_path=r"C:\Users\as280\Downloads\test.png", prompt="zoombie", search_prompt="brain")
+if __name__ == '__main__':
+    import asyncio
+    from discord_tools.image_generate import GenerateImages
+    sd = Stable_Diffusion_API(api_keys="^_^")
+    generator = GenerateImages(stable_diffusion=sd)
+    images = asyncio.run(generator.generate("Tree 4K", polinations=False, waufu=False, hugging_face=False))
+    print(images)
+
