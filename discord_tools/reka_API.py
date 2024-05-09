@@ -11,13 +11,16 @@ class MediaType:
 
 
 class Reka_API:
-    def __init__(self, app_session=None, proxies=None):
+    def __init__(self, app_session=None, proxies=None, auth_token=None):
         """
         :app_session: AppSession в Request cookie в запросе "auth/firebase_token"
         """
         self.app_session = app_session
         self.proxies = proxies
-        self.auth_key = self.get_access_key()
+        if auth_token:
+            self.auth_key = auth_token
+        else:
+            self.auth_key = self.get_access_key()
 
     def get_access_key(self):
         try:

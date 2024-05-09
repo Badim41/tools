@@ -19,6 +19,7 @@ from gradio_client import Client
 from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
+from stability_API import Stable_Diffusion_API
 
 logger = Logs(warnings=False, errors=False)
 
@@ -40,9 +41,10 @@ async def get_image_size(image_path):
 
 class GenerateImages:
     def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None, bing_cookies=None,
-                 proxies=None):
+                 proxies=None, stable_diffusion: Stable_Diffusion_API = None):
         if not os.path.exists(RESULT_PATH):
             os.mkdir(RESULT_PATH)
+
 
         if isinstance(secret_keys_kandinsky, list):
             self.secret_keys_kandinsky = secret_keys_kandinsky
@@ -76,6 +78,7 @@ class GenerateImages:
         self.proxies = proxies
         self.queue = 0
         self.hg_client = None
+        self.stable_diffusion = stable_diffusion
 
     # [Kandinsky_API, Polinations_API, CharacterAI_API, Bing_API]
     def generate_image_grid_wrapper_sync(self, model_class, image_name, prompt, zip_name=None, delete_temp=True,
@@ -749,6 +752,23 @@ class Kandinsky_API:
             return image_path
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+
+class Stability_API:
+    def __init__(self, generator: GenerateImages):
+
+        self.suffix = "r1"
+        self.return_images = 1
+        self.support_russian = False
+        self.support_async = True
+        self.proxies = generator.proxies
+        self.stable_diffusion = generator.stable_diffusion
+
+    def generate(self, prompt, image_path):
+        try:
+            self.stable_diffusion.text_to_image(prompt, output_path=image_path)
+        except:
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
+
 
 
 async def reduce_image_resolution(image_path, target_size_mb=49):

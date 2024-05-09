@@ -13,6 +13,7 @@ logger = Logs(warnings=True)
 if not os.path.exists("images"):
     os.mkdir("images")
 
+
 class FoundNSFW(Exception):
     """Когда найден небезопасный контент"""
     pass
@@ -55,7 +56,8 @@ class Stable_Diffusion_API:
                 return sk_key
         raise Exception("sk-KEY не найден.")
 
-    def search_and_replace(self, image_path, prompt, search_prompt, random_factor="", negative_prompt="", seed=0, output_format="png"):
+    def search_and_replace(self, image_path, prompt, search_prompt, random_factor="", negative_prompt="", seed=0,
+                           output_format="png"):
         if not self.api_keys:
             print("No api keys stability")
             return False
@@ -93,13 +95,14 @@ class Stable_Diffusion_API:
                     logger.logging("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
                     key_manager.add_expired_key(self.api_keys[0])
                     self.api_keys = self.api_keys[1:]
-                    return self.search_and_replace(image_path=image_path, prompt=prompt, search_prompt=search_prompt, random_factor=random_factor, negative_prompt=negative_prompt, seed=seed, output_format=output_format)
+                    return self.search_and_replace(image_path=image_path, prompt=prompt, search_prompt=search_prompt,
+                                                   random_factor=random_factor, negative_prompt=negative_prompt,
+                                                   seed=seed, output_format=output_format)
                 raise Exception(f"HTTP {response.status_code}: {response.text}")
 
             # Decode response
             output_image = response.content
             finish_reason = response.headers.get("finish-reason")
-            seed = response.headers.get("seed")
 
             # Check for NSFW classification
             if finish_reason == 'CONTENT_FILTERED':
@@ -115,6 +118,7 @@ class Stable_Diffusion_API:
             return FoundNSFW
         except Exception as e:
             logger.logging("ERROR IN SEARCH AND REPLACE:", e)
+
     @staticmethod
     def resize_image(image_path):
         # Открываем изображение
@@ -152,6 +156,7 @@ class Stable_Diffusion_API:
                     img = img.resize((576, 1024))
 
             img.save(image_path)
+
     def get_generate_video_id(self, image_path):
         self.resize_image(image_path)
         response = requests.post(
@@ -203,7 +208,6 @@ class Stable_Diffusion_API:
                 else:
                     break
 
-
             output_path = f"images/{random_factor}video.mp4"
             if response.status_code == 200:
                 logger.logging("Generation complete!")
@@ -215,6 +219,64 @@ class Stable_Diffusion_API:
         except Exception as e:
             logger.logging("ERROR IN VIDEO GENERATE:", e)
 
+    def text_to_image(self, prompt, negative_prompt="", aspect_ratio="1:1", seed=0, output_format="png", model="sd3",
+                      random_factor: [int, str] = "1", output_path=None):
+        # prompt = "Victory Day"  # @param {type:"string"}
+        # negative_prompt = ""  # @param {type:"string"}
+        # aspect_ratio = "1:1"  # @param ["21:9", "16:9", "3:2", "5:4", "1:1", "4:5", "2:3", "9:16", "9:21"]
+        # seed = 0  # @param {type:"integer"}
+        # output_format = "png"  # @param ["jpeg", "png"]
+        # model = "sd3"  # @param ["sd3", "sd3-turbo"]
+
+        host = f"https://api.stability.ai/v2beta/stable-image/generate/sd3"
+
+        params = {
+            "prompt": prompt,
+            "negative_prompt": negative_prompt if model == "sd3" else "",
+            "aspect_ratio": aspect_ratio,
+            "seed": seed,
+            "output_format": output_format,
+            "model": model,
+            "mode": "text-to-image"
+        }
+
+        headers = {
+            "Accept": "image/*",
+            "Authorization": f"Bearer {self.api_keys[0]}"
+        }
+
+        # Send request
+        response = requests.post(
+            host,
+            headers=headers,
+            data=params
+        )
+
+        if not response.ok:
+            if response.status_code == 402:
+                logger.logging("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                key_manager.add_expired_key(self.api_keys[0])
+                self.api_keys = self.api_keys[1:]
+                return self.text_to_image(prompt=prompt, negative_prompt=negative_prompt, aspect_ratio=aspect_ratio,
+                                          seed=seed, output_format=output_format, model=model)
+            raise Exception(f"HTTP {response.status_code}: {response.text}")
+
+        # Decode response
+        output_image = response.content
+        finish_reason = response.headers.get("finish-reason")
+
+        # Check for NSFW classification
+        if finish_reason == 'CONTENT_FILTERED':
+            raise Exception("Generation failed NSFW classifier")
+
+        # Save and display result
+        if not output_path:
+            output_path = f"{random_factor}.{output_format}"
+
+        with open(output_path, "wb") as f:
+            f.write(output_image)
+
+        return output_path
 
 # api = Stable_Diffusion_API("^_^")
 # api.img_to_video(r"C:\Users\as280\Downloads\test.png")
