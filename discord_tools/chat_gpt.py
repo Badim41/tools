@@ -600,7 +600,7 @@ class ChatGPT:
                 await asyncio.sleep(delay_for_gpt)
 
     async def moderation_request(self, text, error=0):
-        if error == 20:
+        if error == 3:
             return None, "Request failed"
 
         if len(text) < 3:
