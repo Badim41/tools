@@ -21,7 +21,7 @@ from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
 from discord_tools.stability_API import Stable_Diffusion_API
 
-logger = Logs(warnings=True, errors=True)
+logger = Logs(warnings=False, errors=False)
 
 user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 
