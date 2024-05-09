@@ -269,7 +269,7 @@ class Stable_Diffusion_API:
                 key_manager.add_expired_key(self.api_keys[0])
                 self.api_keys = self.api_keys[1:]
                 return self.text_to_image(prompt=prompt, negative_prompt=negative_prompt, aspect_ratio=aspect_ratio,
-                                          seed=seed, output_format=output_format, model=model)
+                                          seed=seed, output_format=output_format, model=model, output_path=output_path)
             raise Exception(f"HTTP {response.status_code}: {response.text}")
 
         # Decode response
@@ -294,7 +294,7 @@ class Stable_Diffusion_API:
 if __name__ == '__main__':
     import asyncio
     from discord_tools.image_generate import GenerateImages
-    sd = Stable_Diffusion_API(api_keys="")
+    sd = Stable_Diffusion_API(api_keys="sk-w8Pom9rlYhpLvbrV1vpoDGIywyw5EadZXMJLRZANk4o0ZefG")
     generator = GenerateImages(stable_diffusion=sd)
     images = asyncio.run(generator.generate("Tree 4K", polinations=False, waufu=False, hugging_face=False))
     print(images)
