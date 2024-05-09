@@ -761,7 +761,7 @@ class Stability_API:
         self.suffix = "r8"
         self.return_images = 1
         self.support_russian = False
-        self.support_async = True
+        self.support_async = False
         self.proxies = generator.proxies
         self.stable_diffusion = generator.stable_diffusion
 
