@@ -282,12 +282,12 @@ class Stable_Diffusion_API:
 
         # Save and display result
         if not output_path:
-            print("No output_path")
+            # print("No output_path")
             output_path = f"{random_factor}.{output_format}"
 
         with open(output_path, "wb") as f:
             f.write(output_image)
-        print("saved stability as", output_path)
+        # print("saved stability as", output_path)
 
         return output_path
 

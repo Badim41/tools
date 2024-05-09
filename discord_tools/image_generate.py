@@ -767,9 +767,9 @@ class Stability_API:
 
     def generate(self, prompt, image_path):
         try:
-            logger.logging("Stability got path:", image_path)
+            # logger.logging("Stability got path:", image_path)
             image_path = self.stable_diffusion.text_to_image(prompt, output_path=image_path)
-            logger.logging("Stability done path:", image_path)
+            # logger.logging("Stability done path:", image_path)
             return image_path
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
