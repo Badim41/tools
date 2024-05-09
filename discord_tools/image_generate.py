@@ -186,7 +186,7 @@ class GenerateImages:
                        bing_image_generator=True, astica=False, waufu=True,
                        hugging_face=True,
                        zip_name=None, delete_temp=True, bing_fast=False,
-                       row_prompt=None):
+                       row_prompt=None, stable_diffusion=True):
         self.queue += 1
 
         if not row_prompt:
@@ -216,8 +216,10 @@ class GenerateImages:
             models.append(Waifus_API)
         if hugging_face:
             models.append(Huggingface_API)
+        if stable_diffusion:
+            models.append(Stability_API)
 
-        # Награмождения для асинхроного многопоточного выполнения
+        # Награмождения для асинхроного выполнения
         tasks = [self.generate_image_grid(model_class=model,
                                    image_name=user_id,
                                    prompt=prompt,
