@@ -19,7 +19,7 @@ from gradio_client import Client
 from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
-from stability_API import Stable_Diffusion_API
+from discord_tools.stability_API import Stable_Diffusion_API
 
 logger = Logs(warnings=False, errors=False)
 
