@@ -335,6 +335,8 @@ class ChatGPT:
                 if answer and prompt not in answer:
                     return ChatGPT_Responses.gpt_official, answer
 
+        if mode == ChatGPT_Mode.fast:
+            for value in [False, True]:
                 answer = await self.run_deep_seek(messages, 1, value, user_id, gpt_role)
                 if answer:
                     return ChatGPT_Responses.deepseek, answer
