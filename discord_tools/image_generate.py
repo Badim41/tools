@@ -761,13 +761,16 @@ class Stability_API:
         self.suffix = "r8"
         self.return_images = 1
         self.support_russian = False
-        self.support_async = False# для оптимизации
+        self.support_async = True
         self.proxies = generator.proxies
         self.stable_diffusion = generator.stable_diffusion
 
     def generate(self, prompt, image_path):
         try:
-            return self.stable_diffusion.text_to_image(prompt, output_path=image_path)
+            logger.logging("Stability got path:", image_path)
+            image_path = self.stable_diffusion.text_to_image(prompt, output_path=image_path)
+            logger.logging("Stability done path:", image_path)
+            return
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
