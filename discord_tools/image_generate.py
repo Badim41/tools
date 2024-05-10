@@ -768,7 +768,7 @@ class Stability_API:
     def generate(self, prompt, image_path):
         try:
             if image_path[-5].isdigit:
-                time.sleep(int(image_path[-5])*3+0.1)
+                time.sleep(int(image_path[-5])*1.5+0.1)
                 # print("sleep", image_path[-5])
             # logger.logging("Stability got path:", image_path)
             image_path = self.stable_diffusion.text_to_image(prompt, output_path=image_path)
