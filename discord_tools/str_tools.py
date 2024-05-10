@@ -2,18 +2,28 @@ import json
 import re
 
 
-def convert_answer_to_json(answer, keys, start_symbol="{", end_symbol="}"):
+def convert_answer_to_json(answer, keys, start_symbol="{", end_symbol="}", attemtp=1):
     if isinstance(keys, str):
         keys = [keys]
 
     answer = answer.replace(" ", "")
 
-    if start_symbol in answer and end_symbol in answer:
-        answer = answer[answer.find(start_symbol):]
-        answer = answer[:answer.rfind(end_symbol) + 1]
+    if attemtp == 2:
+        if start_symbol in answer and end_symbol in answer:
+            answer = answer[answer.find(start_symbol):]
+            answer = answer[:answer.find(end_symbol) + 1]
+        else:
+            print("Не json")
+            return False, "Не json"
+    elif attemtp == 1:
+        if start_symbol in answer and end_symbol in answer:
+            answer = answer[answer.find(start_symbol):]
+            answer = answer[:answer.rfind(end_symbol) + 1]
+        else:
+            print("Не json")
+            return False, "Не json"
     else:
-        print("Не json")
-        return False, "Не json"
+        return False, "ERROR"
 
     try:
         response = json.loads(answer)
@@ -24,7 +34,7 @@ def convert_answer_to_json(answer, keys, start_symbol="{", end_symbol="}"):
         return True, response
     except json.JSONDecodeError as e:
         print("Error", e)
-        return False, str(e)
+        return convert_answer_to_json(answer=answer, keys=keys, start_symbol=start_symbol, end_symbol=end_symbol, attemtp=attemtp+1)
 
 
 def remove_emojis(text):
