@@ -215,6 +215,7 @@ def save_image_png(image_url, image_path, chunk_size=1024):
                 for chunk in response.iter_content(chunk_size=chunk_size):
                     file.write(chunk)
             print("Изображение успешно сохранено по пути:", image_path)
+            return image_path
         else:
             print("Ошибка при загрузке изображения. Код состояния:", response.status_code)
     except BaseException as e:
