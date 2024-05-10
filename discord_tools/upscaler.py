@@ -207,16 +207,18 @@ class FotorAPI:
         return expires, oss_access_key_id, signature, upload_key
 
 
-def save_image_png(image_url, image_path):
+def save_image_png(image_url, image_path, chunk_size=1024):
     try:
-        response = requests.get(image_url)
+        response = requests.get(image_url, stream=True)
         if response.status_code == 200:
-            image = Image.open(io.BytesIO(response.content))
-            image.save(image_path, "PNG")
-            return image_path
-    except Exception as e:
-        logger.logging("Ошибка при конвертации изображения:", e)
-        pass
+            with open(image_path, 'wb') as file:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    file.write(chunk)
+            print("Изображение успешно сохранено по пути:", image_path)
+        else:
+            print("Ошибка при загрузке изображения. Код состояния:", response.status_code)
+    except BaseException as e:
+        print("Ошибка при загрузке изображения:", e)
 
 
 class Upscale_Mode:
