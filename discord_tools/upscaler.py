@@ -238,6 +238,8 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
         y = int(height)
         return x, y
 
+    resize_image_if_small(image_path)
+
     if not random_factor:
         random_factor = os.path.basename(image_path)[:-4] + "_"
 
@@ -285,6 +287,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
 
 
 def remove_background(image_path, random_factor="", testing=False, only_url=False):
+    resize_image_if_small(image_path)
     fotor = FotorAPI(mode=FotorModes.upscaler, testing=testing)
     expires, oss_access_key_id, signature, upload_key = fotor.get_upload_url_remove_background()
     fotor.upload_on_url_background(image_path, expires, oss_access_key_id, signature, upload_key)
@@ -297,3 +300,29 @@ def remove_background(image_path, random_factor="", testing=False, only_url=Fals
         result_path = save_image_png(result_url, random_factor + "remove_background.png")
 
     return result_path, result_url
+
+def resize_image_if_small(image_path, target_megapixels=0.5):
+    try:
+        # Открываем изображение с помощью Pillow
+        with Image.open(image_path) as img:
+            # Получаем размеры изображения
+            width, height = img.size
+            # Вычисляем количество пикселей
+            total_pixels = width * height
+            # Количество пикселей в одном мегапикселе
+            megapixel_pixels = 1000000
+
+            # Проверяем, если количество пикселей меньше целевого значения
+            if total_pixels < target_megapixels * megapixel_pixels:
+                # Вычисляем новые размеры изображения
+                new_width = int((target_megapixels * megapixel_pixels) ** 0.5)
+                new_height = int((target_megapixels * megapixel_pixels) ** 0.5)
+                # Масштабируем изображение
+                resized_img = img.resize((new_width, new_height))
+                # Сохраняем масштабированное изображение
+                resized_img.save(image_path)
+                print("Изображение успешно масштабировано до 0.5 мегапикселей.")
+            else:
+                print("Изображение уже имеет достаточное количество пикселей.")
+    except Exception as e:
+        print("Ошибка при масштабировании изображения:", e)
