@@ -8,6 +8,7 @@ proxies = {
 
 account = ChatGPT_4_Account(proxies=proxies)
 
+# kielbasarendell.yvvh
 prompt = input("Введите запрос:")
 
 result = account.ask_gpt(prompt)

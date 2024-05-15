@@ -180,7 +180,7 @@ class ChatGPT_4_Account:
 
     def save_to_json(self, last_used=None, refresh=False):
         if last_used is None:
-            last_used = int(datetime.date.today().strftime("%Y%m%d"))
+            last_used = int(datetime.today().strftime("%Y%m%d"))
 
         try:
             with open(JSON_ACCOUNT_SAVE, 'r', encoding='utf-8') as f:
