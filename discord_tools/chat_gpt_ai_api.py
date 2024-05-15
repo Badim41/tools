@@ -284,7 +284,7 @@ class ChatGPT_4_Account:
 
         response = requests.request("POST", url, json=payload, headers=headers, params=querystring)
         print("refresh")
-        self.save_to_json(last_used=1, refresh=True)
+        self.save_to_json(refresh=True)
 
 
 class ChatGPT_4_Site:
