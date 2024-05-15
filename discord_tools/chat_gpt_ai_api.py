@@ -4,6 +4,7 @@ import json
 import os.path
 import re
 import requests
+import threading
 import time
 import urllib
 from datetime import datetime, timedelta
@@ -148,7 +149,9 @@ class ChatGPT_4_Account:
                 try:
                     if not self.bot_info["restNonce"]:
                         raise Exception("No restNonce")
-                    self.recover_account()
+
+                    threading.Thread(target=self.recover_account).start()
+
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
                                                      model=model, image_path=image_path, chat_history=chat_history,
                                                      replace_prompt=replace_prompt)
