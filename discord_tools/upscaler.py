@@ -241,6 +241,7 @@ MAX_PIXELS = 8000
 
 
 def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False, only_url=False):
+    print(image_path)
     def get_image_dimensions(file_path):
         with Image.open(file_path) as img:
             width, height = img.size
@@ -248,7 +249,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
         y = int(height)
         return x, y
 
-    resize_image_if_small(image_path)
+    resize_image_if_small_or_big(image_path)
 
     if not random_factor:
         random_factor = os.path.basename(image_path)[:-4] + "_"
@@ -297,7 +298,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
 
 
 def remove_background(image_path, random_factor="", testing=False, only_url=False):
-    resize_image_if_small(image_path)
+    resize_image_if_small_or_big(image_path)
     fotor = FotorAPI(mode=FotorModes.upscaler, testing=testing)
     expires, oss_access_key_id, signature, upload_key = fotor.get_upload_url_remove_background()
     # exit()
@@ -316,7 +317,7 @@ def remove_background(image_path, random_factor="", testing=False, only_url=Fals
 
     return result_path, result_url
 
-def resize_image_if_small(image_path, target_megapixels=0.5):
+def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=2):
     try:
         # Открываем изображение с помощью Pillow
         with Image.open(image_path) as img:
@@ -327,23 +328,37 @@ def resize_image_if_small(image_path, target_megapixels=0.5):
             # Количество пикселей в одном мегапикселе
             megapixel_pixels = 1000000
 
-            # Проверяем, если количество пикселей меньше целевого значения
-            if total_pixels < target_megapixels * megapixel_pixels:
-                # Вычисляем новые размеры изображения
-                new_width = int((target_megapixels * megapixel_pixels) ** 0.5)
-                new_height = int((target_megapixels * megapixel_pixels) ** 0.5)
+            # Проверяем, если количество пикселей меньше минимального значения
+            if total_pixels < min_megapixels * megapixel_pixels:
+                # Вычисляем коэффициент масштабирования для увеличения
+                scale_factor = (min_megapixels * megapixel_pixels / total_pixels) ** 0.5
+                # Вычисляем новые размеры изображения, сохраняя пропорции
+                new_width = int(width * scale_factor)
+                new_height = int(height * scale_factor)
                 # Масштабируем изображение
                 resized_img = img.resize((new_width, new_height))
                 # Сохраняем масштабированное изображение
                 resized_img.save(image_path)
-                print("Изображение успешно масштабировано до 0.5 мегапикселей.")
+                print("Изображение успешно увеличено до 0.5 мегапикселей.")
+            # Проверяем, если количество пикселей больше максимального значения
+            elif total_pixels > max_megapixels * megapixel_pixels:
+                # Вычисляем коэффициент масштабирования для уменьшения
+                scale_factor = (max_megapixels * megapixel_pixels / total_pixels) ** 0.5
+                # Вычисляем новые размеры изображения, сохраняя пропорции
+                new_width = int(width * scale_factor)
+                new_height = int(height * scale_factor)
+                # Масштабируем изображение
+                resized_img = img.resize((new_width, new_height))
+                # Сохраняем масштабированное изображение
+                resized_img.save(image_path)
+                print("Изображение успешно уменьшено до 2 мегапикселей.")
             else:
-                print("Изображение уже имеет достаточное количество пикселей.")
+                print("Изображение уже находится в допустимом диапазоне.")
     except Exception as e:
         print("Ошибка при масштабировании изображения:", e)
 
 
 if __name__ == '__main__':
     image_path = input("File:")
-    result_path, result_url = remove_background(image_path)
+    result_path, result_url = upscale_image(image_path, upscale_factor=Upscale_Mode.quality_8K)
     print(result_path, result_url)
