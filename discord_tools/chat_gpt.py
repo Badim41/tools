@@ -244,7 +244,10 @@ class ChatGPT:
         self.AsyncOpenAI = AsyncOpenAI
 
     async def run_all_gpt(self, prompt, mode=ChatGPT_Mode.fast, user_id=None, gpt_role=None, limited=False,
-                          translate_lang=None, chat_gpt_4=True):
+                          translate_lang=None, chat_gpt_4:[bool, str]=GPT_Models.gpt_4):
+        if chat_gpt_4 is True:
+            chat_gpt_4 = GPT_Models.gpt_4
+
         if not os.path.exists('gpt_history'):
             os.mkdir('gpt_history')
 
@@ -296,7 +299,7 @@ class ChatGPT:
         if self.chat_gpt_4 and chat_gpt_4 and mode == ChatGPT_Mode.fast:
             chat_history_temp = chat_history
             messages = get_sys_prompt(user_id, gpt_role) + trim_history(chat_history_temp, max_length=15000)
-            answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3,
+            answer = await asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=chat_gpt_4, attempts=3,
                                              image_path=None, chat_history=messages)
 
             if answer:

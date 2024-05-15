@@ -15,8 +15,29 @@ logger = Logs(warnings=True)
 JSON_ACCOUNT_SAVE = "accounts.json"
 
 
+class DailyLimitException(Exception):
+    """Reached your daily limit"""
+
+
+class CookieCheckException(Exception):
+    """Cookie check failed"""
+
+
+class QueryRejectedException(Exception):
+    """Sorry, your query has been rejected."""
+
+
+class MessageModeratedException(Exception):
+    """'Sorry, your message has been rejected by moderation'"""
+
+
+class NotLoggedException(Exception):
+    """<a href=\"https:\/\/chatgate.ai\/login\" style=\"color: #fff; text-decoration: underline; font-weight: bold;\">Click to Login<\/a> and continue."""
+
+
 class GPT_Models:
-    gpt_4 = "gpt4"  # tydbjd
+    gpt_4 = "gpt_4"# tydbjd
+    gpt_4o = "gpt_4o"# 3siv3p
     gpt_4_vision = "vision"  # kvic0w
     dalle_e_3 = "dalle-e-3"  # 5rwkvr
     claude_opus = "chat-claude-opus"  # zdmvyq
@@ -29,7 +50,8 @@ class GPT_Models:
             GPT_Models.gpt_4_vision: "chatbot-kvic0w",
             GPT_Models.dalle_e_3: "chatbot-5rwkvr",
             GPT_Models.claude_opus: "chatbot-zdmvyq",
-            GPT_Models.claude_vision: "chatbot-12oenm"
+            GPT_Models.claude_vision: "chatbot-12oenm",
+            GPT_Models.gpt_4o: "chatbot-3siv3p"
         }
         if model_name not in secret_ids:
             raise Exception("Не найден ID для модели", model_name)
@@ -71,6 +93,7 @@ class ChatGPT_4_Account:
         account = ChatGPT_4_Account.load()
         if account:
             self.__dict__.update(account.__dict__)
+            self.recover_account()
         else:
             # raise Exception("Not found account")
             for i in range(3):
@@ -108,8 +131,9 @@ class ChatGPT_4_Account:
         self.save_to_json(last_used=1)
         self.bot_info = None
 
-    def ask_gpt(self, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None, chat_history=None,
+    def ask_gpt(self, prompt, model=GPT_Models.gpt_4o, attempts=3, image_path=None, chat_history=None,
                 replace_prompt="??? ^"):
+        print("Модель GPT_ai:", model)
         try:
             if not chat_history:
                 chat_history = []
@@ -127,15 +151,15 @@ class ChatGPT_4_Account:
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
                                                      model=model, image_path=image_path, chat_history=chat_history,
                                                      replace_prompt=replace_prompt)
-                except Exception as e:
-                    if "Reached your daily limit" in str(e) or \
-                            "No restNonce" in str(e) or \
-                            "Cookie check failed" in str(e):
-                        print("Reset account")
-                        self.save_to_json()
-                        self.update_class()
-                    else:
-                        logger.logging("ERROR IN CHATGPT-4:", str(e))
+
+                except (DailyLimitException, CookieCheckException, QueryRejectedException, MessageModeratedException):
+                    print("Reset account")
+                    self.save_to_json()
+                    self.update_class()
+                except NotLoggedException:
+                    print("Delete account")
+                    self.save_to_json(last_used=20340420)
+                    self.update_class()
         except Exception as e:
             logger.logging("Error in generate GHATGPT-4:", e)
 
@@ -150,7 +174,7 @@ class ChatGPT_4_Account:
             "last_used": last_used
         }
 
-    def save_to_json(self, last_used=None):
+    def save_to_json(self, last_used=None, refresh=False):
         if last_used is None:
             last_used = int(date.today().strftime("%Y%m%d"))
 
@@ -161,16 +185,21 @@ class ChatGPT_4_Account:
             instances = []
 
         found_instance = False
+        new_instances = []
         for instance in instances:
             if instance['email'] == self.email:
+                if refresh:
+                    instance['refreshToken'] = self.refreshToken
+                    instance['idToken'] = self.idToken
                 found_instance = True
                 instance['last_used'] = last_used
+            new_instances.append(instance)
 
         if not found_instance:
-            instances.append(self.to_dict(last_used=last_used))
+            new_instances.append(self.to_dict(last_used=last_used))
 
         with open(JSON_ACCOUNT_SAVE, 'w', encoding='utf-8') as f:
-            json.dump(instances, f, ensure_ascii=False, indent=4)
+            json.dump(new_instances, f, ensure_ascii=False, indent=4)
 
     @classmethod
     def load(cls):
@@ -199,6 +228,53 @@ class ChatGPT_4_Account:
             if instance.last_used != today:
                 print("select:", instance.email)
                 return instance
+
+    def recover_account(self):
+        url = "https://securetoken.googleapis.com/v1/token"
+
+        querystring = {"key": self.api_chatgpt.apiKey}
+
+        payload = f"grant_type=refresh_token&refresh_token={self.refreshToken}"
+
+        headers = {
+            "authority": "securetoken.googleapis.com",
+            "content-type": "application/x-www-form-urlencoded",
+            "origin": "https://chatgate.ai",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "x-client-version": "Chrome/JsCore/9.6.6/FirebaseCore-web",
+        }
+
+        response = requests.request("POST", url, data=payload, headers=headers, params=querystring)
+
+        response_json = response.json()
+
+        self.refreshToken = response_json['refresh_token']
+        self.idToken = response_json['id_token']
+
+        url = "https://identitytoolkit.googleapis.com/v1/accounts:lookup"
+
+        querystring = {"key": self.api_chatgpt.apiKey}
+
+        payload = {"idToken": self.idToken}
+
+        headers = {
+            "authority": "identitytoolkit.googleapis.com",
+            "accept": "*/*",
+            "accept-language": "ru,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://chatgate.ai",
+            "sec-ch-ua-mobile": "?0",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "x-client-version": "Chrome/JsCore/9.6.6/FirebaseCore-web",
+            "x-firebase-gmpid": "1:430595938852:web:a8639030eeddf71e9d16b1"
+        }
+
+        response = requests.request("POST", url, json=payload, headers=headers, params=querystring)
+        print("refresh")
+        self.save_to_json(last_used=1, refresh=True)
 
 
 class ChatGPT_4_Site:
@@ -345,6 +421,8 @@ class ChatGPT_4_Site:
         response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
 
         result = re.search(r"data-system='(.*?)'", response.text)
+
+        print("restNonce", json.loads(html.unescape(result.group(1)))["restNonce"])
 
         if result:
             return json.loads(html.unescape(result.group(1)))
@@ -508,13 +586,15 @@ class ChatGPT_4_Site:
         logger.logging(last_line, color=Color.GRAY)
 
         if "Reached your daily limit" in response.text:
-            raise Exception("Reached your daily limit")
+            raise DailyLimitException
         elif 'Cookie check failed' in response.text:
-            raise Exception("Cookie check failed")
+            raise CookieCheckException
         elif 'Sorry, your query has been rejected.' in response.text:
-            raise Exception("Sorry, your query has been rejected.")
+            raise QueryRejectedException
         elif 'Sorry, your message has been rejected by moderation' in response.text:
-            raise Exception('Sorry, your message has been rejected by moderation')
+            raise MessageModeratedException
+        elif 'Click to Login' in response.text:
+            raise NotLoggedException
 
         answer = json.loads(last_line)['reply']
 
@@ -570,7 +650,7 @@ if __name__ == "__main__":
 
     #
     # print(account.ask_gpt(prompt="Какая ты модель GPT?"))  # _vision, image_path=r"C:\Users\as280\Downloads\temp.png"
-    for i in range(5):
+    for i in range(50):
         account = ChatGPT_4_Account()
         for i in range(10):
             try:
@@ -578,3 +658,6 @@ if __name__ == "__main__":
                 time.sleep(60)
             except Exception as e:
                 logger.logging(e)
+
+# aabdoanwaraa.bdo.anw.ar%7C1716007208%7CuYU3NdAGKkHs6mduv0pntNaePEpi191p8vZpSoKuyWy%7C184310e417e1e2b0d1fdec07492028de81d34ab39b54115b1caeffc8e22357a6
+# aabdoanwaraa.bdo.anw.ar%7C1716007208%7CuYU3NdAGKkHs6mduv0pntNaePEpi191p8vZpSoKuyWy%7C184310e417e1e2b0d1fdec07492028de81d34ab39b54115b1caeffc8e22357a6

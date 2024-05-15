@@ -6,6 +6,7 @@ from PIL import Image
 
 from discord_tools.logs import Logs, Color
 from urllib.parse import urlparse, parse_qs
+from urllib.parse import quote
 
 logger = Logs(warnings=True)
 
@@ -139,18 +140,25 @@ class FotorAPI:
                        "returnForm": "png"}
 
         payload = {}
-        response = requests.request("POST", url, json=payload, params=querystring)
+        headers = {
+            "authority": "www.fotor.com",
+            "accept": "application/json, text/plain, */*",
+            "accept-language": "ru,en;q=0.9",
+            "content-type": "application/json",
+            "origin": "https://www.fotor.com",
+            "referer": "https://www.fotor.com/ru/features/background-remover/upload",
+            "x-app-id": "app-fotor-web"
+        }
 
-        # print(response.text)
+        response = requests.request("POST", url, headers=headers, json=payload, params=querystring)
+
+        print(response.text)
         return response.json()['data']['taskId']
 
     def upload_on_url_background(self, image_path, expires, oss_access_key_id, signature, upload_key):
         url = f'https://fotor-com-cutout.oss-accelerate.aliyuncs.com/{upload_key}'
         querystring = {"Expires": expires, "OSSAccessKeyId": oss_access_key_id,
                        "Signature": signature}
-
-        with open(image_path, 'rb') as file:
-            file_content = file.read()
 
         # print("upload url", url)
 
@@ -165,12 +173,13 @@ class FotorAPI:
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "cross-site",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36",
-            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua": '"Chromium";v="122", "Not(A: Brand";v="24", "YaBrowser";v="24.4", "Yowser";v="2.5"',
+            "sec-ch-ua-mobile": "?0"
         }
+        with open(image_path, 'rb') as file_content:
+            response = requests.request("PUT", url, data=file_content, headers=headers, params=querystring)
 
-        response = requests.request("PUT", url, data=file_content, headers=headers, params=querystring)
-
-        # print(response.text, response.status_code, querystring)
+        print(response.text, response.status_code, querystring)
 
     def get_upload_url_remove_background(self):
         url = "https://www.fotor.com/api/app/cutout/v2/upload-img"
@@ -196,13 +205,13 @@ class FotorAPI:
 
         # print("Базовая часть URL без параметров:", base_url)
 
-        # print(response.text)
+        print(response.text)
 
         self.upload_url = base_url
 
         upload_key = data['uploadKey']
 
-        # print("expires, oss_access_key_id, signature, upload_key", expires, oss_access_key_id, signature, upload_key)
+        print("expires, oss_access_key_id, signature, upload_key", expires, oss_access_key_id, signature, upload_key)
 
         return expires, oss_access_key_id, signature, upload_key
 
@@ -291,8 +300,13 @@ def remove_background(image_path, random_factor="", testing=False, only_url=Fals
     resize_image_if_small(image_path)
     fotor = FotorAPI(mode=FotorModes.upscaler, testing=testing)
     expires, oss_access_key_id, signature, upload_key = fotor.get_upload_url_remove_background()
+    # exit()
     fotor.upload_on_url_background(image_path, expires, oss_access_key_id, signature, upload_key)
+    time.sleep(3)
+    input("UPLOAD?")
+    # exit()
     task_id = fotor.send_background_request(upload_key)
+    # exit()
     result_url = fotor.get_result_background(task_id)
 
     if only_url:
@@ -327,3 +341,9 @@ def resize_image_if_small(image_path, target_megapixels=0.5):
                 print("Изображение уже имеет достаточное количество пикселей.")
     except Exception as e:
         print("Ошибка при масштабировании изображения:", e)
+
+
+if __name__ == '__main__':
+    image_path = input("File:")
+    result_path, result_url = remove_background(image_path)
+    print(result_path, result_url)
