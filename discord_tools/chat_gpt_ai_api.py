@@ -195,8 +195,9 @@ class ChatGPT_4_Account:
                 if refresh:
                     instance['refreshToken'] = self.refreshToken
                     instance['idToken'] = self.idToken
+                else:
+                    instance['last_used'] = last_used
                 found_instance = True
-                instance['last_used'] = last_used
             new_instances.append(instance)
 
         if not found_instance:
