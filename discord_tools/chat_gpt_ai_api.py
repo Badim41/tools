@@ -669,6 +669,3 @@ if __name__ == "__main__":
                 time.sleep(60)
             except Exception as e:
                 logger.logging(e)
-
-# aabdoanwaraa.bdo.anw.ar%7C1716007208%7CuYU3NdAGKkHs6mduv0pntNaePEpi191p8vZpSoKuyWy%7C184310e417e1e2b0d1fdec07492028de81d34ab39b54115b1caeffc8e22357a6
-# aabdoanwaraa.bdo.anw.ar%7C1716007208%7CuYU3NdAGKkHs6mduv0pntNaePEpi191p8vZpSoKuyWy%7C184310e417e1e2b0d1fdec07492028de81d34ab39b54115b1caeffc8e22357a6
