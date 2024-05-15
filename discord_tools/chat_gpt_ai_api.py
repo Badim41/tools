@@ -1,3 +1,4 @@
+import datetime
 import html
 import json
 import os.path
@@ -5,7 +6,7 @@ import re
 import requests
 import time
 import urllib
-from datetime import date
+from datetime import datetime, timedelta
 
 from discord_tools.logs import Logs, Color
 from discord_tools.temp_gmail_test import Temp_Gmail_API
@@ -93,7 +94,6 @@ class ChatGPT_4_Account:
         account = ChatGPT_4_Account.load()
         if account:
             self.__dict__.update(account.__dict__)
-            self.recover_account()
         else:
             # raise Exception("Not found account")
             for i in range(3):
@@ -148,6 +148,7 @@ class ChatGPT_4_Account:
                 try:
                     if not self.bot_info["restNonce"]:
                         raise Exception("No restNonce")
+                    self.recover_account()
                     return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
                                                      model=model, image_path=image_path, chat_history=chat_history,
                                                      replace_prompt=replace_prompt)
@@ -176,7 +177,7 @@ class ChatGPT_4_Account:
 
     def save_to_json(self, last_used=None, refresh=False):
         if last_used is None:
-            last_used = int(date.today().strftime("%Y%m%d"))
+            last_used = int(datetime.date.today().strftime("%Y%m%d"))
 
         try:
             with open(JSON_ACCOUNT_SAVE, 'r', encoding='utf-8') as f:
@@ -223,9 +224,14 @@ class ChatGPT_4_Account:
             )
             instances.append(instance)
 
-        today = int(date.today().strftime("%Y%m%d"))
+        today = datetime.today()
         for instance in instances:
-            if instance.last_used != today:
+            this_account_last_used = str(instance.last_used)
+            if len(this_account_last_used) == 1:
+                this_account_last_used = "20200101"
+
+            last_used_date = datetime.strptime(this_account_last_used, "%Y%m%d")
+            if (today - last_used_date).days >= 1:
                 print("select:", instance.email)
                 return instance
 
@@ -320,6 +326,7 @@ class ChatGPT_4_Site:
 
         response = requests.request("GET", "https://chatgate.ai/login", data=payload, headers=headers,
                                     params=querystring, proxies=self.proxies)
+        # print("RESPONCE TEXT:", response.text)
         theme_json = ChatGPT_4_Site.get_json_from_response(response.text, "firebaseOptions")
         logger.logging("API key", theme_json['apiKey'], color=Color.GRAY)
         return theme_json['apiKey']
