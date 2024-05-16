@@ -303,3 +303,14 @@ def lower_image_resolution(image_path, max_pixels=1000000):
         new_height = int((max_pixels / current_pixels) ** 0.5 * height)
         img = img.resize((new_width, new_height))
         img.save(image_path)
+
+
+if __name__ == '__main__':
+    proxy = "socks5://localhost:5051"  # Здесь указываем порт 5051, как в вашей команде SSH
+
+    proxies = {
+        'http': proxy,
+        'https': proxy
+    }
+
+    print(describe_image(image_path=r"C:\Users\as280\Downloads\test.png", describers=[Describers_API.Iodraw], proxies=proxies))
