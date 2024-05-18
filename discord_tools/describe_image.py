@@ -77,7 +77,8 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
     Describe = 9-16s
     comment: хорошо воспринимает запрос, хорошо находит даже рукописный текст
     """
-
+    # doesnt work
+    return
     for i in range(attempts):
         if i == 2:
             proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
@@ -313,4 +314,4 @@ if __name__ == '__main__':
         'https': proxy
     }
 
-    print(describe_image(image_path=r"C:\Users\as280\Downloads\test.png", describers=[Describers_API.Iodraw], proxies=proxies))
+    print(describe_image(image_path=r"C:\Users\as280\Downloads\capha.png", describers=[Describers_API.Iodraw], proxies=proxies))

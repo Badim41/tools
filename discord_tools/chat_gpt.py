@@ -126,7 +126,7 @@ async def clear_history(user_id):
 
 def trim_history(history, max_length=4000):
     try:
-        current_length = sum(len(message["content"]) for message in history)
+        current_length = sum(len(str(message["content"])) for message in history)
         logger.logging("History length:", current_length, color=Color.GRAY)
 
         while history and current_length > max_length:

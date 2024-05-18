@@ -1,6 +1,9 @@
+import logging
 import os
 import requests
-from discord_tools.sql_db import get_database
+import threading
+
+from discord_tools.sql_db import get_database, set_database, set_database_not_async
 
 from discord_tools.str_tools import get_cookie_dict_from_response
 
@@ -10,9 +13,11 @@ class MediaType:
     image = "image"
     video = "video"
 
+
 class ConfigKeysReka:
     reka = "reka"
     app_session = "app_session"
+
 
 class Reka_API:
     def __init__(self, app_session=None, proxies=None):
@@ -28,8 +33,29 @@ class Reka_API:
         else:
             self.app_session = app_session
             self.auth_key = self.get_access_key()
+
     def get_key(self):
-        self.app_session = get_database(ConfigKeysReka.reka, ConfigKeysReka.reka)
+        try:
+            self.app_session = get_database(ConfigKeysReka.reka, ConfigKeysReka.reka)
+            self.auth_key = self.get_access_key()
+            if self.auth_key:
+                return True
+        except Exception as e:
+            print("Error in get_key reka:", e)
+
+    def save_key(self, response):
+        cookie_dict = get_cookie_dict_from_response(response)
+        if 'appSession' in cookie_dict:
+            self.app_session = cookie_dict['appSession']
+            if self.app_session:
+                set_database_not_async(ConfigKeysReka.reka, ConfigKeysReka.reka, self.app_session)
+            print("New app_session:", self.app_session)
+        else:
+            print("No app_session in cookies")
+
+    def update_app_session_thread(self):
+        self.auth_key = self.get_access_key()
+
     # def get_me(self):
     #     url = "https://chat.reka.ai/bff/auth/me"
     #
@@ -56,13 +82,13 @@ class Reka_API:
 
             response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
 
-            cookie_dict = get_cookie_dict_from_response(response)
+            self.save_key(response)
 
             url = "https://chat.reka.ai/bff/auth/access_token"
 
             payload = ""
             headers = {
-                "cookie": f"appSession={cookie_dict['appSession']}",
+                "cookie": f"appSession={self.app_session}",
             }
 
             response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
@@ -140,13 +166,15 @@ class Reka_API:
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
 
+            # self.save_key(response)
+            threading.Thread(target=self.update_app_session_thread).start()
             return response.json()['text']
         except Exception as e:
             print("Error in generate (reka):", e)
 
 
 if __name__ == "__main__":
-    api = Reka_API(app_session="app_session")
+    api = Reka_API(app_session="^_^")
     print("access key", api.auth_key)
 
     answer = api.generate(messages=[{"role": "user", "content": "Какая игра на видео?"}],

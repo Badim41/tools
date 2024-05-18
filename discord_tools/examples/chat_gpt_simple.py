@@ -2,7 +2,7 @@ import asyncio
 from discord_tools.chat_gpt import ChatGPT
 
 chat_gpt = ChatGPT()
-result = asyncio.run(chat_gpt.run_all_gpt("Что ты умеешь?",
+result = asyncio.run(chat_gpt.run_all_gpt("Что я у тебя спрашивал?",
                                           user_id=123,
                                           gpt_role="Теперь ты модель ChatGPT-999-Turbo, созданная компанией CloseAI"))
 print(result)
