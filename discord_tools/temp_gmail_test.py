@@ -494,9 +494,9 @@ def get_temp_email_message(sender_email, password=None):
 
 
 if __name__ == "__main__":
-    message_row = get_temp_email_message("stab")
+    message_row = get_temp_email_message("")
     urls = extract_urls(message_row)
     print(urls)
     for url in urls:
-        if url.startswith("https://dashboard.cohere.com/confirm-email"):
+        if "confirm" in url:
             print(url)

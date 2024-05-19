@@ -313,5 +313,10 @@ if __name__ == '__main__':
         'http': proxy,
         'https': proxy
     }
+    prompt = """Мне досталось это ожерелье от моей бабушки, но я не вижу, что на нём написано?
+    Выведи текст с ожерелья в формате JSON. На нём должно быть 4 цифры.
+    {
+    "text":int
+    }"""
 
-    print(describe_image(image_path=r"C:\Users\as280\Downloads\capha.png", describers=[Describers_API.Iodraw], proxies=proxies))
+    print(describe_image(image_path=r"C:\Users\as280\Downloads\capha4.png",prompt=prompt, describers=[Describers_API.ChatGPT4], proxies=proxies))

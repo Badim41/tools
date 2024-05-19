@@ -172,12 +172,17 @@ class Reka_API:
         except Exception as e:
             print("Error in generate (reka):", e)
 
+prompt = """Что здесь изображено?
+Выведи текст с изображения в формате JSON. На капче 4 цифры чёрного цвета.
+{
+"text":int
+}"""
 
 if __name__ == "__main__":
     api = Reka_API(app_session="^_^")
     print("access key", api.auth_key)
 
-    answer = api.generate(messages=[{"role": "user", "content": "Какая игра на видео?"}],
-                          file_path=r"C:\Users\as280\Pictures\mine-imator\falling.mp4", media_type=MediaType.video)
+    answer = api.generate(messages=[{"role": "user", "content": prompt}],
+                          file_path=r"C:\Users\as280\Downloads\capha2.png", media_type=MediaType.image)
 
     print(answer)

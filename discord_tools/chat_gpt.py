@@ -553,8 +553,11 @@ class ChatGPT:
                     model="deepseek-chat",
                     messages=messages
                 )
-
-                return response.choices[0].message.content
+                try:
+                    return response.choices[0].message.content
+                except Exception as e:
+                    self.deep_seek_keys = self.deep_seek_keys[1:]
+                    raise Exception(f"Нет ответа (deepseek): {e}")
             except Exception as e:
                 if self.testing:
                     self.logger.logging("Error in DeepSeek_1:", str(e)[:50], color=Color.GRAY)
