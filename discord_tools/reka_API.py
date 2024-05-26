@@ -73,6 +73,27 @@ class Reka_API:
 
     def get_access_key(self):
         try:
+            import requests
+
+            url = "https://chat.reka.ai/chat/orEE2JVvbdOq9NkkIzL2"
+
+            payload = ""
+            headers = {
+                "authority": "chat.reka.ai",
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "cookie": f"appSession={self.app_session}",
+                "sec-fetch-dest": "document",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "same-origin",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36"
+            }
+
+            response = requests.request("GET", url, data=payload, headers=headers)
+
+            print("chat", response.text)
+
             url = "https://chat.reka.ai/bff/auth/firebase_token"
 
             payload = ""

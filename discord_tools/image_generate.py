@@ -311,7 +311,7 @@ class Pollinations_API:
         if seed is None:
             seed = random.randint(1, 9999999)
         try:
-            image_site = f"https://image.pollinations.ai/prompt/{prompt}?&seed={seed}&nologo=true"
+            image_site = f"https://image.pollinations.ai/prompt/{prompt}?seed={seed}&nofeed=true&nologo=true"
             self.save_image(image_url=image_site, image_path=image_path)
 
             x, y = Pollinations_API.get_image_size(image_path)

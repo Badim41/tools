@@ -290,6 +290,8 @@ class Stable_Diffusion_API:
         # print("saved stability as", output_path)
 
         return output_path
+    def inpaint_image(self, image_path:str, prompt:str, mask_path=None, negative_prompt=""):
+        raise "Not working"
 
 if __name__ == '__main__':
     import asyncio
