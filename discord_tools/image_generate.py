@@ -526,7 +526,7 @@ class Bing_API:
                 "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
             }
 
-            logger.logging("Bing cookies,", self.bing_cookie)
+            # logger.logging("Bing cookies,", self.bing_cookie)
 
             response = requests.request("POST", url, data="", headers=headers, params=data,
                                         proxies=self.generator.proxies)
