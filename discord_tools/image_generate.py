@@ -531,6 +531,8 @@ class Bing_API:
             response = requests.request("POST", url, data="", headers=headers, params=data,
                                         proxies=self.generator.proxies)
 
+            logger.logging("bing cookies", self.bing_cookie)
+
             if not response.status_code == 200:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
                 continue
