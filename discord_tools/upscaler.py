@@ -304,7 +304,7 @@ def remove_background(image_path, random_factor="", testing=False, only_url=Fals
     # exit()
     fotor.upload_on_url_background(image_path, expires, oss_access_key_id, signature, upload_key)
     time.sleep(3)
-    input("UPLOAD?")
+    # input("UPLOAD?")
     # exit()
     task_id = fotor.send_background_request(upload_key)
     # exit()
@@ -360,5 +360,5 @@ def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=
 
 if __name__ == '__main__':
     image_path = input("File:")
-    result_path, result_url = upscale_image(image_path, upscale_factor=Upscale_Mode.quality_8K)
+    result_path, result_url = remove_background(image_path)
     print(result_path, result_url)
