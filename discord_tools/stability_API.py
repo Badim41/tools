@@ -8,6 +8,7 @@ import json
 
 from discord_tools.logs import Logs
 from discord_tools.key_manager import KeyManager
+from discord_tools.upscaler import resize_image_if_small_or_big
 
 key_manager = KeyManager("stability")
 
@@ -61,6 +62,7 @@ class Stable_Diffusion_API:
 
     def outpaint_image(self, image_path, prompt="", left=256, right=256, up=256, down=256, creativity=0.5, seed=0,
                        random_factor=""):
+        resize_image_if_small_or_big(image_path)
         try:
             output_format = "png"  # @param ["webp", "jpeg", "png"]
 
