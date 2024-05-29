@@ -8,7 +8,7 @@ from PIL import Image
 
 import json
 
-from upscaler import resize_image_if_small_or_big
+from discord_tools.upscaler import resize_image_if_small_or_big
 
 
 def image_to_base64(image_path):
