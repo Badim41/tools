@@ -39,12 +39,12 @@ async def get_image_size(image_path):
         logger.logging(f"Ошибка при получении размера изображения: {e}")
         return None
 
+
 class GenerateImages:
     def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None, bing_cookies=None,
-                 proxies=None, stable_diffusion: Stable_Diffusion_API = None):
+                 proxies=None, stable_diffusion: Stable_Diffusion_API = None, artbreeder_api=None):
         if not os.path.exists(RESULT_PATH):
             os.mkdir(RESULT_PATH)
-
 
         if isinstance(secret_keys_kandinsky, list):
             self.secret_keys_kandinsky = secret_keys_kandinsky
@@ -79,26 +79,29 @@ class GenerateImages:
         self.queue = 0
         self.hg_client = None
         self.stable_diffusion = stable_diffusion
+        self.artbreeder_api = artbreeder_api
 
     # [Kandinsky_API, Polinations_API, CharacterAI_API, Bing_API]
     def generate_image_grid_wrapper_sync(self, model_class, image_name, prompt, zip_name=None, delete_temp=True,
-                                         row_prompt=None):
+                                         row_prompt=None, input_image_path=None):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
         image_path = loop.run_until_complete(self.generate_image_grid(
-                model_class=model_class,
-                image_name=image_name,
-                prompt=prompt,
-                zip_name=zip_name,
-                delete_temp=delete_temp,
-                row_prompt=row_prompt
-            ))
+            model_class=model_class,
+            image_name=image_name,
+            prompt=prompt,
+            zip_name=zip_name,
+            delete_temp=delete_temp,
+            row_prompt=row_prompt,
+            input_image_path=input_image_path
+        ))
 
         loop.close()
         return image_path
 
-    async def generate_image_grid(self, model_class, image_name, prompt, row_prompt, delete_temp=True, zip_name=None):
+    async def generate_image_grid(self, model_class, image_name, prompt, row_prompt, delete_temp=True, zip_name=None,
+                                  input_image_path=None):
         def create_black_image(width, height):
             return Image.new('RGB', (width, height), (0, 0, 0))
 
@@ -116,8 +119,11 @@ class GenerateImages:
 
             try:
                 if model_instance.return_images == 1:
-                    tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png") for i in
+                    tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png",
+                                               input_image_path=input_image_path) for i in
                              range(4)]
+
+                    # input_image_path для изменения изображений
 
                     if model_instance.support_async:
                         # 4 функции сразу
@@ -186,7 +192,7 @@ class GenerateImages:
                        bing_image_generator=True, astica=False, waufu=True,
                        hugging_face=True,
                        zip_name=None, delete_temp=True, bing_fast=False,
-                       row_prompt=None, stable_diffusion=True):
+                       row_prompt=None, stable_diffusion=True, artbreeder_api=True):
         self.queue += 1
 
         if not row_prompt:
@@ -218,14 +224,16 @@ class GenerateImages:
             models.append(Huggingface_API)
         if stable_diffusion:
             models.append(Stability_API)
+        if artbreeder_api:
+            models.append(ArtbreederImageGenerateAPI)
 
         # Награмождения для асинхроного выполнения
         tasks = [self.generate_image_grid(model_class=model,
-                                   image_name=user_id,
-                                   prompt=prompt,
-                                   zip_name=zip_name,
-                                   delete_temp=delete_temp,
-                                   row_prompt=row_prompt) for model in models]
+                                          image_name=user_id,
+                                          prompt=prompt,
+                                          zip_name=zip_name,
+                                          delete_temp=delete_temp,
+                                          row_prompt=row_prompt) for model in models]
 
         task_objects = [asyncio.create_task(task) for task in tasks]
 
@@ -252,7 +260,7 @@ class Huggingface_API:
         self.support_russian = False
         self.support_async = True
 
-    def generate(self, prompt, image_path, quality=GenerateQuality.fast):
+    def generate(self, prompt, image_path, quality=GenerateQuality.fast, *args, **kwargs):
         if quality == GenerateQuality.faster:
             quality = "1-Step"
         elif quality == GenerateQuality.fast:
@@ -292,14 +300,14 @@ class Pollinations_API:
         self.support_async = False
 
     def save_image(self, image_url, image_path, timeout=GLOBAL_IMAGE_TIMEOUT):
-            try:
-                response = requests.get(image_url, timeout=timeout // 3)
-                if response.status_code == 200:
-                    image = Image.open(io.BytesIO(response.content))
-                    image.save(image_path, "PNG")
-                    return
-            except:
-                print(f"Timeout in {self.__class__.__name__}, try again")
+        try:
+            response = requests.get(image_url, timeout=timeout // 3)
+            if response.status_code == 200:
+                image = Image.open(io.BytesIO(response.content))
+                image.save(image_path, "PNG")
+                return
+        except:
+            print(f"Timeout in {self.__class__.__name__}, try again")
 
     @staticmethod
     def get_image_size(image_path):
@@ -307,7 +315,7 @@ class Pollinations_API:
             width, height = img.size
             return width, height
 
-    def generate(self, prompt, image_path, seed=None):
+    def generate(self, prompt, image_path, seed=None, *args, **kwargs):
         if seed is None:
             seed = random.randint(1, 9999999)
         try:
@@ -357,7 +365,7 @@ class CharacterAI_API:
         else:
             raise Exception("char.ai: нельзя сохранить изображение")
 
-    def generate(self, prompt, image_path):
+    def generate(self, prompt, image_path, *args, **kwargs):
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -390,7 +398,7 @@ class Astica_Desinger_API:
         self.support_russian = False
         self.support_async = True
 
-    def generate(self, prompt, image_path, quality=GenerateQuality.high):
+    def generate(self, prompt, image_path, quality=GenerateQuality.high, *args, **kwargs):
         try:
             result_path = self.api.generate_image(prompt, generate_quality=quality, image_path=image_path)
             return result_path
@@ -453,7 +461,7 @@ class Waifus_API:
         return response.text
 
     def generate(self, prompt, image_path, negative_prompt='', cfg_scale=10, denoising_strength=0.5, seed=None,
-                 model="anything"):
+                 model="anything", *args, **kwargs):
         if seed is None:
             seed = random.randint(1, 9999999)
         try:
@@ -664,7 +672,7 @@ class Bing_API:
         else:
             logger.logging(f"Ошибка при загрузке изображения. Код статуса: {response.status_code}")
 
-    def generate(self, prompt, image_path, fast=False):
+    def generate(self, prompt, image_path, fast=False, *args, **kwargs):
         try:
             rt = 4 if fast else 3
             request_id = self.get_request_id(prompt_row=prompt, rt=rt)
@@ -698,7 +706,7 @@ class Kandinsky_API:
         self.suffix = "r1"
         self.return_images = 1
         self.support_russian = True
-        self.support_async = False # ради оптимизации. Вообще поддерживает
+        self.support_async = False  # ради оптимизации. Вообще поддерживает
 
     def get_model(self):
         response = requests.get(self.URL + 'key/api/v1/models', headers=self.AUTH_HEADERS)
@@ -741,7 +749,7 @@ class Kandinsky_API:
         with open(image_path, 'wb') as file:
             file.write(image_data_binary)
 
-    def generate(self, prompt, image_path):
+    def generate(self, prompt, image_path, *args, **kwargs):
         try:
             model_id = self.get_model()
             uuid = self.generate_request(prompt, model_id)
@@ -759,6 +767,7 @@ class Kandinsky_API:
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
+
 class Stability_API:
     def __init__(self, generator: GenerateImages):
 
@@ -769,10 +778,10 @@ class Stability_API:
         self.proxies = generator.proxies
         self.stable_diffusion = generator.stable_diffusion
 
-    def generate(self, prompt, image_path):
+    def generate(self, prompt, image_path, *args, **kwargs):
         try:
             if image_path[-5].isdigit:
-                time.sleep(int(image_path[-5])*1.5+0.1)
+                time.sleep(int(image_path[-5]) * 1.5 + 0.1)
                 # print("sleep", image_path[-5])
             # logger.logging("Stability got path:", image_path)
             image_path = self.stable_diffusion.text_to_image(prompt, output_path=image_path)
@@ -781,6 +790,45 @@ class Stability_API:
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
+
+class ArtbreederImageGenerateAPI:
+    def __init__(self, generator: GenerateImages):
+
+        self.suffix = "r9"
+        self.return_images = 1
+        self.support_russian = False
+        self.support_async = True
+        self.proxies = generator.proxies
+        self.artbreeder_api = generator.artbreeder_api
+
+    def generate(self, prompt, image_path, input_image_path=None, *args, **kwargs):
+        try:
+            if input_image_path:
+                strength = 0
+                seed = random.randint(1,99999)
+
+                if image_path[-5].isdigit:
+                    if int(image_path[-5]) == 0:
+                        strength = 0.2
+                    elif int(image_path[-5]) == 1:
+                        strength = 0.3
+                    elif int(image_path[-5]) == 2:
+                        strength = 0.4
+                    elif int(image_path[-5]) == 3:
+                        strength = 0.5
+
+                if not strength:
+                    print("strength not found")
+                    strength = 0.3
+
+                image_path = self.artbreeder_api.inpaint_image(prompt, output_path=image_path, strength=strength,
+                                                               guidance_scale=2, num_steps=15, seed=seed)
+            else:
+                image_path = self.artbreeder_api.text_to_image(prompt, output_path=image_path, num_steps=15)
+
+            return image_path
+        except:
+            logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
 
 
 async def reduce_image_resolution(image_path, target_size_mb=49):

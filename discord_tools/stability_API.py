@@ -59,6 +59,71 @@ class Stable_Diffusion_API:
                 return sk_key
         raise Exception("sk-KEY не найден.")
 
+    def outpaint_image(self, image_path, prompt="", left=256, right=256, up=256, down=256, creativity=0.5, seed=0,
+                       random_factor=""):
+        try:
+            output_format = "png"  # @param ["webp", "jpeg", "png"]
+
+            host = f"https://api.stability.ai/v2beta/stable-image/edit/outpaint"
+
+            params = {
+                "left": left,
+                "right": right,
+                "up": up,
+                "down": down,
+                "prompt": prompt,
+                "creativity": creativity,
+                "seed": seed,
+                "output_format": output_format
+            }
+
+            headers = {
+                "Accept": "image/*",
+                "Authorization": f"Bearer {self.api_keys[0]}"
+            }
+
+            # Encode parameters
+            files = {}
+            files["image"] = open(image_path, 'rb')
+
+            # Send request
+            logger.logging(f"Sending REST request to {host}...")
+            response = requests.post(
+                host,
+                headers=headers,
+                files=files,
+                data=params
+            )
+            if not response.ok:
+                if response.status_code == 402:
+                    logger.logging("Недостаточно средств на балансе, удаляем ключ:", self.api_keys[0])
+                    key_manager.add_expired_key(self.api_keys[0])
+                    self.api_keys = self.api_keys[1:]
+                    return self.outpaint_image(image_path=image_path, prompt=prompt, left=left, right=right, up=up,
+                                               down=down, creativity=creativity, seed=seed,
+                                               random_factor=random_factor)
+                raise Exception(f"HTTP {response.status_code}: {response.text}")
+
+            # Decode response
+            output_image = response.content
+            finish_reason = response.headers.get("finish-reason")
+
+            # Check for NSFW classification
+            if finish_reason == 'CONTENT_FILTERED':
+                raise FoundNSFW
+
+            # Save and display result
+            filename, _ = os.path.splitext(os.path.basename(image_path))
+            edited = f"images/{random_factor}o{filename}.{output_format}"
+            with open(edited, "wb") as f:
+                f.write(output_image)
+            return edited
+
+        except FoundNSFW:
+            return FoundNSFW
+        except Exception as e:
+            logger.logging("ERROR IN OUTPAINT:", e)
+
     def search_and_replace(self, image_path, prompt, search_prompt, random_factor="", negative_prompt="", seed=0,
                            output_format="png"):
         if not self.api_keys:
@@ -252,7 +317,7 @@ class Stable_Diffusion_API:
         }
 
         # Encode parameters
-        files = {"none":""}
+        files = {"none": ""}
 
         # Send request
         logger.logging(f"Sending REST request to {host}...")
@@ -290,14 +355,16 @@ class Stable_Diffusion_API:
         # print("saved stability as", output_path)
 
         return output_path
-    def inpaint_image(self, image_path:str, prompt:str, mask_path=None, negative_prompt=""):
+
+    def inpaint_image(self, image_path: str, prompt: str, mask_path=None, negative_prompt=""):
         raise "Not working"
+
 
 if __name__ == '__main__':
     import asyncio
     from discord_tools.image_generate import GenerateImages
+
     sd = Stable_Diffusion_API(api_keys="sk-IEsYeFeu2tVUtFBC8SHnv9JutPT95yVId07RcRLoUmnPmARm")
     generator = GenerateImages(stable_diffusion=sd)
     images = asyncio.run(generator.generate("Tree 4K", polinations=False, waufu=False, hugging_face=False))
     print(images)
-

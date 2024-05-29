@@ -339,7 +339,7 @@ def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=
                 resized_img = img.resize((new_width, new_height))
                 # Сохраняем масштабированное изображение
                 resized_img.save(image_path)
-                print("Изображение успешно увеличено до 0.5 мегапикселей.")
+                print(f"Изображение успешно увеличено до {min_megapixels} мегапикселей.")
             # Проверяем, если количество пикселей больше максимального значения
             elif total_pixels > max_megapixels * megapixel_pixels:
                 # Вычисляем коэффициент масштабирования для уменьшения
@@ -351,7 +351,7 @@ def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=
                 resized_img = img.resize((new_width, new_height))
                 # Сохраняем масштабированное изображение
                 resized_img.save(image_path)
-                print("Изображение успешно уменьшено до 2 мегапикселей.")
+                print(f"Изображение успешно уменьшено до {max_megapixels} мегапикселей.")
             else:
                 print("Изображение уже находится в допустимом диапазоне.")
     except Exception as e:

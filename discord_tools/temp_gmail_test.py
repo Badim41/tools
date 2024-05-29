@@ -500,3 +500,4 @@ if __name__ == "__main__":
     for url in urls:
         if "confirm" in url:
             print(url)
+# &redirectAfterLogin=https://artbreeder.com/create]']
