@@ -18,8 +18,8 @@ def image_to_base64(image_path):
 
 def create_mask_base64(image_path):
     # Открываем исходное изображение
-    # original_image = Image.open(image_path)
-    original_width, original_height = 512, 512
+    original_image = Image.open(image_path)
+    original_width, original_height = original_image.size
     mask_width = 1024
     mask_height = 1024
     # Создаем изображение маски

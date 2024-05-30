@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from PIL import Image
 from gradio_client import Client
 
+from discord_tools.artbreeder_api import ArtbreederAPI
 from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
@@ -42,7 +43,7 @@ async def get_image_size(image_path):
 
 class GenerateImages:
     def __init__(self, secret_keys_kandinsky=None, apis_kandinsky=None, char_tokens=None, bing_cookies=None,
-                 proxies=None, stable_diffusion: Stable_Diffusion_API = None, artbreeder_api=None):
+                 proxies=None, stable_diffusion: Stable_Diffusion_API = None, artbreeder_api=ArtbreederAPI()):
         if not os.path.exists(RESULT_PATH):
             os.mkdir(RESULT_PATH)
 
