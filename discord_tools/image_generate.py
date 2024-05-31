@@ -824,6 +824,8 @@ class ArtbreederImageGenerateAPI:
             else:
                 image_path = self.artbreeder_api.text_to_image(prompt, output_path=image_path, num_steps=15)
 
+            logger.logging(f"{self.__class__.__name__} done: {image_path}")
+
             return image_path
         except:
             logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
