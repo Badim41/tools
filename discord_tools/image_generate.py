@@ -219,7 +219,8 @@ class GenerateImages:
             logger.logging("Ascite API Design-AI больше не работает!")
             # models.append(Astica_Desinger_API)
         if waufu:
-            models.append(Waifus_API)
+            logger.logging("Waifus API больше не работает!")
+            # models.append(Waifus_API)
         if hugging_face:
             models.append(Huggingface_API)
         if stable_diffusion:
