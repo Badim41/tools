@@ -364,3 +364,4 @@ if __name__ == '__main__':
     image_path = input("File:")
     result_path, result_url = remove_background(image_path)
     print(result_path, result_url)
+
