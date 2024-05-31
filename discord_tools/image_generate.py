@@ -818,8 +818,8 @@ class ArtbreederImageGenerateAPI:
                 if not strength:
                     print("strength not found")
                     strength = 0.3
-
-                image_path = self.artbreeder_api.inpaint_image(image_path=input_image_path, prompt=prompt, output_path=image_path, strength=strength,
+                shutil.copy(input_image_path, image_path)
+                image_path = self.artbreeder_api.inpaint_image(image_path=image_path, prompt=prompt, output_path=image_path, strength=strength,
                                                                guidance_scale=2, num_steps=15, seed=seed)
             else:
                 image_path = self.artbreeder_api.text_to_image(prompt, output_path=image_path, num_steps=15)
