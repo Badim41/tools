@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup as bs
 class ProxySession:
     def __init__(self, proxy_type, url=None):
         self.ip = None
+        self.proxies = None
         self.proxy_session = proxy_type(self, url=url)
         print("Текущий IP:", self.ip)
 
@@ -41,6 +42,11 @@ class ProxySession:
             try:
                 self.ip = session.get("http://icanhazip.com", timeout=1.5).text.strip()
 
+                if "Not authenticated" in self.ip or "I'm busy right now" in self.ip:
+                    continue
+
+                self.proxies = {"http": proxy, "https": proxy}
+
                 if url:
                     session.get(url)
 
@@ -53,11 +59,14 @@ class ProxySession:
         session = requests.Session()
         # установка прокси для http и https на localhost: 9050
         # для этого требуется запущенная служба Tor на вашем компьютере и прослушивание порта 9050 (по умолчанию)
-        session.proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
-        self.ip = session.get("http://icanhazip.com").text
+        proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
+        session.proxies = proxies
 
         if url:
             session.get(url)
+
+        self.ip = session.get("http://icanhazip.com").text
+        self.proxies = proxies
 
         return session
 
@@ -81,7 +90,8 @@ class ProxyTypes:
 if __name__ == "__main__":
     url = "https://astica.ai/vision/describe-images"
 
-    session = ProxySession(proxy_type=ProxyTypes.tor_proxy).proxy_session
+    proxy_manager = ProxySession(proxy_type=ProxyTypes.free_proxy_list, url=url)
+    print(proxy_manager.proxies, proxy_manager.ip)
 
     payload = ""
     headers = {
@@ -97,7 +107,7 @@ if __name__ == "__main__":
     }
 
     try:
-        response = session.get(url, data=payload, headers=headers)
+        response = requests.get(url, data=payload, headers=headers, proxies=proxy_manager.proxies)
     except requests.exceptions.TooManyRedirects:
         raise Exception("IP заблокирован")
     except Exception as e:

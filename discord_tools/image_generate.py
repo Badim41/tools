@@ -28,7 +28,7 @@ RESULT_PATH = 'images'
 GLOBAL_IMAGE_TIMEOUT = 60
 
 
-async def get_image_size(image_path):
+def get_image_size(image_path):
     try:
         with Image.open(image_path) as img:
             width, height = img.size
