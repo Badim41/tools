@@ -311,6 +311,9 @@ class Pollinations_API:
             print(f"Timeout in {self.__class__.__name__}, try again")
 
     def generate(self, prompt, image_path, seed=None, *args, **kwargs):
+        if image_path[-5].isdigit:
+            time.sleep(int(image_path[-5]) * 1.5 + 0.1)
+
         if seed is None:
             seed = random.randint(1, 9999999)
         try:
