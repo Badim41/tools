@@ -27,13 +27,15 @@ class FotorModes:
 
 
 class FotorAPI:
-    def __init__(self, mode, upscale_factor=None, testing=False):
+    def __init__(self, mode, upscale_factor=None, testing=False, proxies=None, cookies=None):
         self.key = None
         self.upload_url = None
         self.mode = mode
         self.mode_params = FotorModes.get_mode(mode, upscale_factor=upscale_factor)
         self.upscale_factor = upscale_factor
         self.testing = testing
+        self.proxies = proxies
+        self.cookies = cookies
 
     def change_mode(self):
         url = "https://www.fotor.com/api/image/sr/task/v2"
@@ -46,7 +48,7 @@ class FotorAPI:
             "x-app-id": "app-fotor-web"
         }
 
-        response = requests.request("POST", url, json=payload, headers=headers)
+        response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
 
         if self.testing:
             logger.logging("CHANGE MODE:", response.text)
@@ -63,7 +65,7 @@ class FotorAPI:
                 "key": self.key
             }
 
-            response = requests.get(url, headers=headers, params=params)
+            response = requests.get(url, headers=headers, paramsparams, proxies=self.proxies)
 
             # Проверка статуса ответа
             if response.status_code == 200:
@@ -110,7 +112,7 @@ class FotorAPI:
             "x-app-id": "app-fotor-web"
         }
 
-        response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
+        response = requests.request("GET", url, data=payload, headers=headers, params=querystring, proxies=self.proxies)
 
         if self.testing:
             logger.logging("get upload url:", response.text)
@@ -150,7 +152,7 @@ class FotorAPI:
             "x-app-id": "app-fotor-web"
         }
 
-        response = requests.request("POST", url, headers=headers, json=payload, params=querystring)
+        response = requests.request("POST", url, headers=headers, json=payload, params=querystring, proxies=self.proxies)
 
         print(response.text)
         return response.json()['data']['taskId']
@@ -187,7 +189,7 @@ class FotorAPI:
         querystring = {"mimeType": "image/png", "num": "1"}
 
         payload = ""
-        response = requests.request("GET", url, data=payload, params=querystring)
+        response = requests.request("GET", url, data=payload, params=querystring, proxies=self.proxies)
 
         data = response.json()['data'][0]
 
@@ -240,7 +242,7 @@ class Upscale_Mode:
 MAX_PIXELS = 8000
 
 
-def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False, only_url=False):
+def upscale_image(image_path, upscale_factor=None, random_factor="", testing=False, only_url=False, proxies=None):
     print(image_path)
     def get_image_dimensions(file_path):
         with Image.open(file_path) as img:
@@ -283,7 +285,7 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
                    int(get_image_dimensions(image_path)[0] * upscale_factor_val),
                    int(get_image_dimensions(image_path)[1] * upscale_factor_val))
 
-    fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor_val, testing=testing)
+    fotor = FotorAPI(mode=FotorModes.upscaler, upscale_factor=upscale_factor_val, testing=testing, proxies=proxies)
     fotor.get_upload_url_upscale()
     fotor.upload_on_url_upscale(image_path)
     fotor.change_mode()
@@ -297,9 +299,9 @@ def upscale_image(image_path, upscale_factor=None, random_factor="", testing=Fal
     return result_path, result_url
 
 
-def remove_background(image_path, random_factor="", testing=False, only_url=False):
+def remove_background(image_path, random_factor="", testing=False, only_url=False, proxies=None):
     resize_image_if_small_or_big(image_path)
-    fotor = FotorAPI(mode=FotorModes.upscaler, testing=testing)
+    fotor = FotorAPI(mode=FotorModes.upscaler, testing=testing, proxies=proxies)
     expires, oss_access_key_id, signature, upload_key = fotor.get_upload_url_remove_background()
     # exit()
     fotor.upload_on_url_background(image_path, expires, oss_access_key_id, signature, upload_key)
