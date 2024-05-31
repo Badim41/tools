@@ -807,19 +807,19 @@ class ArtbreederImageGenerateAPI:
 
                 if image_path[-5].isdigit:
                     if int(image_path[-5]) == 0:
-                        strength = 0.2
-                    elif int(image_path[-5]) == 1:
-                        strength = 0.3
-                    elif int(image_path[-5]) == 2:
                         strength = 0.4
-                    elif int(image_path[-5]) == 3:
+                    elif int(image_path[-5]) == 1:
                         strength = 0.5
+                    elif int(image_path[-5]) == 2:
+                        strength = 0.6
+                    elif int(image_path[-5]) == 3:
+                        strength = 0.7
 
                 if not strength:
                     print("strength not found")
                     strength = 0.3
 
-                image_path = self.artbreeder_api.inpaint_image(image_path=image_path, prompt=prompt, output_path=input_image_path, strength=strength,
+                image_path = self.artbreeder_api.inpaint_image(image_path=input_image_path, prompt=prompt, output_path=image_path, strength=strength,
                                                                guidance_scale=2, num_steps=15, seed=seed)
             else:
                 image_path = self.artbreeder_api.text_to_image(prompt, output_path=image_path, num_steps=15)
