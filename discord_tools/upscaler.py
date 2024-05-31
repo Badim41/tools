@@ -65,7 +65,7 @@ class FotorAPI:
                 "key": self.key
             }
 
-            response = requests.get(url, headers=headers, paramsparams, proxies=self.proxies)
+            response = requests.get(url, headers=headers, params=params, proxies=self.proxies)
 
             # Проверка статуса ответа
             if response.status_code == 200:

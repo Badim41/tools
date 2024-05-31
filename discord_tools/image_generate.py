@@ -24,8 +24,6 @@ from discord_tools.stability_API import Stable_Diffusion_API
 
 logger = Logs(warnings=True, errors=True)
 
-user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
-
 RESULT_PATH = 'images'
 GLOBAL_IMAGE_TIMEOUT = 60
 
@@ -83,23 +81,23 @@ class GenerateImages:
         self.artbreeder_api = artbreeder_api
 
     # [Kandinsky_API, Polinations_API, CharacterAI_API, Bing_API]
-    def generate_image_grid_wrapper_sync(self, model_class, image_name, prompt, zip_name=None, delete_temp=True,
-                                         row_prompt=None, input_image_path=None):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        image_path = loop.run_until_complete(self.generate_image_grid(
-            model_class=model_class,
-            image_name=image_name,
-            prompt=prompt,
-            zip_name=zip_name,
-            delete_temp=delete_temp,
-            row_prompt=row_prompt,
-            input_image_path=input_image_path
-        ))
-
-        loop.close()
-        return image_path
+    # def generate_image_grid_wrapper_sync(self, model_class, image_name, prompt, zip_name=None, delete_temp=True,
+    #                                      row_prompt=None, input_image_path=None):
+    #     loop = asyncio.new_event_loop()
+    #     asyncio.set_event_loop(loop)
+    #
+    #     image_path = loop.run_until_complete(self.generate_image_grid(
+    #         model_class=model_class,
+    #         image_name=image_name,
+    #         prompt=prompt,
+    #         zip_name=zip_name,
+    #         delete_temp=delete_temp,
+    #         row_prompt=row_prompt,
+    #         input_image_path=input_image_path
+    #     ))
+    #
+    #     loop.close()
+    #     return image_path
 
     async def generate_image_grid(self, model_class, image_name, prompt, row_prompt, delete_temp=True, zip_name=None,
                                   input_image_path=None):
@@ -213,7 +211,8 @@ class GenerateImages:
         if polinations:
             models.append(Pollinations_API)
         if character_ai and self.char_tokens:
-            models.append(CharacterAI_API)
+            logger.logging("character_ai images больше не работает!")
+            # models.append(CharacterAI_API)
         if bing_image_generator and self.bing_cookies:
             models.append(Bing_API)
         if astica:
@@ -310,12 +309,6 @@ class Pollinations_API:
         except:
             print(f"Timeout in {self.__class__.__name__}, try again")
 
-    @staticmethod
-    def get_image_size(image_path):
-        with Image.open(image_path) as img:
-            width, height = img.size
-            return width, height
-
     def generate(self, prompt, image_path, seed=None, *args, **kwargs):
         if seed is None:
             seed = random.randint(1, 9999999)
@@ -323,7 +316,7 @@ class Pollinations_API:
             image_site = f"https://image.pollinations.ai/prompt/{prompt}?seed={seed}&nofeed=true&nologo=true"
             self.save_image(image_url=image_site, image_path=image_path)
 
-            x, y = Pollinations_API.get_image_size(image_path)
+            x, y = get_image_size(image_path)
 
             if x == 1024 and y == 1024:
                 image = Image.open(image_path)
