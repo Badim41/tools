@@ -146,6 +146,8 @@ class ArtbreederAPI:
         with open(output_path, "wb") as file:
             file.write(response.content)
 
+        return output_path
+
     def inpaint_image(self, image_path, output_path, prompt="", negative_prompt="bad anatomy, low quality",
                       guidance_scale=1.5, seed=None,
                       width=None, height=None,
