@@ -15,6 +15,7 @@ setup(
         'characterai==0.8.0',
         'mtranslate==1.8',
         'websockets',
-        'cohere==5.2.6'
+        'cohere==5.2.6',
+        'gradio_client'
     ],
 )
