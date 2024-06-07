@@ -363,7 +363,7 @@ def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=
                 resized_img.save(image_path)
                 print(f"Изображение успешно уменьшено до {max_megapixels} мегапикселей.")
             elif return_pixels:
-                return new_width, new_height
+                return width, height
             else:                
                 print("Изображение уже находится в допустимом диапазоне.")
     except Exception as e:
