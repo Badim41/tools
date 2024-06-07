@@ -22,6 +22,7 @@ from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
 from discord_tools.stability_API import Stable_Diffusion_API
+from discord_tools.upscaler import resize_image_if_small_or_big
 
 logger = Logs(warnings=True, errors=True)
 
