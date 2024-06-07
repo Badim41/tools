@@ -319,7 +319,7 @@ def remove_background(image_path, random_factor="", testing=False, only_url=Fals
 
     return result_path, result_url
 
-def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=2):
+def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=2, return_pixels=False):
     try:
         # Открываем изображение с помощью Pillow
         with Image.open(image_path) as img:
@@ -337,6 +337,10 @@ def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=
                 # Вычисляем новые размеры изображения, сохраняя пропорции
                 new_width = int(width * scale_factor)
                 new_height = int(height * scale_factor)
+                
+                if return_pixels:
+                    return new_width, new_height
+                
                 # Масштабируем изображение
                 resized_img = img.resize((new_width, new_height))
                 # Сохраняем масштабированное изображение
@@ -349,12 +353,18 @@ def resize_image_if_small_or_big(image_path, min_megapixels=0.5, max_megapixels=
                 # Вычисляем новые размеры изображения, сохраняя пропорции
                 new_width = int(width * scale_factor)
                 new_height = int(height * scale_factor)
+
+                if return_pixels:
+                    return new_width, new_height
+                
                 # Масштабируем изображение
                 resized_img = img.resize((new_width, new_height))
                 # Сохраняем масштабированное изображение
                 resized_img.save(image_path)
                 print(f"Изображение успешно уменьшено до {max_megapixels} мегапикселей.")
-            else:
+            elif return_pixels:
+                return new_width, new_height
+            else:                
                 print("Изображение уже находится в допустимом диапазоне.")
     except Exception as e:
         print("Ошибка при масштабировании изображения:", e)
