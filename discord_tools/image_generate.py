@@ -809,7 +809,7 @@ class ArtbreederImageGenerateAPI:
         try:
             seed = random.randint(1,99999)
             if isinstance(input_image_path, list):
-                
+                print("merge images")
                 if image_path[-5].isdigit:
                     if int(image_path[-5]) == 0:
                         weights = self.create_equal_distribution(len(input_image_path), 0.9, 0.1)
@@ -831,6 +831,7 @@ class ArtbreederImageGenerateAPI:
                 image_path = self.artbreeder_api.merge_images(reference_images=reference_images, prompt=prompt, output_path=image_path, seed=seed,
                                                              width=width, height=height)
             elif input_image_path:
+                print("inpaint images")
                 strength = 0
 
                 if image_path[-5].isdigit:
