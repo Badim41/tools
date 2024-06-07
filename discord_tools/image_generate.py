@@ -810,15 +810,15 @@ class ArtbreederImageGenerateAPI:
                 
                 if image_path[-5].isdigit:
                     if int(image_path[-5]) == 0:
-                        weights = create_equal_distribution(len(input_image_path), 0.9, 0.1)
+                        weights = self.create_equal_distribution(len(input_image_path), 0.9, 0.1)
                     elif int(image_path[-5]) == 1:
-                        weights = create_equal_distribution(len(input_image_path), 0.1, 0.9)
+                        weights = self.create_equal_distribution(len(input_image_path), 0.1, 0.9)
                     elif int(image_path[-5]) == 2:
-                        weights = create_equal_distribution(len(input_image_path), 0.6, 0.4)
+                        weights = self.create_equal_distribution(len(input_image_path), 0.6, 0.4)
                     elif int(image_path[-5]) == 3:
-                        weights = create_equal_distribution(len(input_image_path), 0.4, 0.6)
+                        weights = self.create_equal_distribution(len(input_image_path), 0.4, 0.6)
                     else:
-                        weights = create_equal_distribution(len(input_image_path), 0.5, 0.5)
+                        weights = self.create_equal_distribution(len(input_image_path), 0.5, 0.5)
                         print("weights not found")
 
                 reference_images = []
