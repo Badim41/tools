@@ -824,8 +824,8 @@ class ArtbreederImageGenerateAPI:
                         print("weights not found")
 
                 reference_images = []
-                for i, image_path in enumerate(input_image_path):
-                    reference_images.append({"data":image_to_base64(image_path), "weight":weights[i], "referenceType":"content"})
+                for i, image_path_1 in enumerate(input_image_path):
+                    reference_images.append({"data":image_to_base64(image_path_1), "weight":weights[i], "referenceType":"content"})
 
                 width, height = resize_image_if_small_or_big(input_image_path[0], return_pixels=True, max_megapixels=1)
                 image_path = self.artbreeder_api.merge_images(reference_images=reference_images, prompt=prompt, output_path=image_path, seed=seed,
