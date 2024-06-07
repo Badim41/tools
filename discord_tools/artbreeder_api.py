@@ -80,6 +80,14 @@ class ArtbreederAPI:
                 },
             ]
         """
+        resize_image_if_small_or_big(image_path, max_megapixels=1)
+
+        if not width or not height:
+            original_image = Image.open(image_path)
+            width, height = original_image.size
+
+        print(width, height)
+        
         if seed is None:
             seed = random.randint(1111111, 9999999)
         
@@ -134,7 +142,7 @@ class ArtbreederAPI:
             'browserToken': 'ZuyyUztKaFXZXRC9vKeQ',
         }
         
-        response = requests.post('https://www.artbreeder.com/api/realTimeJobs', cookies=None, headers=headers, json=json_data)
+        response = requests.post('https://www.artbreeder.com/api/realTimeJobs', cookies=None, headers=headers, json=json_data, proxies=self.proxies)
 
         with open(output_path, "wb") as file:
             file.write(response.content)
