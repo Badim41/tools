@@ -826,7 +826,8 @@ class ArtbreederImageGenerateAPI:
                     reference_images.append({"data":image_to_base64(image_path, "weight":weights[i], "referenceType":"content"})
 
                 width, height = resize_image_if_small_or_big(input_image_path[0], return_pixels=True, max_megapixels=1)
-                image_path = self.artbreeder_api.merge_images(image_path=image_path, prompt=prompt, output_path=image_path, seed=seed)
+                image_path = self.artbreeder_api.merge_images(image_path=image_path, prompt=prompt, output_path=image_path, seed=seed,
+                                                             width=width, height=height)
             elif input_image_path:
                 strength = 0
 
