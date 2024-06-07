@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 from PIL import Image
 from gradio_client import Client
 
-from discord_tools.artbreeder_api import ArtbreederAPI
+from discord_tools.artbreeder_api import ArtbreederAPI, image_to_base64
 from discord_tools.astica_API import Astica_API, GenerateQuality
 from discord_tools.character_ai_chat import Character_AI, char_id_images
 from discord_tools.logs import Logs, Color
@@ -798,22 +798,47 @@ class ArtbreederImageGenerateAPI:
         self.support_async = True
         self.proxies = generator.proxies
         self.artbreeder_api = generator.artbreeder_api
-
+    
+    @staticmethod
+    def create_equal_distribution(N, X, Y):
+        return np.linspace(X, Y, N).tolist()
+    
     def generate(self, prompt, image_path, input_image_path=None, *args, **kwargs):
         try:
-            if input_image_path:
+            seed = random.randint(1,99999)
+            if isinstance(input_image_path, list):
+                
+                if image_path[-5].isdigit:
+                    if int(image_path[-5]) == 0:
+                        weights = create_equal_distribution(len(input_image_path), 0.9, 0.1)
+                    elif int(image_path[-5]) == 1:
+                        weights = create_equal_distribution(len(input_image_path), 0.1, 0.9)
+                    elif int(image_path[-5]) == 2:
+                        weights = create_equal_distribution(len(input_image_path), 0.6, 0.4)
+                    elif int(image_path[-5]) == 3:
+                        weights = create_equal_distribution(len(input_image_path), 0.4, 0.6)
+                    else:
+                        weights = create_equal_distribution(len(input_image_path), 0.5, 0.5)
+                        print("weights not found")
+
+                reference_images = []
+                for i, image_path in enumerate(input_image_path):
+                    reference_images.append({"data":image_to_base64(image_path, "weight":weights[i], "referenceType":"content"})
+
+                width, height = resize_image_if_small_or_big(input_image_path[0], return_pixels=True, max_megapixels=1)
+                image_path = self.artbreeder_api.merge_images(image_path=image_path, prompt=prompt, output_path=image_path, seed=seed)
+            elif input_image_path:
                 strength = 0
-                seed = random.randint(1,99999)
 
                 if image_path[-5].isdigit:
                     if int(image_path[-5]) == 0:
-                        strength = 0.4
+                        strength = 0.2
                     elif int(image_path[-5]) == 1:
-                        strength = 0.5
+                        strength = 0.3
                     elif int(image_path[-5]) == 2:
-                        strength = 0.6
+                        strength = 0.4
                     elif int(image_path[-5]) == 3:
-                        strength = 0.7
+                        strength = 0.5
 
                 if not strength:
                     print("strength not found")
