@@ -15,6 +15,7 @@ import shutil
 from bs4 import BeautifulSoup
 from PIL import Image
 from gradio_client import Client
+import numpy as np
 
 from discord_tools.artbreeder_api import ArtbreederAPI, image_to_base64
 from discord_tools.astica_API import Astica_API, GenerateQuality
