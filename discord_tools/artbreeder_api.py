@@ -80,7 +80,6 @@ class ArtbreederAPI:
                 },
             ]
         """
-        resize_image_if_small_or_big(image_path, max_megapixels=1)
 
         if not width or not height:
             original_image = Image.open(image_path)
