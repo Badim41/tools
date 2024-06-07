@@ -64,6 +64,80 @@ class ArtbreederAPI:
             image.save(output_path, "PNG")
             return output_path
         return None
+    def merge_images(self, reference_images, output_path, prompt="", negative_prompt="", seed=None, width=None, height=None, do_upres=True, do_upscale=False, enhance=True,
+                    face_change=0.75, style_change=0.75, content_content=0.75):
+        """
+        reference_images:
+                {
+                    'data': image_to_base64("/content/image 2.png"),
+                    'weight': 0.5,
+                    'referenceType': 'content',
+                },
+                {
+                    'data': image_to_base64("/content/image 1.png"),
+                    'weight': 0.9,
+                    'referenceType': 'content',
+                },
+            ]
+        """
+        if seed is None:
+            seed = random.randint(1111111, 9999999)
+        
+        headers = {
+            'accept': 'application/json',
+            'accept-language': 'ru,en-US;q=0.9,en;q=0.8',
+            'content-type': 'application/json',
+            'origin': 'https://www.artbreeder.com',
+            'priority': 'u=1, i',
+            'referer': 'https://www.artbreeder.com/create/composer?from-google=true',
+            'sec-ch-ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Linux"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        }
+        
+        json_data = {
+            'job': {
+                'name': 'sd-lightning',
+                'data': {
+                    'seed': seed,
+                    'prompt': prompt,
+                    'ip_adapter_scales': [
+                        0.5,
+                        0,
+                        0,
+                    ],
+                    'guidance_scale': 1,
+                    'width': width,
+                    'height': height,
+                    'reference_images': reference_images,
+                    'num_inference_steps': 3,
+                    'do_upres': do_upres,
+                    'do_upscale': do_upscale,
+                    'init_image': None,
+                    'init_image_strength': 0.2,
+                    'chaosScales': {
+                        'face': face_change,
+                        'style': style_change,
+                        'content': content_content,
+                    },
+                    'return_binary': True,
+                    'negative_prompt': negative_prompt,
+                    'enhance': enhance,
+                },
+                'alias': 'composer-image',
+            },
+            'environment': None,
+            'browserToken': 'ZuyyUztKaFXZXRC9vKeQ',
+        }
+        
+        response = requests.post('https://www.artbreeder.com/api/realTimeJobs', cookies=None, headers=headers, json=json_data)
+
+        with open(output_path, "wb") as file:
+            file.write(response.content)
 
     def inpaint_image(self, image_path, output_path, prompt="", negative_prompt="bad anatomy, low quality",
                       guidance_scale=1.5, seed=None,
