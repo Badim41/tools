@@ -80,12 +80,6 @@ class ArtbreederAPI:
                 },
             ]
         """
-
-        if not width or not height:
-            original_image = Image.open(image_path)
-            width, height = original_image.size
-
-        print(width, height)
         
         if seed is None:
             seed = random.randint(1111111, 9999999)
