@@ -80,8 +80,17 @@ class RecraftAPI:
         if not seed:
             seed= random.randint(111111, 999999)
 
-        operation_id = self.get_operation_id(prompt=prompt, image_type=image_type, negative_prompt=negative_prompt, complexity=complexity, rgb_colors=rgb_colors, height=height, width=width, seed=seed, background_color=background_color)
-        
+        operation_id = self.get_operation_id(
+                image_type=image_type,
+                negative_prompt=negative_prompt,
+                complexity=complexity,
+                rgb_colors=rgb_colors,
+                height=height,
+                width=width,
+                seed=seed,
+                background_color=background_color,
+                prompt=prompt  # Используйте значение переменной prompt здесь
+            )
         print("operation_id",operation_id)
 
         return self.get_result(operationId, output_path_name)
