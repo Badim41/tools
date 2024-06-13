@@ -77,8 +77,8 @@ class RecraftAPI:
         rgb_colors = [{'rgb': [int(x, 16) for x in re.findall(r'.{2}', color.upper().replace("#",""))]} for color in colors]
         background_color = {'rgb': [int(x, 16) for x in re.findall(r'.{2}', background_color.upper().replace("#",""))]}
 
-        if not random_seed:
-            random_seed= random.ranint(111111, 999999)
+        if not seed:
+            seed= random.ranint(111111, 999999)
 
         operation_id = self.get_operation_id(prompt=prompt, image_type=image_type, negative_prompt=negative_prompt, complexity=complexity, rgb_colors=rgb_colors, height=height, width=width, seed=seed, background_color=background_color)
         
