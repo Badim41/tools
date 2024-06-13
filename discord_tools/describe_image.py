@@ -116,7 +116,7 @@ def iodraw_API(image_path, prompt='What photo is this?', proxies=None, timeout=1
             time.sleep(3)
 
 
-def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, attempts=3, *args, **kwargs):
+def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, attempts=5, *args, **kwargs):
     """
     speed: fast
     Moderate = 11-13s (37s с получением ключа)
@@ -126,7 +126,7 @@ def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, at
     response_text = "not defined"
     timer = Time_Count()
     for i in range(attempts):
-        if i == 3:
+        if i == 5:
             proxies = {"http": "socks5://localhost:9050", "https": "socks5://localhost:9050"}
         try:
             account = ChatGPT_4_Account(proxies=proxies)
