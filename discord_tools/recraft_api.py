@@ -143,7 +143,7 @@ class RecraftAPI:
         headers = {
             'accept': '*/*',
             'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
-            'authorization': f'Bearer {AUTH_KEY_RECRAFT}',
+            'authorization': f'Bearer {self.auth_key_craft}',
             'origin': 'https://app.recraft.ai',
             'priority': 'u=1, i',
             'referer': 'https://app.recraft.ai/',
@@ -192,7 +192,7 @@ class RecraftAPI:
                 image_id = data['image_id']
                 print("image_id", image_id)
                 png_filename = f'{output_path_name}{i}.png'
-                headers = {'authorization': f'Bearer {AUTH_KEY_RECRAFT}'}
+                headers = {'authorization': f'Bearer {self.auth_key_craft}'}
                 response_2 = requests.get(f"https://api.recraft.ai/image/{image_id}", headers=headers)
                 if response_2.status_code == 200:
                     image = Image.open(io.BytesIO(response_2.content))
