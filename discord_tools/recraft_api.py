@@ -105,11 +105,11 @@ class RecraftAPI:
                 'x-client-type': 'web-app.recraft.ai',
             }
             
-            params = {
+        params = {
                 'project_id': self.project_id,
             }
             
-            json_data = {
+        json_data = {
                 'prompt': prompt,
                 'image_type': image_type,
                 'negative_prompt': negative_prompt,
@@ -126,9 +126,9 @@ class RecraftAPI:
                 'developer_params': {},
             }
             
-            response = requests.post('https://api.recraft.ai/queue_recraft/prompt_to_image', params=params, headers=headers, json=json_data)
+        response = requests.post('https://api.recraft.ai/queue_recraft/prompt_to_image', params=params, headers=headers, json=json_data)
             
-            return response.json()['operationId']
+        return response.json()['operationId']
     
     def get_result(operationId, output_path_name):
         headers = {
