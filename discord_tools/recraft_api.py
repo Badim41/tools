@@ -95,7 +95,7 @@ class RecraftAPI:
 
         return self.get_result(operationId, output_path_name)
         
-    def get_operation_id(prompt, image_type, negative_prompt, complexity, rgb_colors, height, width, seed, background_color):
+    def get_operation_id(self, prompt, image_type, negative_prompt, complexity, rgb_colors, height, width, seed, background_color):
         headers = {
                 'accept': '*/*',
                 'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -139,7 +139,7 @@ class RecraftAPI:
             
         return response.json()['operationId']
     
-    def get_result(operationId, output_path_name):
+    def get_result(self, operationId, output_path_name):
         headers = {
             'accept': '*/*',
             'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
