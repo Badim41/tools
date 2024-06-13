@@ -74,7 +74,7 @@ class RecraftAPI:
         self.proxies = proxies
 
     def generate_image(self, prompt, colors:list, background_color="FFFFFF", complexity=ComplexityReCraftAPI.high, image_type=ImageTypeReCraftAPI.vector_illustration, negative_prompt='', width=1024, height=1024, seed=None, number=2, output_path_name="image"):
-        rgb_colors = [{'rgb': [int(x, 16) for x in re.findall(r'.{2}', color.upper().replace("#","")]} for color in colors]
+        rgb_colors = [{'rgb': [int(x, 16) for x in re.findall(r'.{2}', color.upper().replace("#",""))]} for color in colors]
         background_color = {'rgb': [int(x, 16) for x in re.findall(r'.{2}', background_color.upper().replace("#",""))]}
 
         if not random_seed:
