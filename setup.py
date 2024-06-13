@@ -16,6 +16,8 @@ setup(
         'mtranslate==1.8',
         'websockets',
         'cohere==5.2.6',
-        'gradio_client'
+        'gradio_client',
+        'svgwrite',
+        'cairosvg'
     ],
 )
