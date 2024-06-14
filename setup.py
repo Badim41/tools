@@ -18,6 +18,7 @@ setup(
         'cohere==5.2.6',
         'gradio_client',
         'svgwrite',
-        'cairosvg'
+        'cairosvg',
+        'fake_useragent'
     ],
 )
