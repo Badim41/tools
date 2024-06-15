@@ -19,6 +19,8 @@ setup(
         'gradio_client',
         'svgwrite',
         'cairosvg',
-        'fake_useragent'
+        'fake_useragent',
+        'pydub==0.25.1',
+        'yt_dlp==2023.7.6'
     ],
 )
