@@ -123,7 +123,7 @@ class GenerateImages:
                 if model_instance.return_images == 1 or model_instance.return_images == 2:
                     tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png",
                                                input_image_path=input_image_path) for i in
-                             range(4/model_instance.return_images)]
+                             range(4//model_instance.return_images)]
 
                     # input_image_path для изменения изображений
 
@@ -226,7 +226,7 @@ class GenerateImages:
             # models.append(Waifus_API)
         if hugging_face:
             models.append(Huggingface_API)
-        if stable_diffusion:
+        if stable_diffusion and self.stable_diffusion:
             models.append(Stability_API)
         if artbreeder_api:
             models.append(ArtbreederImageGenerateAPI)
