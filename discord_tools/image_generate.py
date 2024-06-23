@@ -542,14 +542,15 @@ class Bing_API:
 
             logger.logging("bing cookies", self.bing_cookie)
 
-            if not response.status_code == 200:
-                logger.logging("Bing image status:", response.status_code, color=Color.RED)
-                continue
-
             if i >= attempts:
                 with open("temp_response_bing.txt", "w", encoding="utf-8") as writer:
                     writer.write(response.text)
                 raise Exception(f"Спустя {attempts} попыток не отправлен запрос")
+
+            if not response.status_code == 200:
+                logger.logging("Bing image status:", response.status_code, color=Color.RED)
+                return
+
 
             soup = BeautifulSoup(response.text, 'html.parser')
 

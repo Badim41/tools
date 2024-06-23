@@ -1,5 +1,8 @@
+import base64
 import json
 import re
+
+import urllib
 
 
 def convert_answer_to_json(answer, keys, start_symbol="{", end_symbol="}", attemtp=1):
@@ -61,3 +64,38 @@ def get_cookie_dict_from_response(response):
     cookies = response.cookies
     cookie_dict = {cookie.name: cookie.value for cookie in cookies}
     return cookie_dict
+
+def create_query_dict_from_url(url):
+        parsed_url = urllib.parse.urlparse(url)
+        query_params = urllib.parse.parse_qs(parsed_url.query)
+        query_dict = {}
+        for param, value in query_params.items():
+            query_dict[param] = value[0]
+
+        return query_dict
+
+
+def create_cookies_dict(cookies_str):
+    if isinstance(cookies_str, dict):
+        return cookies_str
+    elif isinstance(cookies_str, str):
+        # Разделяем строку по точке с запятой, чтобы получить список cookie-пар
+        cookies = cookies_str.split('; ')
+
+        # Создаем словарь для хранения cookie
+        cookie_dict = {}
+
+        # Проходим по списку cookie-пар
+        for cookie in cookies:
+            # Разделяем каждую пару на ключ и значение
+            key, value = cookie.split('=', 1)
+            # Добавляем ключ и значение в словарь
+            cookie_dict[key] = value
+
+        return cookie_dict
+
+    raise Exception("cookie должны быть str или dict")
+
+def image_to_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')

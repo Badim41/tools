@@ -90,9 +90,9 @@ class Reka_API:
                 "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 YaBrowser/24.4.0.0 Safari/537.36"
             }
 
-            response = requests.request("GET", url, data=payload, headers=headers)
+            response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
 
-            print("chat", response.text)
+            # print("chat", response.text)
 
             url = "https://chat.reka.ai/bff/auth/firebase_token"
 
@@ -141,6 +141,8 @@ class Reka_API:
         if not self.auth_key:
             return None
 
+        response_text = "No text"
+
         try:
             if file_path:
                 if not media_type:
@@ -186,12 +188,13 @@ class Reka_API:
             }
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
+            response_text = response.text
 
             # self.save_key(response)
             threading.Thread(target=self.update_app_session_thread).start()
             return response.json()['text']
         except Exception as e:
-            print("Error in generate (reka):", e)
+            print("Error in generate (reka):", response_text, e)
 
 prompt = """Что здесь изображено?
 Выведи текст с изображения в формате JSON. На капче 4 цифры чёрного цвета.
@@ -200,10 +203,14 @@ prompt = """Что здесь изображено?
 }"""
 
 if __name__ == "__main__":
-    api = Reka_API(app_session="^_^")
+    proxy = "socks5://localhost:5051"
+
+    proxies = {"http": proxy, "https": proxy}
+
+    api = Reka_API(app_session="^_^ app session", proxies=proxies)
     print("access key", api.auth_key)
 
     answer = api.generate(messages=[{"role": "user", "content": prompt}],
-                          file_path=r"C:\Users\as280\Downloads\capha2.png", media_type=MediaType.image)
+                          file_path=r"C:\Users\as280\Downloads\image.png", media_type=MediaType.image)
 
     print(answer)

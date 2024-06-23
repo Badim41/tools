@@ -169,7 +169,7 @@ class MailTM:
             for message_id in message_ids:
                 message_source = self.get_message_source_by_id(message_id, token=token)
                 if sender_email in message_source['from']['address']:
-                    return message_source['text']
+                    return message_source['html'][0]
             time.sleep(3)
 
 

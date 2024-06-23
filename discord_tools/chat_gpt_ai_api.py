@@ -10,6 +10,7 @@ import urllib
 from datetime import datetime, timedelta
 
 from discord_tools.logs import Logs, Color
+from discord_tools.str_tools import create_query_dict_from_url
 from discord_tools.temp_gmail_test import Temp_Gmail_API
 
 logger = Logs(warnings=True)
@@ -123,7 +124,7 @@ class ChatGPT_4_Account:
 
         result = self.api_gmail.wait_untill_send_message(gmail_address=self.email, timestamp=timestamp,
                                                          sender_name="chatgate.ai")
-        query_dict = ChatGPT_4_Site.create_query_dict((correct_link(result)))
+        query_dict = create_query_dict_from_url((correct_link(result)))
         self.kind, self.idToken, self.refreshToken, self.localId = self.api_chatgpt.sign_in_with_email_link(
             email=self.email,
             oob_code=query_dict['oobCode'])
@@ -161,7 +162,7 @@ class ChatGPT_4_Account:
                     self.save_to_json()
                     self.update_class()
                 except NotLoggedException:
-                    print("Delete account")
+                    print("Delete account chatgate ai")
                     self.save_to_json(last_used=20340420)
                     self.update_class()
         except Exception as e:
@@ -300,16 +301,6 @@ class ChatGPT_4_Site:
         if result:
             result_json = json.loads(html.unescape(result.group(1)))
             return result_json
-
-    @staticmethod
-    def create_query_dict(url):
-        parsed_url = urllib.parse.urlparse(url)
-        query_params = urllib.parse.parse_qs(parsed_url.query)
-        query_dict = {}
-        for param, value in query_params.items():
-            query_dict[param] = value[0]
-
-        return query_dict
 
     @staticmethod
     def print_cookie(response, type=""):
