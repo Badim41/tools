@@ -4,6 +4,7 @@ import math
 import os
 import random
 import requests
+import shutil
 import traceback
 from datetime import datetime
 
@@ -55,7 +56,7 @@ class DeepAI_autoreg():
         }
 
         response = requests.post('https://api.deepai.org/daily-time-sync/login/', headers=headers,
-                                 files=files)
+                                 files=files, proxies=self.proxies)
 
         self._cookies = get_cookie_dict_from_response(response)
     def send_message_on_email(self):
@@ -130,10 +131,9 @@ class DeepAI_autoreg():
 
 
 class DeepAI_API():
-    def __init__(self, proxies=None, cookies=None, create_new=True, last_used=None, email=None, password=None, attempts=3):
+    def __init__(self, proxies=None, cookies=None, create_new=True, last_used=None, email=None, password=None):
         self.proxies = proxies
         self.user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 YaBrowser/24.6.0.0 Safari/537.37'
-        self.attempts = attempts
 
         if create_new:
             try:
@@ -208,9 +208,10 @@ class DeepAI_API():
         autoreg.register_account()
 
         self.cookies = autoreg._cookies
-        self.cookies = "; ".join([f"{key}={value}" for key, value in self.cookies.items()]) + "; _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRIANCIzCGRTQxYcQ1FAH1m9MSlIoU1egDsYAM0pgZnURIjTZ8pavWaQM5jADaAXQC+QA; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; user_sees_ads=true; __gads=ID=cdb2c4129f90042b:T=1719186544:RT=1719187206:S=ALNI_MYKC43pvQCUNthSLrSKXdz3gbaZxA; __gpi=UID=00000e635f0c3cf0:T=1719186544:RT=1719187206:S=ALNI_MYWZLrDQ0JIbK-GrJx6GIBsGAWWZA; __eoi=ID=4cfbe10503afe7ce:T=1719186544:RT=1719187206:S=AA-Afjap5yPh6OH2A_svC6rW8uwr; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFedbAVgM8+21K0AZnQAuTFm3QFUqWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtmiHmGKrR0GnSwnLTQcNC0HtoOTi7u3n4AxmISrMjsXAS0howwBKogXqlxMIglALZBIGoZMMxZ7DJy4F5WEB6GogAyivJRoh4Arva0OvIeYACSACLaBBCzAHb2ABIeACp9AIoA0laKAEbodACOJ6J7AEoAVvIA4mboAJ5+hopCogtLK+sAFKGAAaGwOijMGnQqT6AHUhGACPYwGBbn17qsQABfIA; _ga_GY2GHX2J9Y=GS1.1.1719186489.1.1.1719187275.23.0.0"
-        self.email = autoreg.address #                                                           _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; __gads=ID=cdb2c4129f90042b:T=1719186544:RT=1719194581:S=ALNI_MYKC43pvQCUNthSLrSKXdz3gbaZxA; __gpi=UID=00000e635f0c3cf0:T=1719186544:RT=1719194581:S=ALNI_MYWZLrDQ0JIbK-GrJx6GIBsGAWWZA; __eoi=ID=4cfbe10503afe7ce:T=1719186544:RT=1719194581:S=AA-Afjap5yPh6OH2A_svC6rW8uwr; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06JlpoOGhaD20HJxd3bwKAsQlWVk5uWkNGGFRaLwD6mERVEF8SkDUOmGYu9i4OKq8rCA9DUQAZRXlq0Q8AV3taHRiwAEkAEW0cq7CACQ8AFR2ARQBpK0UAI3QdAAjn9RB8AEoAK3kAHEzOgAJ4FQyKISiW73CCPewAKUMAA0nl9FGYNOgAjsAOpCMAEexgMDgnaQkIgAC+QA; _ga_GY2GHX2J9Y=GS1.1.1719194583.2.1.1719194614.29.0.0
-        self.password = autoreg.password #                                                       _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; __gads=ID=cdb2c4129f90042b:T=1719186544:RT=1719194581:S=ALNI_MYKC43pvQCUNthSLrSKXdz3gbaZxA; __gpi=UID=00000e635f0c3cf0:T=1719186544:RT=1719194581:S=ALNI_MYWZLrDQ0JIbK-GrJx6GIBsGAWWZA; __eoi=ID=4cfbe10503afe7ce:T=1719186544:RT=1719194581:S=AA-Afjap5yPh6OH2A_svC6rW8uwr; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06WA5aaDhoWg9tBycXd28CgLEJVlZOblpDRhgCVRAvAIaYRBHfEpA1TphmbvYp+GqvKwgPQ1EAGUV5GtEPAFd7Wh0YsABJABFtHOuwgAkPABVdgEUAaStFACN0HQAI7-USfABKACt5ABxMzoACeBUMiiEojuDwgT3sAClDAANZ7fRRmDToAK7ADqQjABHsYDAEN2UJCIAAvkA; _ga_GY2GHX2J9Y=GS1.1.1719194583.2.1.1719194908.53.0.0
+        self.cookies = "; ".join([f"{key}={value}" for key, value in self.cookies.items()]) #+ "; _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; user_sees_ads=true; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; __gads=ID=cdb2c4129f90042b:T=1719186544:RT=1719196223:S=ALNI_MYKC43pvQCUNthSLrSKXdz3gbaZxA; __gpi=UID=00000e635f0c3cf0:T=1719186544:RT=1719196223:S=ALNI_MYWZLrDQ0JIbK-GrJx6GIBsGAWWZA; __eoi=ID=4cfbe10503afe7ce:T=1719186544:RT=1719196223:S=AA-Afjap5yPh6OH2A_svC6rW8uwr; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06WHhaaDhoWg9tBycXd28CgLEJVlZOblpDRhgSAlovAIaYRFUQXxKQNU6YZm7EXAJcabAvKwgPQ1EAGUV5GtEPAFd7Wh0YsABJABFtHLuwgAkPABUDgEUAaSsigARug6ABHIGiH4AJQAVvIAOJmdAATwKhkUQlEj2eEFe9gAUoYABpvP6KMwadABA4AdSEYAI9jAYGhB1hIRAAF8gA; _ga_GY2GHX2J9Y=GS1.1.1719194583.2.1.1719196262.50.0.0"
+        self.email = autoreg.address #                                                           _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D;bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06JlpoOGhaD20HJxd3bwKAsQlWVk5uWkNGGFRaLwD6mERVEF8SkDUOmGYu9i4OKq8rCA9DUQAZRXlq0Q8AV3taHRiwAEkAEW0cq7CACQ8AFR2ARQBpK0UAI3QdAAjn9RB8AEoAK3kAHEzOgAJ4FQyKISiW73CCPewAKUMAA0nl9FGYNOgAjsAOpCMAEexgMDgnaQkIgAC+QA; _ga_GY2GHX2J9Y=GS1.1.1719194583.2.1.1719194614.29.0.0
+        self.password = autoreg.password #                                                       _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06WA5aaDhoWg9tBycXd28CgLEJVlZOblpDRhgCVRAvAIaYRBHfEpA1TphmbvYp+GqvKwgPQ1EAGUV5GtEPAFd7Wh0YsABJABFtHOuwgAkPABVdgEUAaStFACN0HQAI7-USfABKACt5ABxMzoACeBUMiiEojuDwgT3sAClDAANZ7fRRmDToAK7ADqQjABHsYDAEN2UJCIAAvkA; _ga_GY2GHX2J9Y=GS1.1.1719194583.2.1.1719194908.53.0.0
+        #                                                                                        bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06WHhaaDhoWg9tBycXd28CgLEJVlZOblpDRhgSAlovAIaYRFUQXxKQNU6YZm7EXAJcabAvKwgPQ1EAGUV5GtEPAFd7Wh0YsABJABFtHLuwgAkPABUDgEUAaSsigARug6ABHIGiH4AJQAVvIAOJmdAATwKhkUQlEj2eEFe9gAUoYABpvP6KMwadABA4AdSEYAI9jAYGhB1hIRAAF8gA
 
         self.save_to_json(last_used=1)
 
@@ -279,8 +280,8 @@ class DeepAI_API():
             return False
         return True
 
-    def generate_image(self, prompt, image_generator_version="hd", output_path="image.png"):
-        for i in range(self.attempts):
+    def generate_image(self, prompt, image_generator_version="hd", output_path="image.png", attempts=1):
+        for i in range(attempts):
             headers = {
                 'accept': '*/*',
                 'accept-language': 'ru,en;q=0.9',
@@ -308,11 +309,16 @@ class DeepAI_API():
             if not self.check_valid_response(response):
                 continue
 
-            print(response.text, response.status_code)
-            print(response.json())
-            # TODO SAVE IMAGE
-    def generate_text(self, chat_history):
-        for i in range(self.attempts):
+            response = requests.get(response.json()['output_url'], stream=True, cookies=create_cookies_dict(self.cookies), proxies=self.proxies)
+            if response.status_code == 200:
+                with open(output_path, 'wb') as file:
+                    response.raw.decode_content = True
+                    shutil.copyfileobj(response.raw, file)
+                return output_path
+            else:
+                print("not success status code when save image", response.status_code)
+    def generate_text(self, chat_history, attempts=1):
+        for i in range(attempts):
             try:
 
                 url = 'https://api.deepai.org/hacking_is_a_serious_crime'
@@ -346,8 +352,8 @@ class DeepAI_API():
                 logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
                 return
 
-    def generate_video(self, prompt, output_file="video.mp4"):
-        for i in range(self.attempts):
+    def generate_video(self, prompt, output_file="video.mp4", attempts=1):
+        for i in range(attempts):
             headers = {
                 'accept': '*/*',
                 'accept-language': 'ru,en;q=0.9',
@@ -387,8 +393,8 @@ class DeepAI_API():
                 return output_file
             else:
                 print("Ошибка при скачивании видео:", response.status_code)
-    def generate_audio(self, prompt, output_file="audio.mp3"):
-        for i in range(self.attempts):
+    def generate_audio(self, prompt, output_file="audio.mp3", attempts=1):
+        for i in range(attempts):
             headers = {
                 'accept': '*/*',
                 'accept-language': 'ru,en;q=0.9',
@@ -424,25 +430,26 @@ if __name__ == '__main__':
     # autoreg.register_account()
     # print("_cookies")
     # exit()
-    proxy = "socks5://localhost:5052"
+    proxy = "socks5://localhost:5051"
 
     proxies = {"http": proxy, "https": proxy}
-    deep_ai_api = DeepAI_API(proxies=proxies, attempts=1, create_new=True)
+    print(requests.get("http://icanhazip.com", timeout=1.5, proxies=proxies).text.strip())
+    deep_ai_api = DeepAI_API(proxies=proxies, create_new=True)
 
     try:
-        for i in range(1000):
+        for i in range(1):
             # chat_history = [{"role":"user","content":"В комнате было 10 книг, 2 я прочитал. Сколько книг осталось в комнате?"}]
             # result = deep_ai_api.generate_text(chat_history)
             # print(f"result-text-{i}", result)
 
-            result = deep_ai_api.generate_image("cat run on street")
-            print(f"result-image-{i}", result)
-
+            # result = deep_ai_api.generate_image("cat run on street")
+            # print(f"result-image-{i}", result)
+            #
             # result = deep_ai_api.generate_video("cat run on street")
             # print(f"result-video-{i}", result)
 
-            # result = deep_ai_api.generate_audio('piano, minecraft soundtrack')
-            # print(f"result-audio-{i}", result)
+            result = deep_ai_api.generate_audio('piano, minecraft soundtrack')
+            print(f"result-audio-{i}", result)
     except DeepAIError as e:
         logger.logging("DeepAIError:", e.text)
     except Exception as e:

@@ -626,6 +626,7 @@ class Bing_API:
         if match:
             return match.group(1)
         else:
+            logger.logging(f"Error in bing AI. Not found group in:{response.text}")
             raise Exception("Совпадения не найдено")
 
     def check_generation(self, prompt_row, request_id, image_group_id, timeout=GLOBAL_IMAGE_TIMEOUT, delay=1):
