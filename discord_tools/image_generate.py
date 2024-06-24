@@ -2,20 +2,20 @@ import asyncio
 import base64
 import io
 import json
+import numpy as np
 import os
 import random
+import re
 import requests
+import shutil
 import time
 import traceback
-import zipfile
 import urllib
-import re
-import shutil
-
-from bs4 import BeautifulSoup
+import zipfile
 from PIL import Image
 from gradio_client import Client
-import numpy as np
+
+from bs4 import BeautifulSoup
 
 from discord_tools.artbreeder_api import ArtbreederAPI, image_to_base64
 from discord_tools.astica_API import Astica_API, GenerateQuality
@@ -123,7 +123,7 @@ class GenerateImages:
                 if model_instance.return_images == 1 or model_instance.return_images == 2:
                     tasks = [asyncio.to_thread(model_instance.generate, prompt, image_path + f"_{i}.png",
                                                input_image_path=input_image_path) for i in
-                             range(4//model_instance.return_images)]
+                             range(4 // model_instance.return_images)]
 
                     # input_image_path для изменения изображений
 
@@ -551,7 +551,6 @@ class Bing_API:
                 logger.logging("Bing image status:", response.status_code, color=Color.RED)
                 return
 
-
             soup = BeautifulSoup(response.text, 'html.parser')
 
             element = None
@@ -604,7 +603,9 @@ class Bing_API:
         url = 'https://www.bing.com/images/create'
         headers = {
             'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'upgrade-insecure-requests': '1',
+            "accept-language": "ru,en;q=0.9",
+            "sec-fetch-user": "?1",
+            "upgrade-insecure-requests": "1",
             'cookie': self.bing_cookie,
             'user-agent': self.user_agent
         }
@@ -802,14 +803,14 @@ class ArtbreederImageGenerateAPI:
         self.support_async = True
         self.proxies = generator.proxies
         self.artbreeder_api = generator.artbreeder_api
-    
+
     @staticmethod
     def create_equal_distribution(N, X, Y):
         return np.linspace(X, Y, N).tolist()
-    
+
     def generate(self, prompt, image_path, input_image_path=None, *args, **kwargs):
         try:
-            seed = random.randint(1,99999)
+            seed = random.randint(1, 99999)
             if isinstance(input_image_path, list):
                 print("merge images")
                 if image_path[-5].isdigit:
@@ -827,11 +828,13 @@ class ArtbreederImageGenerateAPI:
 
                 reference_images = []
                 for i, image_path_1 in enumerate(input_image_path):
-                    reference_images.append({"data":image_to_base64(image_path_1), "weight":weights[i], "referenceType":"content"})
+                    reference_images.append(
+                        {"data": image_to_base64(image_path_1), "weight": weights[i], "referenceType": "content"})
 
                 width, height = resize_image_if_small_or_big(input_image_path[0], return_pixels=True, max_megapixels=1)
-                image_path = self.artbreeder_api.merge_images(reference_images=reference_images, prompt=prompt, output_path=image_path, seed=seed,
-                                                             width=width, height=height)
+                image_path = self.artbreeder_api.merge_images(reference_images=reference_images, prompt=prompt,
+                                                              output_path=image_path, seed=seed,
+                                                              width=width, height=height)
             elif input_image_path:
                 print("inpaint images")
                 strength = 0
@@ -850,7 +853,8 @@ class ArtbreederImageGenerateAPI:
                     print("strength not found")
                     strength = 0.3
                 shutil.copy(input_image_path, image_path)
-                image_path = self.artbreeder_api.inpaint_image(image_path=image_path, prompt=prompt, output_path=image_path, strength=strength,
+                image_path = self.artbreeder_api.inpaint_image(image_path=image_path, prompt=prompt,
+                                                               output_path=image_path, strength=strength,
                                                                guidance_scale=2, num_steps=15, seed=seed)
             else:
                 image_path = self.artbreeder_api.text_to_image(prompt, output_path=image_path, num_steps=15)

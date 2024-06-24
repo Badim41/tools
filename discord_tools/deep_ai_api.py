@@ -34,7 +34,30 @@ class DeepAI_autoreg():
         self.password = None
         self.api_key = None
         self._cookies = None
+    def login(self):
+        headers = {
+            'accept': '*/*',
+            'accept-language': 'ru,en;q=0.9',
+            'origin': 'https://deepai.org',
+            'priority': 'u=1, i',
+            'sec-ch-ua': '"Chromium";v="124", "YaBrowser";v="24.6", "Not-A.Brand";v="99", "Yowser";v="2.5"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 YaBrowser/24.6.0.0 Safari/537.36',
+        }
 
+        files = {
+            'username': (None, self.address),
+            'password': (None, self.password),
+        }
+
+        response = requests.post('https://api.deepai.org/daily-time-sync/login/', headers=headers,
+                                 files=files)
+
+        self._cookies = get_cookie_dict_from_response(response)
     def send_message_on_email(self):
         url = 'https://api.deepai.org/daily-time-sync/registration/'
         headers = {
@@ -65,7 +88,6 @@ class DeepAI_autoreg():
             raise error
 
         print("send_message_on_email", response.text, response.status_code)
-        self._cookies = get_cookie_dict_from_response(response)
 
     def get_user_info(self):
         url = "https://api.deepai.org/daily-time-sync/user"
@@ -99,18 +121,12 @@ class DeepAI_autoreg():
 
         self.send_message_on_email()
 
-        # message_row = mail_tm.wait_untill_send_message(sender_email="deepai.org",
-        #                                                token=self.account['token']['token'])
-        #
-        # urls = extract_urls(message_row)
-        #
-        # print(urls)
+        self.login()
 
-        self.get_user_info()
+        # self.get_user_info()
 
-        print(f"Login: {self.address}\nPassword: {self.password}\nAPI:{self.api_key}")
+        # print(f"Login: {self.address}\nPassword: {self.password}")
 
-        # self.set_password_on_site(password=self.password, access_token=access_token)
 
 
 class DeepAI_API():
@@ -141,6 +157,7 @@ class DeepAI_API():
             for i in range(3):
                 try:
                     self.create_account()
+                    print("cookies:", self.cookies)
                     return
                 except Exception as e:
                     logger.logging("Error in create account:", e)
@@ -191,9 +208,9 @@ class DeepAI_API():
         autoreg.register_account()
 
         self.cookies = autoreg._cookies
-        self.cookies = "; ".join([f"{key}={value}" for key, value in self.cookies.items()])
-        self.email = autoreg.address
-        self.password = autoreg.password
+        self.cookies = "; ".join([f"{key}={value}" for key, value in self.cookies.items()]) + "; _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRIANCIzCGRTQxYcQ1FAH1m9MSlIoU1egDsYAM0pgZnURIjTZ8pavWaQM5jADaAXQC+QA; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; user_sees_ads=true; __gads=ID=cdb2c4129f90042b:T=1719186544:RT=1719187206:S=ALNI_MYKC43pvQCUNthSLrSKXdz3gbaZxA; __gpi=UID=00000e635f0c3cf0:T=1719186544:RT=1719187206:S=ALNI_MYWZLrDQ0JIbK-GrJx6GIBsGAWWZA; __eoi=ID=4cfbe10503afe7ce:T=1719186544:RT=1719187206:S=AA-Afjap5yPh6OH2A_svC6rW8uwr; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFedbAVgM8+21K0AZnQAuTFm3QFUqWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtmiHmGKrR0GnSwnLTQcNC0HtoOTi7u3n4AxmISrMjsXAS0howwBKogXqlxMIglALZBIGoZMMxZ7DJy4F5WEB6GogAyivJRoh4Arva0OvIeYACSACLaBBCzAHb2ABIeACp9AIoA0laKAEbodACOJ6J7AEoAVvIA4mboAJ5+hopCogtLK+sAFKGAAaGwOijMGnQqT6AHUhGACPYwGBbn17qsQABfIA; _ga_GY2GHX2J9Y=GS1.1.1719186489.1.1.1719187275.23.0.0"
+        self.email = autoreg.address #                                                           _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; __gads=ID=cdb2c4129f90042b:T=1719186544:RT=1719194581:S=ALNI_MYKC43pvQCUNthSLrSKXdz3gbaZxA; __gpi=UID=00000e635f0c3cf0:T=1719186544:RT=1719194581:S=ALNI_MYWZLrDQ0JIbK-GrJx6GIBsGAWWZA; __eoi=ID=4cfbe10503afe7ce:T=1719186544:RT=1719194581:S=AA-Afjap5yPh6OH2A_svC6rW8uwr; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06JlpoOGhaD20HJxd3bwKAsQlWVk5uWkNGGFRaLwD6mERVEF8SkDUOmGYu9i4OKq8rCA9DUQAZRXlq0Q8AV3taHRiwAEkAEW0cq7CACQ8AFR2ARQBpK0UAI3QdAAjn9RB8AEoAK3kAHEzOgAJ4FQyKISiW73CCPewAKUMAA0nl9FGYNOgAjsAOpCMAEexgMDgnaQkIgAC+QA; _ga_GY2GHX2J9Y=GS1.1.1719194583.2.1.1719194614.29.0.0
+        self.password = autoreg.password #                                                       _ga=GA1.1.1345731647.1719186490; consentUUID=ae450b60-77db-4bae-880f-6b438a0e4272_33; consentDate=2024-06-23T23:49:01.645Z; usnatUUID=a628bcb3-34d9-4c48-a634-f2135efe478b; _cc_id=a3d6e999f27c429a7ab4f684e8e0e7f1; panoramaId_expiry=1719791344906; panoramaId=1675f966d4f1aee7abd825befccc185ca02ca7dd512bb10a6d5ff65bd0dbe6b0; panoramaIdType=panoDevice; __qca=P0-278961403-1719186542213; __idcontext=eyJjb29raWVJRCI6IjJpSW5lSHJUTFFLRm9iN3ZxYnRRUmphR0E3eSIsImRldmljZUlEIjoiMmlJbmVKc1hIS29BcDdjTFdmZDJlZGRSTGpuIiwiaXYiOiIiLCJ2IjoiIn0%3D; __gads=ID=cdb2c4129f90042b:T=1719186544:RT=1719194581:S=ALNI_MYKC43pvQCUNthSLrSKXdz3gbaZxA; __gpi=UID=00000e635f0c3cf0:T=1719186544:RT=1719194581:S=ALNI_MYWZLrDQ0JIbK-GrJx6GIBsGAWWZA; __eoi=ID=4cfbe10503afe7ce:T=1719186544:RT=1719194581:S=AA-Afjap5yPh6OH2A_svC6rW8uwr; bounceClientVisit6726v=N4IgNgDiBcIBYBcEQM4FIDMBBNAmAYnvgCYCmpEAhgJYB0A9gE4DmRAtpQMZzUB2pAWjClKjXn2YC29MmCIJSADwS5qbZiAA0IRjBBkKNBiy0hqKAPrN6FlKRQpq9XjABmlMHe3mrEW-cdnNw8vEDsNaABtAF0AXyA; bounceClientVisit6726=N4IgJglmIFwgHATgIwBYDsisAYBsiAmA+AZkRJORABoQA3KWZdZFRVAVkQ4-RKUS0AZnQAuTFinjpiyWgEMA9rGy0ANgAdYIABajRGgM4BSEgEFjBAGKWrYAKb2N8iADpFAJwDmtgLbyAYx0IADt7AFo1e3kPENCvcN9FBzVbUXsAD1ECCF8vGhB5QxVaOg06WA5aaDhoWg9tBycXd28CgLEJVlZOblpDRhgCVRAvAIaYRBHfEpA1TphmbvYp+GqvKwgPQ1EAGUV5GtEPAFd7Wh0YsABJABFtHOuwgAkPABVdgEUAaStFACN0HQAI7-USfABKACt5ABxMzoACeBUMiiEojuDwgT3sAClDAANZ7fRRmDToAK7ADqQjABHsYDAEN2UJCIAAvkA; _ga_GY2GHX2J9Y=GS1.1.1719194583.2.1.1719194908.53.0.0
 
         self.save_to_json(last_used=1)
 
@@ -283,6 +300,8 @@ class DeepAI_API():
                 'text': (None, prompt),
                 'image_generator_version': (None, image_generator_version),
             }
+
+            print("send cookies:", self.cookies)
 
             response = requests.post('https://api.deepai.org/api/text2img', cookies=create_cookies_dict(self.cookies), headers=headers, files=files, proxies=self.proxies)
 
@@ -408,19 +427,22 @@ if __name__ == '__main__':
     proxy = "socks5://localhost:5052"
 
     proxies = {"http": proxy, "https": proxy}
-    deep_ai_api = DeepAI_API(proxies=proxies, attempts=1)
+    deep_ai_api = DeepAI_API(proxies=proxies, attempts=1, create_new=True)
 
     try:
         for i in range(1000):
-            chat_history = [{"role":"user","content":"В комнате было 10 книг, 2 я прочитал. Сколько книг осталось в комнате?"}]
-            result = deep_ai_api.generate_text(chat_history)
-            print(f"result-{i}", result)
+            # chat_history = [{"role":"user","content":"В комнате было 10 книг, 2 я прочитал. Сколько книг осталось в комнате?"}]
+            # result = deep_ai_api.generate_text(chat_history)
+            # print(f"result-text-{i}", result)
 
-        # result = deep_ai_api.generate_video("cat run on street")
-        # print("result", result)
+            result = deep_ai_api.generate_image("cat run on street")
+            print(f"result-image-{i}", result)
 
-        # result = deep_ai_api.generate_audio('piano, minecraft soundtrack')
-        # print("result", result)
+            # result = deep_ai_api.generate_video("cat run on street")
+            # print(f"result-video-{i}", result)
+
+            # result = deep_ai_api.generate_audio('piano, minecraft soundtrack')
+            # print(f"result-audio-{i}", result)
     except DeepAIError as e:
         logger.logging("DeepAIError:", e.text)
     except Exception as e:
