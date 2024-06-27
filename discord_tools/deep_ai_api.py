@@ -278,6 +278,7 @@ class DeepAI_API():
             self.save_to_json()
             self.update_class()
             return False
+
         return True
 
     def generate_image(self, prompt, image_generator_version="hd", output_path="image.png", attempts=1):
@@ -340,7 +341,7 @@ class DeepAI_API():
 
                 files = {
                     'chat_style': (None, 'chat'),
-                    'chatHistory': (None, str(chat_history).replace("\'","\""))
+                    'chatHistory': (None, str(chat_history).replace("\"","").replace("\'","\""))
                 }
 
                 response = requests.post(url, headers=headers, files=files, proxies=self.proxies)
@@ -348,7 +349,8 @@ class DeepAI_API():
                 if not self.check_valid_response(response):
                     continue
 
-                return response.text
+                if response.status_code == 200:
+                    return response.text
             except Exception as e:
                 logger.logging(f"error in {self.__class__.__name__}", str(traceback.format_exc()))
                 return
