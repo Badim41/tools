@@ -540,7 +540,7 @@ class ChatGPT_4_Site:
                 role = "" if role == "Ты полезный ассистент и даёшь только полезную информацию" else role
 
         # абуз бага. Сайт не принимает более 1000 символов, но запрос загружается в историю
-        if len(prompt) > 800:
+        if len(prompt) + len(role) > 800:
             if role:
                 chat_history_temp.append({"role": "user", "content": f"Role: {role}\n\n\n{prompt}"})
             else:

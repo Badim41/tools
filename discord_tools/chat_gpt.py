@@ -5,9 +5,11 @@ import requests
 import traceback
 import uuid
 import aiohttp
+from json import JSONDecodeError
 from openai.types.chat import ChatCompletionMessage
 
 from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account, GPT_Models
+from discord_tools.deep_ai_api import DeepAI_API
 from discord_tools.key_manager import KeyManager
 from discord_tools.logs import Logs, Color
 from discord_tools.character_ai_chat import Character_AI, ModerateParams
@@ -150,6 +152,7 @@ class ChatGPT_providers:
     gpt_official = "gpt_official"
     fake_gpt = "fake_gpt"
     deepseek = "deepseek"
+    deep_ai = "deep_ai"
 
 
 class ResponseGPT:
@@ -349,11 +352,19 @@ class ChatGPT:
                 if answer and prompt not in answer:
                     return ChatGPT_providers.gpt_official, answer
 
-        if mode == ChatGPT_Mode.fast:
+            answer = await asyncio.to_thread(DeepAI_API(create_new=False).generate_text, messages)
+            if answer:
+                return ChatGPT_providers.deep_ai, answer
+
             for value in [False, True]:
                 answer = await self.run_deep_seek(messages, 1, value, user_id, gpt_role)
                 if answer:
                     return ChatGPT_providers.deepseek, answer
+
+
+
+
+
 
             functions = get_fake_gpt_functions(30)
 
@@ -475,7 +486,7 @@ class ChatGPT:
             response_parts = response.split("data: ")
 
             return json.loads(response_parts[-2])['message']['content']['parts'][0]
-        except KeyError:
+        except (KeyError, JSONDecodeError):
             self.blocked_chatgpt_location = True
             if self.testing:
                 self.logger.logging("Неправильная локация для gpt-off3", color=Color.PURPLE)

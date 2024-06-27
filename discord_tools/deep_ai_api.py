@@ -318,6 +318,7 @@ class DeepAI_API():
             else:
                 print("not success status code when save image", response.status_code)
     def generate_text(self, chat_history, attempts=1):
+
         for i in range(attempts):
             try:
 
@@ -434,13 +435,13 @@ if __name__ == '__main__':
 
     proxies = {"http": proxy, "https": proxy}
     print(requests.get("http://icanhazip.com", timeout=1.5, proxies=proxies).text.strip())
-    deep_ai_api = DeepAI_API(proxies=proxies, create_new=True)
+    deep_ai_api = DeepAI_API(proxies=proxies, create_new=False)
 
     try:
         for i in range(1):
-            # chat_history = [{"role":"user","content":"В комнате было 10 книг, 2 я прочитал. Сколько книг осталось в комнате?"}]
-            # result = deep_ai_api.generate_text(chat_history)
-            # print(f"result-text-{i}", result)
+            chat_history = [{"role":"user","content":"В комнате было 10 книг, 2 я прочитал. Сколько книг осталось в комнате?"}]
+            result = deep_ai_api.generate_text(chat_history)
+            print(f"result-text-{i}", result)
 
             # result = deep_ai_api.generate_image("cat run on street")
             # print(f"result-image-{i}", result)
@@ -448,8 +449,8 @@ if __name__ == '__main__':
             # result = deep_ai_api.generate_video("cat run on street")
             # print(f"result-video-{i}", result)
 
-            result = deep_ai_api.generate_audio('piano, minecraft soundtrack')
-            print(f"result-audio-{i}", result)
+            # result = deep_ai_api.generate_audio('piano, minecraft soundtrack')
+            # print(f"result-audio-{i}", result)
     except DeepAIError as e:
         logger.logging("DeepAIError:", e.text)
     except Exception as e:
