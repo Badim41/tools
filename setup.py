@@ -21,6 +21,7 @@ setup(
         'cairosvg',
         'fake_useragent',
         'pydub==0.25.1',
-        'yt_dlp==2023.7.6'
+        'yt_dlp==2023.7.6',
+        'PyExecJS'
     ],
 )
