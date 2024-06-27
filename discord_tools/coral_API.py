@@ -216,7 +216,7 @@ class Coral_API:
             }
 
             response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
-            if response.status_code == 429:
+            if response.status_code == 429 or "{'message': 'invalid api token'}" in response.text:
                 if not error == 25 and self.api_keys:
                     key_manager.add_expired_key(self.api_keys[0])
                     self.api_keys = self.api_keys[1:]
