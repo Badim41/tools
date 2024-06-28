@@ -3,6 +3,7 @@ import os
 import requests
 import time
 from PIL import Image
+from discord_tools.str_tools import convert_answer_to_json
 
 from discord_tools.chat_gpt_ai_api import ChatGPT_4_Account
 from discord_tools.logs import Logs, Color
@@ -194,7 +195,7 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
 
 
 def reka_recognize_image(image_path, reka_api, prompt="",
-                         attempts=2, *args, **kwargs):
+                         attempts=2, detect_bad_image=False, *args, **kwargs):
     """
     speed: very slow
     Describe = 25-30s
@@ -207,6 +208,20 @@ def reka_recognize_image(image_path, reka_api, prompt="",
     if not prompt:
         prompt = "Подробно опиши, что изображено на картинке"
 
+    if detect_bad_image:
+        prompt = (
+            "Тебе нужно модерировать входящие изображения."
+            "Вот категории, которые тебе нужно модерировать:"
+            "'sexual', 'hate', 'harassment', 'self-harm', 'sexual/minors', 'hate/threatening', 'violence/graphic', 'self-harm/intent', 'self-harm/instructions', 'harassment/threatening', 'violence'"
+            "Выведи ответ в json формате, например:\n"
+            "# Примеры ответа"
+            "## Запрос 1: Картинка с невежливым человеком.\n"
+            '## Ответ 1: {"blocked": false, "category": "None"}.\n'
+            "## Запрос 2: Картинка с обнаженным человеком.\n"
+            '## Ответ 2: {"blocked": true, "category": "sexual"}.\n'
+            f"Вот изображение, на которое тебе нужно будет ответить:"
+        )
+
     for i in range(attempts):
         try:
             text = reka_api.generate(file_path=image_path, media_type=MediaType.image,
@@ -215,12 +230,18 @@ def reka_recognize_image(image_path, reka_api, prompt="",
                 return
 
             # logger.logging("Response from server:", text, color=Color.GRAY)
+            if detect_bad_image:
+                converted, result_json = convert_answer_to_json(text, keys=["blocked", "category"])
 
-            # Хотя бы так?
-            for ban_word in ban_words:
-                for word in text.split(" "):
-                    if (word.lower() + " ").startswith(ban_word):
+                if converted:
+                    if result_json['blocked']:
                         return True, text
+            else:
+                # Хотя бы так?
+                for ban_word in ban_words:
+                    for word in text.split(" "):
+                        if (word.lower() + " ").startswith(ban_word):
+                            return True, text
 
             return False, text
         except Exception as e:
@@ -252,7 +273,7 @@ def detect_bad_image(image_path, isAdultContent=True, isRacyContent=True, isGory
             timer = Time_Count()
             nsfw, _ = describer_method(image_path, prompt='', isAdultContent=isAdultContent,
                                        isRacyContent=isRacyContent, isGoryContent=isGoryContent, proxies=proxies,
-                                       reka_api=reka_api)
+                                       reka_api=reka_api, detect_bad_image=True)
             print("Detect bad image:", nsfw, _, str(describer_method), timer.count_time(ignore_error=True))
             return nsfw
         except Exception as e:
