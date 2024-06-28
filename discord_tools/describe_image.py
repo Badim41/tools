@@ -132,7 +132,7 @@ def chat_gpt_4_vision(image_path, prompt='What photo is this?', proxies=None, at
             account = ChatGPT_4_Account(proxies=proxies)
             result = account.ask_gpt(prompt=prompt, image_path=image_path)
             ban_results = ["I'm sorry", "Sorry, I can't", "I can't help", "I can't assist", "I can't provide"]
-            print(timer.count_time(ignore_error=True))
+            # print(timer.count_time(ignore_error=True))
             for ban_result in ban_results:
                 if ban_result in result:
                     return True, result

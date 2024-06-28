@@ -540,7 +540,7 @@ class Bing_API:
             response = requests.request("POST", url, data="", headers=headers, params=data,
                                         proxies=self.generator.proxies)
 
-            logger.logging("bing cookies", self.bing_cookie)
+            # logger.logging("bing cookies", self.bing_cookie)
 
             if i >= attempts:
                 with open("temp_response_bing.txt", "w", encoding="utf-8") as writer:

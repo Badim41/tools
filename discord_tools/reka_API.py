@@ -3,10 +3,12 @@ import os
 import requests
 import threading
 
+from discord_tools.logs import Logs
 from discord_tools.sql_db import get_database, set_database, set_database_not_async
 
 from discord_tools.str_tools import get_cookie_dict_from_response
 
+logger = Logs(warnings=True)
 
 class MediaType:
     pdf = "pdf"
@@ -29,7 +31,7 @@ class Reka_API:
         got_keys = self.get_key()
 
         if got_keys:
-            print("Use existing app_session")
+            logger.logging("Use existing app_session")
         else:
             self.app_session = app_session
             self.auth_key = self.get_access_key()
@@ -41,7 +43,7 @@ class Reka_API:
             if self.auth_key:
                 return True
         except Exception as e:
-            print("Error in get_key reka:", e)
+            logger.logging("Error in get_key reka:", e)
 
     def save_key(self, response):
         cookie_dict = get_cookie_dict_from_response(response)
@@ -49,9 +51,9 @@ class Reka_API:
             self.app_session = cookie_dict['appSession']
             if self.app_session:
                 set_database_not_async(ConfigKeysReka.reka, ConfigKeysReka.reka, self.app_session)
-            print("New app_session:", self.app_session)
+            # logger.logging("New app_session:", self.app_session)
         else:
-            print("No app_session in cookies")
+            logger.logging("No app_session in cookies")
 
     def update_app_session_thread(self):
         self.auth_key = self.get_access_key()
@@ -68,8 +70,8 @@ class Reka_API:
     #
     #     cookie_dict = get_cookie_dict_from_response(response)
     #
-    #     print(cookie_dict)
-    #     print("appSession", cookie_dict['appSession'])
+    #     logger.logging(cookie_dict)
+    #     logger.logging("appSession", cookie_dict['appSession'])
 
     def get_access_key(self):
         try:
@@ -92,7 +94,7 @@ class Reka_API:
 
             response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
 
-            # print("chat", response.text)
+            # logger.logging("chat", response.text)
 
             url = "https://chat.reka.ai/bff/auth/firebase_token"
 
@@ -115,7 +117,7 @@ class Reka_API:
             response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
             return response.json()['accessToken']
         except Exception as e:
-            print("Error in get access key:", e)
+            logger.logging("Error in get access key:", e)
 
     def upload_file(self, file_path):
         if not os.path.exists(file_path):
@@ -174,7 +176,7 @@ class Reka_API:
                     }]
                 else:
                     transformed_messages.append({"type": role, "text": message})
-            # print("MESSAGES:", transformed_messages)
+            # logger.logging("MESSAGES:", transformed_messages)
             payload = {
                 "conversation_history": transformed_messages,
                 "stream": False,
@@ -194,7 +196,7 @@ class Reka_API:
             threading.Thread(target=self.update_app_session_thread).start()
             return response.json()['text']
         except Exception as e:
-            print("Error in generate (reka):", response_text, e)
+            logger.logging("Error in generate (reka):", response_text, e)
 
 prompt = """Что здесь изображено?
 Выведи текст с изображения в формате JSON. На капче 4 цифры чёрного цвета.
