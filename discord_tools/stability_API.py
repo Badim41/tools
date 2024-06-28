@@ -104,6 +104,8 @@ class Stable_Diffusion_API:
                     return self.outpaint_image(image_path=image_path, prompt=prompt, left=left, right=right, up=up,
                                                down=down, creativity=creativity, seed=seed,
                                                random_factor=random_factor)
+                if "Your request was flagged" in response.text:
+                    return FoundNSFW
                 raise Exception(f"HTTP {response.status_code}: {response.text}")
 
             # Decode response
@@ -168,6 +170,8 @@ class Stable_Diffusion_API:
                     return self.search_and_replace(image_path=image_path, prompt=prompt, search_prompt=search_prompt,
                                                    random_factor=random_factor, negative_prompt=negative_prompt,
                                                    seed=seed, output_format=output_format)
+                if "Your request was flagged" in response.text:
+                    return FoundNSFW
                 raise Exception(f"HTTP {response.status_code}: {response.text}")
 
             # Decode response
@@ -341,6 +345,8 @@ class Stable_Diffusion_API:
                 self.api_keys = self.api_keys[1:]
                 return self.text_to_image(prompt=prompt, negative_prompt=negative_prompt, aspect_ratio=aspect_ratio,
                                           seed=seed, output_format=output_format, model=model, output_path=output_path)
+            if "Your request was flagged" in response.text:
+                return FoundNSFW
             raise Exception(f"HTTP {response.status_code}: {response.text}")
 
         # Decode response
