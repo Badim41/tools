@@ -202,7 +202,8 @@ def reka_recognize_image(image_path, reka_api, prompt="",
     comment: Медленный, нужен аккаунт
     """
     if not reka_api:
-        return None, None
+        return
+
     if not prompt:
         prompt = "Подробно опиши, что изображено на картинке"
 
