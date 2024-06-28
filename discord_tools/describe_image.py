@@ -174,7 +174,7 @@ def astica_API(image_path, prompt="", isAdultContent=True, isRacyContent=True, i
                 prompt=prompt,
                 vision_params=Astica_Describe_Params.gpt_detailed)
 
-            logger.logging("Response from server:", result, color=Color.GRAY)
+            # logger.logging("Response from server:", result, color=Color.GRAY)
 
             if result.get('caption_GPTS'):
                 caption = result['caption_GPTS']
@@ -214,7 +214,7 @@ def reka_recognize_image(image_path, reka_api, prompt="",
             if not text:
                 return
 
-            logger.logging("Response from server:", text, color=Color.GRAY)
+            # logger.logging("Response from server:", text, color=Color.GRAY)
 
             # Хотя бы так?
             for ban_word in ban_words:
