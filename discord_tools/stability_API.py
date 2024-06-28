@@ -248,6 +248,7 @@ class Stable_Diffusion_API:
             key_manager.add_expired_key(self.api_keys[0])
             self.api_keys = self.api_keys[1:]
             return self.get_generate_video_id(image_path=image_path)
+
         if "Your request was flagged" in response.text:
             return FoundNSFW
 
@@ -272,6 +273,9 @@ class Stable_Diffusion_API:
                         'authorization': f"Bearer {self.api_keys[0]}"
                     },
                 )
+
+                if "Your request was flagged" in response.text:
+                    return FoundNSFW
 
                 if response.status_code == 202:
                     time.sleep(10)
