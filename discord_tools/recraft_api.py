@@ -163,6 +163,8 @@ class RecraftAPI:
         
         response = requests.get('https://api.recraft.ai/poll_recraft', params=params, headers=headers)
 
+        print("get_result recraft", response.text)
+
         output_paths = []
 
         for i, data in enumerate(response.json()['images']):
