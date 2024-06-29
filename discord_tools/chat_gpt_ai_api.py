@@ -607,7 +607,7 @@ class ChatGPT_4_Site:
 
         answer = json.loads(last_line)['reply']
 
-        return answer
+        return answer, image_url
 
 
 def clear_email_list(filename):
