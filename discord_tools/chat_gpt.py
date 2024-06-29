@@ -49,6 +49,7 @@ def fix_message_history(messages):
     assistant_message_added = False
 
     for message in messages:
+        message["content"] = str(message["content"])
         if message["role"] == "user" and not user_message_added:
             converted_messages.append(message)
             user_message_added = True
@@ -75,7 +76,7 @@ def load_history_from_json(user_id):
     if not fixed_chat_history == chat_history:
         logger.logging("Fixed chat history", user_id, color=Color.PURPLE)
     # print("load_history:", chat_history)
-    return chat_history
+    return fixed_chat_history
 
 
 def serialize_chat_message(obj):

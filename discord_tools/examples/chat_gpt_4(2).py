@@ -10,6 +10,6 @@ account = ChatGPT_4_Account(proxies=proxies)
 
 # kielbasarendell.yvvh
 prompt = input("Введите запрос:")
-result = account.ask_gpt(prompt)
+result = account.ask_gpt(prompt, image_path=r"C:\Users\as280\Downloads\image_1.png")
 print(result)
 

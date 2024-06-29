@@ -134,7 +134,7 @@ class ChatGPT_4_Account:
         self.bot_info = None
 
     def ask_gpt(self, prompt, model=GPT_Models.gpt_4o, attempts=3, image_path=None, chat_history=None,
-                replace_prompt="??? ^"):
+                replace_prompt="??? ^", return_image_url=False):
         print("Модель GPT_ai:", model)
         try:
             if not chat_history:
@@ -153,9 +153,14 @@ class ChatGPT_4_Account:
 
                     threading.Thread(target=self.recover_account).start()
 
-                    return self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
-                                                     model=model, image_path=image_path, chat_history=chat_history,
-                                                     replace_prompt=replace_prompt)
+                    answer, image_url = self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
+                                                         model=model, image_path=image_path, chat_history=chat_history,
+                                                         replace_prompt=replace_prompt)
+
+                    if return_image_url:
+                        return answer, image_url
+                    else:
+                        return answer
 
                 except (DailyLimitException, CookieCheckException, QueryRejectedException, MessageModeratedException):
                     print("Reset account")
@@ -283,8 +288,8 @@ class ChatGPT_4_Account:
             "x-firebase-gmpid": "1:430595938852:web:a8639030eeddf71e9d16b1"
         }
 
-        response = requests.request("POST", url, json=payload, headers=headers, params=querystring)
-        print("refresh")
+        requests.request("POST", url, json=payload, headers=headers, params=querystring)
+        # print("refresh")
         self.save_to_json(refresh=True)
 
 
@@ -514,25 +519,27 @@ class ChatGPT_4_Site:
 
         logger.logging(response.text, color=Color.GRAY)
         response_json = response.json()
+        # print("uploaded image:", response_json)
         if response_json['success']:
-            return response_json['data']['id']
+            return response_json['data']['id'], response_json['data']['url']
         else:
             raise Exception("No success")
 
     def generate(self, prompt, cookies, bot_info, model, image_path=None, chat_id="eev1322xkeg", chat_history=None,
                  replace_prompt="??? ^"):
         if image_path:
-            image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
+            image_id, image_url = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
             if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
                 logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision",
                                color=Color.GRAY)
             model = GPT_Models.gpt_4_vision
         else:
-            image_id = None
+            image_id, image_url = None, None
 
         if not chat_history:
             chat_history = []
         chat_history_temp = chat_history
+
         role = ""
         if len(chat_history_temp) > 1:
             if chat_history_temp[0]['role'] == 'system':

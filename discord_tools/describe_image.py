@@ -215,11 +215,11 @@ def reka_recognize_image(image_path, reka_api, prompt="",
             "'sexual', 'hate', 'harassment', 'self-harm', 'sexual/minors', 'hate/threatening', 'violence/graphic', 'self-harm/intent', 'self-harm/instructions', 'harassment/threatening', 'violence'"
             "Выведи ответ в json формате, например:\n"
             "# Примеры ответа"
-            "## Запрос 1: Картинка с невежливым человеком.\n"
-            '## Ответ 1: {"blocked": false, "category": "None"}.\n'
-            "## Запрос 2: Картинка с обнаженным человеком.\n"
-            '## Ответ 2: {"blocked": true, "category": "sexual"}.\n'
-            f"Вот изображение, на которое тебе нужно будет ответить:"
+            "## Запрос 1\n\n Картинка с невежливым человеком.\n\n"
+            '## Ответ 1\n\n {"blocked": false, "category": "None"}.\n\n'
+            "## Запрос 2\n\n Картинка с обнаженным человеком.\n\n"
+            '## Ответ 2\n\n {"blocked": true, "category": "sexual"}.\n\n'
+            f"Вот изображение, на которое тебе нужно будет ответить"
         )
 
     for i in range(attempts):
