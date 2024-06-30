@@ -123,8 +123,11 @@ class CryptomusPaymentAPI:
         sign_hash = hashlib.md5(sign_str.encode()).hexdigest()
         return sign_hash
 
-    def get_payment_url(self, user_id: str, amount: str, currency: str = "USD", order_id: str = None,
+    def get_payment_url(self, user_id: [str, int], amount: [str, float], currency: str = "USD", order_id: str = None,
                         add_checker=True) -> str:
+        user_id = str(user_id)
+        amount = str(amount)
+
         if order_id is None:
             order_id = f"{user_id}_{int(time.time())}"
 
@@ -179,12 +182,12 @@ class CryptomusPaymentAPI:
 async def main():
     payment_api = CryptomusPaymentAPI(merchant_id=secret.cryptomus_merchant_id, api_key=secret.cryptomus_api_key)
 
-    await payment_api.run()
-
     @payment_api.handle_payment
     async def payment_handler(order_id: str, amount: str, currency: str):
         user_id = order_id.split("_")[0]
         print(f"Payment completed: User_id={user_id}, Amount={amount}, Currency={currency}")
+
+    await payment_api.run()
 
     # Создание платежа и получение URL
     try:
