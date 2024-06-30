@@ -6,8 +6,7 @@ import re
 import requests
 import threading
 import time
-import urllib
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from discord_tools.logs import Logs, Color
 from discord_tools.str_tools import create_query_dict_from_url
@@ -16,6 +15,10 @@ from discord_tools.temp_gmail_test import Temp_Gmail_API
 logger = Logs(warnings=True)
 
 JSON_ACCOUNT_SAVE = "accounts.json"
+
+
+class NoRestNonce(Exception):
+    """NoRestNonce"""
 
 
 class DailyLimitException(Exception):
@@ -39,8 +42,8 @@ class NotLoggedException(Exception):
 
 
 class GPT_Models:
-    gpt_4 = "gpt_4"# tydbjd
-    gpt_4o = "gpt_4o"# 3siv3p
+    gpt_4 = "gpt_4"  # tydbjd
+    gpt_4o = "gpt_4o"  # 3siv3p
     gpt_4_vision = "vision"  # kvic0w
     dalle_e_3 = "dalle-e-3"  # 5rwkvr
     claude_opus = "chat-claude-opus"  # zdmvyq
@@ -92,9 +95,12 @@ class ChatGPT_4_Account:
             self.localId = local_id
             self.last_used = last_used
 
-    def update_class(self):
+    def update_class(self, force_reload=False):
+        if force_reload:
+            logger.logging("Force register new account for chatgate")
+
         account = ChatGPT_4_Account.load()
-        if account:
+        if account and not force_reload:
             self.__dict__.update(account.__dict__)
         else:
             # raise Exception("Not found account")
@@ -133,7 +139,7 @@ class ChatGPT_4_Account:
         self.save_to_json(last_used=1)
         self.bot_info = None
 
-    def ask_gpt(self, prompt, model=GPT_Models.gpt_4o, attempts=3, image_path=None, chat_history=None,
+    def ask_gpt(self, prompt, model=GPT_Models.gpt_4o, attempts=4, image_path=None, chat_history=None,
                 replace_prompt="??? ^", return_image_url=False):
         print("Модель GPT_ai:", model)
         try:
@@ -149,27 +155,25 @@ class ChatGPT_4_Account:
 
                 try:
                     if not self.bot_info["restNonce"]:
-                        raise Exception("No restNonce")
+                        raise NoRestNonce
 
                     threading.Thread(target=self.recover_account).start()
 
-                    answer, image_url = self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
-                                                         model=model, image_path=image_path, chat_history=chat_history,
-                                                         replace_prompt=replace_prompt)
+                    answer = self.api_chatgpt.generate(prompt=prompt, cookies=self.cookies, bot_info=self.bot_info,
+                                                       model=model, image_path=image_path, chat_history=chat_history,
+                                                       replace_prompt=replace_prompt)
 
-                    if return_image_url:
-                        return answer, image_url
-                    else:
-                        return answer
+                    return answer
 
                 except (DailyLimitException, CookieCheckException, QueryRejectedException, MessageModeratedException):
                     print("Reset account")
                     self.save_to_json()
-                    self.update_class()
-                except NotLoggedException:
+                except (NotLoggedException, NoRestNonce):
                     print("Delete account chatgate ai")
                     self.save_to_json(last_used=20340420)
-                    self.update_class()
+
+                # обновляем аккаунт
+                self.update_class(force_reload=attempts - 2 == i)
         except Exception as e:
             logger.logging("Error in generate GHATGPT-4:", e)
 
@@ -521,20 +525,20 @@ class ChatGPT_4_Site:
         response_json = response.json()
         # print("uploaded image:", response_json)
         if response_json['success']:
-            return response_json['data']['id'], response_json['data']['url']
+            return response_json['data']['id']
         else:
             raise Exception("No success")
 
     def generate(self, prompt, cookies, bot_info, model, image_path=None, chat_id="eev1322xkeg", chat_history=None,
                  replace_prompt="??? ^"):
         if image_path:
-            image_id, image_url = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
+            image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
             if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
                 logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision",
                                color=Color.GRAY)
             model = GPT_Models.gpt_4_vision
         else:
-            image_id, image_url = None, None
+            image_id = None
 
         if not chat_history:
             chat_history = []
@@ -607,7 +611,7 @@ class ChatGPT_4_Site:
 
         answer = json.loads(last_line)['reply']
 
-        return answer, image_url
+        return answer
 
 
 def clear_email_list(filename):
