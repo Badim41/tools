@@ -8,8 +8,6 @@ import time
 from functools import wraps
 from typing import Dict, Callable, Awaitable
 
-import secret
-
 
 class CryptomusPaymentStatus:
     """
@@ -123,7 +121,7 @@ class CryptomusPaymentAPI:
         sign_hash = hashlib.md5(sign_str.encode()).hexdigest()
         return sign_hash
 
-    def get_payment_url(self, user_id: [str, int], amount: [str, float], currency: str = "USD", order_id: str = None,
+    def get_payment_url(self, user_id: [str, int], amount: [str, float], currency: str = "RUB", order_id: str = None,
                         add_checker=True) -> str:
         user_id = str(user_id)
         amount = str(amount)
@@ -180,7 +178,7 @@ class CryptomusPaymentAPI:
 
 # Пример использования
 async def main():
-    payment_api = CryptomusPaymentAPI(merchant_id=secret.cryptomus_merchant_id, api_key=secret.cryptomus_api_key)
+    payment_api = CryptomusPaymentAPI(merchant_id=cryptomus_merchant_id, api_key=cryptomus_api_key)
 
     @payment_api.handle_payment
     async def payment_handler(order_id: str, amount: str, currency: str):
@@ -191,7 +189,7 @@ async def main():
 
     # Создание платежа и получение URL
     try:
-        payment_url = await asyncio.to_thread(payment_api.get_payment_url, user_id="123", amount="15.00")
+        payment_url = await asyncio.to_thread(payment_api.get_payment_url, user_id="123", amount="15.00", currency="RUB")
         print(f"Payment URL: {payment_url}")
     except Exception as e:
         print(f"Error creating payment: {e}")
