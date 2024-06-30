@@ -19,6 +19,10 @@ class MailTMInvalidResponse(Exception):
     """Raised when the response from the MailTM API is not valid."""
     pass
 
+class GmailNotActivated(Exception):
+    """Ошибка, когда почта не активирована"""
+    pass
+
 
 def random_string(length=8):
     return ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(length))
@@ -437,6 +441,7 @@ class Temp_Gmail_API:
         for i in range(attempts):
             time.sleep(15)
             messages = self.get_messages(gmail_address, timestamp)
+
             for message in messages:
                 if sender_name in message['textFrom']:
                     return self.get_message(gmail_address, message['mid'])
@@ -466,6 +471,9 @@ class Temp_Gmail_API:
         }
 
         response = requests.request("GET", url, data=payload, headers=headers, params=querystring)
+
+        if "This email address is not activated yet" in response.text:
+            raise GmailNotActivated
 
         print("get_messages", response.text)
 

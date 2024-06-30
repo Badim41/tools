@@ -178,7 +178,7 @@ class CryptomusPaymentAPI:
 
 # Пример использования
 async def main():
-    payment_api = CryptomusPaymentAPI(merchant_id=cryptomus_merchant_id, api_key=cryptomus_api_key)
+    payment_api = CryptomusPaymentAPI(merchant_id="cryptomus_merchant_id", api_key="cryptomus_api_key")
 
     @payment_api.handle_payment
     async def payment_handler(order_id: str, amount: str, currency: str):
