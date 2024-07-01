@@ -182,7 +182,7 @@ class FreeKassaPaymentAPI:
     def __init__(self, merchant_id, secret_word_1, secret_word_2):
         self.merchant_id = merchant_id
         self.secret_word_1 = secret_word_1
-        self.secret_word_2 = secret_word_1
+        self.secret_word_2 = secret_word_2
         self.payment_handler = None
 
     def handle_payment(self, func: Callable[[str, str, str], Awaitable[None]]):
@@ -195,12 +195,13 @@ class FreeKassaPaymentAPI:
 
     def generate_signature_from_server(self, order_amount, order_id):
         data = f"{self.merchant_id}:{order_amount}:{self.secret_word_2}:{order_id}"
+        # print("data:", data)
         signature = hashlib.md5(data.encode()).hexdigest()
         return signature
 
     def _generate_signature_to_server(self, order_amount, currency, order_id):
         data = f"{self.merchant_id}:{order_amount}:{self.secret_word_1}:{currency}:{order_id}"
-        print("data:", data)
+        # print("data:", data)
         signature = hashlib.md5(data.encode()).hexdigest()
         return signature
 
