@@ -276,7 +276,6 @@ if __name__ == '__main__':
     #         order_amount = request_json['AMOUNT']
     #
     #         sing_original = free_kassa_payment_api.generate_signature_from_server(order_amount=order_amount,
-    #                                                                   currency=currency,
     #                                                                   order_id=order_id)
     #
     #         if sing_original == request_json['SIGN']:
