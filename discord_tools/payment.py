@@ -6,8 +6,8 @@ import os
 import requests
 import time
 from functools import wraps
-from typing import Dict, Callable, Awaitable
 from translate import Languages
+from typing import Dict, Callable, Awaitable
 
 
 class CryptomusPaymentStatus:
@@ -187,7 +187,7 @@ class FreeKassaPaymentAPI:
         signature = hashlib.md5(data.encode()).hexdigest()
         return signature
 
-    def generate_payment_link(self, order_amount, user_id, currency='RUB', lang=Languages.ru):
+    def get_payment_url(self, order_amount, user_id, currency='RUB', lang=Languages.ru):
         order_id = f"{user_id}_{int(time.time())}"
         signature = self.generate_signature(order_amount, currency, order_id)
         return f"https://pay.freekassa.ru/?m={self.merchant_id}&oa={order_amount}&o={order_id}&s={signature}&currency={currency}&i=&lang={lang}"
@@ -223,7 +223,7 @@ if __name__ == '__main__':
     free_kassa_payment_api = FreeKassaPaymentAPI(merchant_id="merchant_id", secret_word="secret_word")
     user_id = '123'
     order_amount = '300'
-    payment_link = free_kassa_payment_api.generate_payment_link(user_id=user_id, order_amount=order_amount)
+    payment_link = free_kassa_payment_api.get_payment_url(user_id=user_id, order_amount=order_amount)
     print(payment_link)
 
     # Add flask server to handle payment
