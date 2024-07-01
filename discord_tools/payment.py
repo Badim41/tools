@@ -179,9 +179,10 @@ class CryptomusPaymentAPI:
 
 
 class FreeKassaPaymentAPI:
-    def __init__(self, merchant_id, secret_word):
+    def __init__(self, merchant_id, secret_word_1, secret_word_2):
         self.merchant_id = merchant_id
-        self.secret_word = secret_word
+        self.secret_word_1 = secret_word_1
+        self.secret_word_2 = secret_word_1
         self.payment_handler = None
 
     def handle_payment(self, func: Callable[[str, str, str], Awaitable[None]]):
@@ -192,14 +193,19 @@ class FreeKassaPaymentAPI:
         self.payment_handler = wrapper
         return wrapper
 
-    def generate_signature(self, order_amount, currency, order_id):
-        data = f"{self.merchant_id}:{order_amount}:{self.secret_word}:{currency}:{order_id}"
+    def generate_signature_from_server(self, order_amount, order_id):
+        data = f"{self.merchant_id}:{order_amount}:{self.secret_word_2}:{order_id}"
+        signature = hashlib.md5(data.encode()).hexdigest()
+        return signature
+
+    def _generate_signature_to_server(self, order_amount, currency, order_id):
+        data = f"{self.merchant_id}:{order_amount}:{self.secret_word_1}:{currency}:{order_id}"
         signature = hashlib.md5(data.encode()).hexdigest()
         return signature
 
     def get_payment_url(self, order_amount: [float, str, int], user_id: [str, int], currency='RUB', lang=Languages.ru):
         order_id = f"{user_id}_{int(time.time())}"
-        signature = self.generate_signature(order_amount, currency, order_id)
+        signature = self._generate_signature_to_server(order_amount, currency, order_id)
         return f"https://pay.freekassa.ru/?m={self.merchant_id}&oa={order_amount}&o={order_id}&s={signature}&currency={currency}&i=&lang={lang}"
 
 
@@ -230,11 +236,14 @@ if __name__ == "__main__":
 
 # FREE KASSA
 if __name__ == '__main__':
-    free_kassa_payment_api = FreeKassaPaymentAPI(merchant_id="merchant_id", secret_word="secret_word")
+    free_kassa_payment_api = FreeKassaPaymentAPI(merchant_id="merchant_id",
+                                                 secret_word_1="secret_word_1",
+                                                 secret_word_2="secret_word_2")
     user_id = '123'
     order_amount = '300'
     payment_link = free_kassa_payment_api.get_payment_url(user_id=user_id, order_amount=order_amount)
     print(payment_link)
+
 
     @free_kassa_payment_api.handle_payment
     async def payment_handler(order_id: str, amount: str, currency: str):
@@ -266,7 +275,7 @@ if __name__ == '__main__':
     #         currency = 'RUB'
     #         order_amount = request_json['AMOUNT']
     #
-    #         sing_original = free_kassa_payment_api.generate_signature(order_amount=order_amount,
+    #         sing_original = free_kassa_payment_api.generate_signature_from_server(order_amount=order_amount,
     #                                                                   currency=currency,
     #                                                                   order_id=order_id)
     #
