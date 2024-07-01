@@ -236,6 +236,11 @@ if __name__ == '__main__':
     payment_link = free_kassa_payment_api.get_payment_url(user_id=user_id, order_amount=order_amount)
     print(payment_link)
 
+    @free_kassa_payment_api.handle_payment
+    async def payment_handler(order_id: str, amount: str, currency: str):
+        user_id = order_id.split("_")[0]
+        print(f"Payment completed: User_id={user_id}, Amount={amount}, Currency={currency}")
+
     # Add flask server to handle payment
 
     # @app.route('/notification', methods=['GET'])
