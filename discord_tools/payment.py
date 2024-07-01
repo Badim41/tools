@@ -175,8 +175,31 @@ class CryptomusPaymentAPI:
         else:
             raise Exception(f"Failed to check payment status: {response_data.get('message', 'Unknown error')}")
 
+import hashlib
+import time
+from discord_tools.translate import Languages
 
-# Пример использования
+import secret
+
+
+class FreeKassaPaymentAPI:
+    def __init__(self, merchant_id, secret_word):
+        self.merchant_id = merchant_id
+        self.secret_word = secret_word
+
+    def generate_signature(self, order_amount, currency, order_id):
+        data = f"{self.merchant_id}:{order_amount}:{self.secret_word}:{currency}:{order_id}"
+        signature = hashlib.md5(data.encode()).hexdigest()
+        return signature
+
+    def generate_payment_link(self, order_amount, user_id, currency='RUB', lang=Languages.ru):
+        order_id = f"{user_id}_{int(time.time())}"
+        signature = self.generate_signature(order_amount, currency, order_id)
+        return f"https://pay.freekassa.ru/?m={self.merchant_id}&oa={order_amount}&o={order_id}&s={signature}&currency={currency}&i=&lang={lang}"
+
+
+
+# CRYPTOMUS
 async def main():
     payment_api = CryptomusPaymentAPI(merchant_id="cryptomus_merchant_id", api_key="cryptomus_api_key")
 
@@ -196,6 +219,42 @@ async def main():
 
     await asyncio.sleep(600)
 
-
 if __name__ == "__main__":
     asyncio.run(main())
+
+# FREE KASSA
+if __name__ == '__main__':
+    free_kassa_payment_api = FreeKassaPaymentAPI(merchant_id="merchant_id", secret_word="secret_word")
+    user_id = '123'
+    order_amount = '300'
+    payment_link = free_kassa_payment_api.generate_payment_link(user_id=user_id, order_amount=order_amount)
+    print(payment_link)
+
+    # Add flask server to handle payment
+
+    # @app.route('/notification', methods=['GET'])
+    # def notification():
+    #     def add_to_json_file(filename, data):
+    #         try:
+    #             with open(filename, "r") as file:
+    #                 existing_data = json.load(file)
+    #         except FileNotFoundError:
+    #             existing_data = []
+    #
+    #         existing_data.append(data)
+    #
+    #         with open(filename, "w") as file:
+    #             json.dump(existing_data, file)
+    #
+    #     # Ваш код для обработки оповещения о платеже
+    #
+    #     # Добавление данных запроса в JSON файл
+    #     print(f"Полученные заголовки: {request.args.to_dict()}")
+    #
+    #     add_to_json_file("notification.json", request.args.to_dict())
+    #     return "YES"
+    #
+    #
+    # def run_flask_server():
+    #     app.run(host='0.0.0.0', port=80)
+
