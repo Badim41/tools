@@ -7,6 +7,7 @@ import requests
 import time
 from functools import wraps
 from typing import Dict, Callable, Awaitable
+from translate import Languages
 
 
 class CryptomusPaymentStatus:
@@ -175,12 +176,6 @@ class CryptomusPaymentAPI:
         else:
             raise Exception(f"Failed to check payment status: {response_data.get('message', 'Unknown error')}")
 
-import hashlib
-import time
-from discord_tools.translate import Languages
-
-import secret
-
 
 class FreeKassaPaymentAPI:
     def __init__(self, merchant_id, secret_word):
@@ -198,7 +193,6 @@ class FreeKassaPaymentAPI:
         return f"https://pay.freekassa.ru/?m={self.merchant_id}&oa={order_amount}&o={order_id}&s={signature}&currency={currency}&i=&lang={lang}"
 
 
-
 # CRYPTOMUS
 async def main():
     payment_api = CryptomusPaymentAPI(merchant_id="cryptomus_merchant_id", api_key="cryptomus_api_key")
@@ -212,12 +206,14 @@ async def main():
 
     # Создание платежа и получение URL
     try:
-        payment_url = await asyncio.to_thread(payment_api.get_payment_url, user_id="123", amount="15.00", currency="RUB")
+        payment_url = await asyncio.to_thread(payment_api.get_payment_url, user_id="123", amount="15.00",
+                                              currency="RUB")
         print(f"Payment URL: {payment_url}")
     except Exception as e:
         print(f"Error creating payment: {e}")
 
     await asyncio.sleep(600)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -257,4 +253,3 @@ if __name__ == '__main__':
     #
     # def run_flask_server():
     #     app.run(host='0.0.0.0', port=80)
-
