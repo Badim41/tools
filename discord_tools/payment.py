@@ -200,6 +200,7 @@ class FreeKassaPaymentAPI:
 
     def _generate_signature_to_server(self, order_amount, currency, order_id):
         data = f"{self.merchant_id}:{order_amount}:{self.secret_word_1}:{currency}:{order_id}"
+        print("data:", data)
         signature = hashlib.md5(data.encode()).hexdigest()
         return signature
 
