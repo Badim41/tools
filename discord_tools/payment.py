@@ -6,7 +6,7 @@ import os
 import requests
 import time
 from functools import wraps
-from translate import Languages
+from discord_tools.translate import Languages
 from typing import Dict, Callable, Awaitable
 
 
