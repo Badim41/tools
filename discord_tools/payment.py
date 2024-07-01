@@ -6,8 +6,9 @@ import os
 import requests
 import time
 from functools import wraps
-from discord_tools.translate import Languages
 from typing import Dict, Callable, Awaitable
+
+from discord_tools.translate import Languages
 
 
 class CryptomusPaymentStatus:
@@ -181,6 +182,15 @@ class FreeKassaPaymentAPI:
     def __init__(self, merchant_id, secret_word):
         self.merchant_id = merchant_id
         self.secret_word = secret_word
+        self.payment_handler = None
+
+    def handle_payment(self, func: Callable[[str, str, str], Awaitable[None]]):
+        @wraps(func)
+        async def wrapper(order_id, amount, currency):
+            return await func(order_id, amount, currency)
+
+        self.payment_handler = wrapper
+        return wrapper
 
     def generate_signature(self, order_amount, currency, order_id):
         data = f"{self.merchant_id}:{order_amount}:{self.secret_word}:{currency}:{order_id}"
