@@ -252,13 +252,24 @@ if __name__ == '__main__':
     #         with open(filename, "w") as file:
     #             json.dump(existing_data, file)
     #
-    #     # Ваш код для обработки оповещения о платеже
+    #         # Ваш код для обработки оповещения о платеже
+    #         request_json = request.args.to_dict()
+    #         # Добавление данных запроса в JSON файл
+    #         print(f"Полученные заголовки: {request_json}")
     #
-    #     # Добавление данных запроса в JSON файл
-    #     print(f"Полученные заголовки: {request.args.to_dict()}")
+    #         order_id = request_json['MERCHANT_ORDER_ID']
+    #         currency = 'RUB'
+    #         order_amount = request_json['AMOUNT']
     #
-    #     add_to_json_file("notification.json", request.args.to_dict())
-    #     return "YES"
+    #         sing_original = free_kassa_payment_api.generate_signature(order_amount=order_amount,
+    #                                                                   currency=currency,
+    #                                                                   order_id=order_id)
+    #
+    #         if sing_original == request_json['SIGN']:
+    #             asyncio.run(free_kassa_payment_api.payment_handler(order_id=order_id, amount=order_amount, currency=currency))
+    #
+    #         add_to_json_file("notification.json", request_json)
+    #         return "YES"
     #
     #
     # def run_flask_server():
