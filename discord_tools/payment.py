@@ -187,7 +187,7 @@ class FreeKassaPaymentAPI:
         signature = hashlib.md5(data.encode()).hexdigest()
         return signature
 
-    def get_payment_url(self, order_amount, user_id, currency='RUB', lang=Languages.ru):
+    def get_payment_url(self, order_amount: [float, str, int], user_id: [str, int], currency='RUB', lang=Languages.ru):
         order_id = f"{user_id}_{int(time.time())}"
         signature = self.generate_signature(order_amount, currency, order_id)
         return f"https://pay.freekassa.ru/?m={self.merchant_id}&oa={order_amount}&o={order_id}&s={signature}&currency={currency}&i=&lang={lang}"
