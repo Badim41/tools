@@ -393,7 +393,7 @@ class ChatGPT:
 
             functions += get_fake_gpt_functions(1)
 
-            results = await asyncio.gather([asyncio.create_task(task) for task in functions])  # результаты всех функций
+            results = await asyncio.gather(*[asyncio.create_task(task) for task in functions])
 
             new_results = []
             for i, result in enumerate(results):
