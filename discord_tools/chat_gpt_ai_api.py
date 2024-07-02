@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 
 from discord_tools.logs import Logs, Color
-from discord_tools.str_tools import create_query_dict_from_url
+from discord_tools.str_tools import create_query_dict_from_url, create_cookies_dict
 from discord_tools.temp_gmail_test import Temp_Gmail_API
 
 logger = Logs(warnings=True)
@@ -44,19 +44,15 @@ class NotLoggedException(Exception):
 class GPT_Models:
     gpt_4 = "gpt_4"  # tydbjd
     gpt_4o = "gpt_4o"  # 3siv3p
-    gpt_4_vision = "vision"  # kvic0w
     dalle_e_3 = "dalle-e-3"  # 5rwkvr
     claude_opus = "chat-claude-opus"  # zdmvyq
-    claude_vision = "chat-claude-vision"  # 12oenm
 
     @staticmethod
     def get_id(model_name):
         secret_ids = {
             GPT_Models.gpt_4: "chatbot-tydbjd",
-            GPT_Models.gpt_4_vision: "chatbot-kvic0w",
             GPT_Models.dalle_e_3: "chatbot-5rwkvr",
             GPT_Models.claude_opus: "chatbot-zdmvyq",
-            GPT_Models.claude_vision: "chatbot-12oenm",
             GPT_Models.gpt_4o: "chatbot-3siv3p"
         }
         if model_name not in secret_ids:
@@ -165,7 +161,7 @@ class ChatGPT_4_Account:
 
                     return answer
 
-                except (DailyLimitException, CookieCheckException, QueryRejectedException, MessageModeratedException):
+                except (DailyLimitException, CookieCheckException):
                     print("Reset account")
                     self.save_to_json()
                 except (NotLoggedException, NoRestNonce):
@@ -412,15 +408,13 @@ class ChatGPT_4_Site:
     # self.print_cookie(response, "Register")
 
     def get_bot_info_json(self, cookies):
-        url = f"https://chatgate.ai/gpt4"
+        url = f"https://chatgate.ai/gpt-4o"
 
         payload = ""
         headers = {
-            "cookie": cookies,
             "authority": "chatgate.ai",
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "accept-language": "ru,en;q=0.9",
-            "referer": "https://chatgate.ai/vision/",
             "sec-fetch-dest": "document",
             "sec-fetch-mode": "navigate",
             "sec-fetch-site": "same-origin",
@@ -429,7 +423,7 @@ class ChatGPT_4_Site:
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 YaBrowser/24.1.0.0 Safari/537.36"
         }
 
-        response = requests.request("GET", url, data=payload, headers=headers, proxies=self.proxies)
+        response = requests.request("GET", url, data=payload, headers=headers, cookies=create_cookies_dict(cookies), proxies=self.proxies)
 
         result = re.search(r"data-system='(.*?)'", response.text)
 
@@ -533,10 +527,6 @@ class ChatGPT_4_Site:
                  replace_prompt="??? ^"):
         if image_path:
             image_id = self.upload_file(image_path=image_path, cookies=cookies, bot_info=bot_info, model=model)
-            if model not in [GPT_Models.gpt_4_vision, GPT_Models.claude_vision]:
-                logger.logging(f"Модель {model} не имеет доступа к изображениям. Модель заменена на GPT4-vision",
-                               color=Color.GRAY)
-            model = GPT_Models.gpt_4_vision
         else:
             image_id = None
 
@@ -571,14 +561,13 @@ class ChatGPT_4_Site:
             "customId": None,
             "session": "N/A",
             "chatId": chat_id,
-            "contextId": 4048,
+            "contextId": 66740,
             "messages": chat_history_temp,
             "newMessage": prompt,
             "newFileId": image_id,
             "stream": False
         }
         headers = {
-            'cookie': cookies,
             "authority": "chatgate.ai",
             "accept": "text/event-stream",
             "accept-language": "ru,en;q=0.9",
@@ -594,7 +583,7 @@ class ChatGPT_4_Site:
 
         # logger.logging("REST:", bot_info["restNonce"], bot_info)
 
-        response = requests.request("POST", url, json=payload, headers=headers, proxies=self.proxies)
+        response = requests.request("POST", url, json=payload, headers=headers, cookies=create_cookies_dict(cookies), proxies=self.proxies)
         last_line = response.text.split("data: ")[-1]
         logger.logging(last_line, color=Color.GRAY)
 
