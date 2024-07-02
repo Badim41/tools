@@ -362,11 +362,6 @@ class ChatGPT:
                 if answer:
                     return ChatGPT_providers.deepseek, answer
 
-
-
-
-
-
             functions = get_fake_gpt_functions(30)
 
             task_objects = [asyncio.create_task(task) for task in functions]
@@ -385,11 +380,16 @@ class ChatGPT:
         elif mode == ChatGPT_Mode.all:
             functions = [self.run_official_gpt(messages, 1, value, user_id, gpt_role) for value in values]
             functions += [self.run_deep_seek(messages, 1, value, user_id, gpt_role) for value in values]
-            functions += [asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1,
-                                            temperature=0.3, model="command-r-plus", web_access=False)]
-            functions += [
-                asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None,
-                                  chat_history=messages)]
+
+            # CORAL
+            if self.coral_API and not limited:
+                functions += [asyncio.to_thread(self.coral_API.generate, chat_history, gpt_role=gpt_role, delay_for_gpt=1,
+                                                temperature=0.3, model="command-r-plus", web_access=False)]
+
+            # CHAT GPT 4
+            if self.chat_gpt_4 and chat_gpt_4:
+                functions += [asyncio.to_thread(self.chat_gpt_4.ask_gpt, prompt, model=GPT_Models.gpt_4, attempts=3, image_path=None,
+                                      chat_history=messages)]
 
             functions += get_fake_gpt_functions(1)
 
