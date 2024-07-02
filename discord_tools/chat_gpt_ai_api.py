@@ -376,7 +376,7 @@ class ChatGPT_4_Site:
         response = requests.request("POST", url, json=payload, headers=headers, params=querystring,
                                     proxies=self.proxies)
         response_json = response.json()
-        kind = response_json['kind']
+        kind = "-"
         idToken = response_json['idToken']
         refreshToken = response_json['refreshToken']
         localId = response_json['localId']
